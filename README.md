@@ -3,6 +3,8 @@
 
 *The project is at very early stage and lacks many of CPU and debugger features*
 
+[![asciicast](https://asciinema.org/a/270744.svg)](https://asciinema.org/a/270744)
+
 ## Supported systems
 
 Program was tested on:
@@ -13,6 +15,30 @@ Program was tested on:
 Program should work on:
 
 * MS Windows / Go >=1.12
+
+## Installing
+
+### version A
+
+```bash
+git clone https://github.com/aniou/go65c816
+cd go65c816
+go run cmd/go65c816/main.go
+
+# go to another terminal and run
+go run cmd/netcon/main.go    
+```
+
+### version B
+
+```bash
+go get github.com/aniou/go65c816/cmd/go65c816
+go get github.com/aniou/go65c816/cmd/netcon
+~/go/bin/go65c816
+
+# spawn another terminal emulator and run console
+~/go/bin/netcon
+```
 
 ## Keybindings
 
