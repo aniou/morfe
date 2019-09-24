@@ -3,6 +3,14 @@
 
 *The project is at very early stage and lacks many of CPU and debugger features*
 
+## Supported systems
+
+Program was tested on:
+
+* NetBSD 9/Go 1.12
+* Ubuntu 18.04/Go 1.13
+* MS Windows 7/Go 1.13  *TBD*
+
 ## Keybindings
 
 |Window  |Key       |Meaning|
