@@ -1,6 +1,8 @@
 # go65c816
 65c816 emulator in Go
 
+*The project is at very early stage and lacks many of CPU and debugger features*
+
 ## Keybindings
 
 |Window  |Key       |Meaning|
@@ -62,3 +64,7 @@ Machine parameters may be tweaked by editing `emulator/platform/platform.go` fil
  * conditional breakpoints
  * additional commands
  * performance improvements
+
+### Foreword
+
+Project was inspired by [NES emulator](https://github.com/fogleman/nes) created by Michael Fogleman and [MOS 6502 emulator](https://github.com/pda/go6502) by Paul Annesley and contains files or concepts from both projects. Some hints and behaviours are modeled on the [C++ 65c816 emulator](https://github.com/andrew-jacobs/emu816) by Andrew Jacobs.
