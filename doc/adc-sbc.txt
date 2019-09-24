@@ -1,0 +1,74 @@
+
+1.
+
+https://github.com/andrew-jacobs/emu816/blob/master/emu816.h#L455
+
+2.
+
+http://ww.supervisord.org/tutorials/vflag.html
+
+3.
+
+https://stackoverflow.com/questions/29193303/6502-emulation-proper-way-to-implement-adc-and-sbc
+Ulfalizer
+
+(I forgot about Decimal mode -- which the NES's 6502 lacks -- when writing the
+answer below. I'll leave it anyway as it may be useful to people writing NES
+emulators.)
+
+SBC is easy to implement once your emulator has ADC. All you need to do is to
+invert the bits of the argument and pass that to the ADC implementation. To get
+an intuitive idea of why this works, note that inverting all the bits of arg
+produces -arg - 1 in two's complement, and work through what happens when the
+carry flag is and isn't set.
+
+Here's the complete source for SBC in my emulator. All flags will be set
+correctly too.
+
+static void sbc(uint8_t arg) { adc(~arg); /* -arg - 1 */ }
+
+The trickiest part when implementing ADC is the calculation of the overflow
+flag. The condition for it to get set is that the result has the "wrong" sign.
+Due to how the ranges work out, it turns out that this can only happen in two
+circumstances:
+
+    Two positive numbers are added, and the result is a negative number.
+    Two negative numbers are added, and the result is a positive number.
+
+(1) and (2) can be simplified into the following condition:
+
+    Two numbers that have the same sign are added, and the result has a different sign.
+
+With some XOR trickery, this allows the overflow flag to be set as in the
+following code (the complete ADC implementation from my emulator):
+
+static void adc(uint8_t arg) {
+    unsigned const sum = a + arg + carry;
+    carry = sum > 0xFF;
+    // The overflow flag is set when the sign of the addends is the same and
+    // differs from the sign of the sum
+    overflow = ~(a ^ arg) & (a ^ sum) & 0x80;
+    zn = a /* (uint8_t) */ = sum;
+}
+
+(a ^ arg) gives 0x80 in the sign bit position if the a register and arg differ
+in sign. ~ flips the bits so that you get 0x80 if a and arg have the same sign.
+In plainer English, the condition can be written
+
+overflow = <'a' and 'arg' have the same sign> &  
+           <the sign of 'a' and 'sum' differs> &  
+           <extract sign bit>
+
+The ADC implementation (as well as many other instructions) also uses a trick
+to store the zero and negative flags together.
+
+My CPU implementation (from an NES emulator) can be found here by the way.
+Searching for "Core instruction logic" will give you simple implementations for
+all instructions (including unofficial instructions).
+
+I've run it through plenty of test ROMs without failures (one of the upsides of
+NES emulation is that there's plenty of great test ROMs available), and I think
+it should be pretty much bug free at this point (save for some extremely
+obscure stuff involving e.g. open bus values in some circumstances).
+
+
