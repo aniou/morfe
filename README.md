@@ -7,9 +7,12 @@
 
 Program was tested on:
 
-* NetBSD 9/Go 1.12
-* Ubuntu 18.04/Go 1.13
-* MS Windows 7/Go 1.13  *TBD*
+* NetBSD 9 / Go 1.12
+* Ubuntu 18.04 / Go 1.13
+ 
+Program should work on:
+
+* MS Windows / Go >=1.12
 
 ## Keybindings
 
