@@ -288,6 +288,7 @@ func (ui *Ui) executeCmd(g *gocui.Gui, v *gocui.View) error {
 		ui.peek(g, tokens)
 	case "quit":
 		ui.quit(g, v)
+		return gocui.ErrQuit
 	default:
 		fmt.Fprintf(ui.logView, "unknown command: %s\n", command)
 	}
