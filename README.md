@@ -3,6 +3,17 @@
 
 *The project is at very early stage and lacks many of CPU and debugger features*
 
+## Supported systems
+
+Program was tested on:
+
+* NetBSD 9 / Go 1.12
+* Ubuntu 18.04 / Go 1.13
+ 
+Program should work on:
+
+* MS Windows / Go >=1.12
+
 ## Keybindings
 
 |Window  |Key       |Meaning|
@@ -53,7 +64,7 @@ Machine parameters may be tweaked by editing `emulator/platform/platform.go` fil
 ```
 
  * minimal area size: **16 bytes**
- * areas **must be** aligned at 4 bits
+ * areas **must be** aligned at 4 bits (16 bytes)
  * areas are stacked
 
 ### TODO
