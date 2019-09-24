@@ -30,6 +30,30 @@ All values should be provided in hexadecimal form.
 |peek24 [addr]     |peek 24-bit value (without wrapping at bank boundary)
 |quit              |quit emulator
 
+## Input/Output
+
+By default emulator provides simplest I/O via TCP socket opened at `localhost:12321`. Every byte written in emulator to addr `0xDF77` should be sent and every received byte is available from `0xDF75`. Buffer sizes for both directons are arbitraly set at 200 bytes.
+
+Almost every program (telnet or nc) should work as client, but best results should be ahieved by client that sends data in character mode (i.e. every pressed key sends one byte). There is available simple client, called `netcon`.
+
+## Memory map
+
+Machine parameters may be tweaked by editing `emulator/platform/platform.go` file. Every memory area should be attached to internal bus, like in following example:
+
+```go
+        bus, _          := bus.New(logger)                     // new bus
+        platform.CPU, _  = cpu65c816.New(bus)                  // new CPU
+        console, _      := netconsole.NewNetConsole(logger)    // netconsole - first IO device
+        ram, _          := memory.New(0x40000)                 // regular RAM, 256kB
+
+        platform.CPU.Bus.Attach(ram,            "ram", 0x000000, 0x03FFFF)    // atach first region
+        platform.CPU.Bus.Attach(console, "netconsole", 0x00DF00, 0x00DFFF)    // mask area 0xdf00-0xdfff
+```
+
+ * minimal area size: **16 bytes**
+ * areas **must be** aligned at 4 bits
+ * areas are stacked
+
 ### TODO
  * interrupts
  * speed limit
