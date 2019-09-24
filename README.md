@@ -53,7 +53,7 @@ Machine parameters may be tweaked by editing `emulator/platform/platform.go` fil
 ```
 
  * minimal area size: **16 bytes**
- * areas **must be** aligned at 4 bits
+ * areas **must be** aligned at 4 bits (16 bytes)
  * areas are stacked
 
 ### TODO
