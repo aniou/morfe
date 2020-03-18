@@ -43,13 +43,15 @@ func (console *Console) Size() uint32 {
 
 func (console *Console) Read(address uint32) byte {
         switch {
-        case address == 0x00DF48:
+        case address == 0x000F8B: //  act like KEY_BUFFER_RPOS
 		if console.InBuf.Len() > 0 {
 			return 1
 		} else {
 			return 0
 		}
-        case address == 0x00DF75:
+        case address == 0x000F8D: //  act like KEY_BUFFER_WPOS
+		return 0
+        case address == 0x000F00:
 		if console.InBuf.Len() > 0 {
 			return *console.InBuf.Dequeue()
 		} else {
@@ -62,7 +64,7 @@ func (console *Console) Read(address uint32) byte {
 
 func (console *Console) Write(address uint32, val byte) {
         switch {
-        case address == 0x00DF77:
+        case address == 0x00EFF:    // random, less conflicting with c256 addr
 		console.out <- val
         default:
         }
