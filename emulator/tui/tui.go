@@ -70,7 +70,7 @@ func (ui *Ui) Run(g *gocui.Gui) {
 
 
 func (ui *Ui) Logger(g *gocui.Gui) {
-	t := time.NewTimer(time.Millisecond * 100)
+	t := time.NewTimer(time.Millisecond * 250)
 
 	for {
 		select {
@@ -89,7 +89,7 @@ func (ui *Ui) Logger(g *gocui.Gui) {
 					return err
 				})
 			}
-			t.Reset(time.Millisecond * 100)
+			t.Reset(time.Millisecond * 250)
 		case <-ui.logQuit:
 			if !t.Stop() {
 				<-t.C
@@ -237,11 +237,15 @@ func (ui *Ui) loadProgram(g *gocui.Gui, tokens []string) {
 	switch tokens[1] {
 	case "hex":
 		ui.p.LoadHex(tokens[2])
-		ui.p.CPU.PC = 0x1000
+		ui.p.CPU.PC = 0x2000
 		ui.p.CPU.E  = 0
 		ui.p.CPU.M  = 0
 		ui.p.CPU.X  = 0
-		ui.updateMemoryView(g)
+
+        ui.updateStatusView(g)
+        ui.updateCodeView(g)
+        ui.updateMemoryView(g)
+        ui.updateStackView(g)
 	default:
 		fmt.Fprintf(ui.logView, "load: unknown parameter '%s'\n", tokens[2])
 	}
