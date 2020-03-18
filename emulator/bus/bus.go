@@ -123,7 +123,7 @@ func (b *Bus) Shutdown() {
 func (b *Bus) EaRead(a uint32) byte {
 	mem, err := b.backendFor(a)
 	if err != nil {
-		panic(err)
+		panic(err)			// XXX should log instead and abort of execution, but unwind tooks too many levels now :-/
 	}
 	value := mem.Read(a)
 	return value
