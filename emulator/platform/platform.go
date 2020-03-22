@@ -25,9 +25,9 @@ func (platform *Platform) Init(logger *mylog.MyLog) {
 	bus, _		:= bus.New(logger)
 	platform.CPU, _  = cpu65c816.New(bus)
 	console, _	:= netconsole.NewNetConsole(logger)
-	ram, _	        := memory.New(0x40000)		// xxx - add logger?
+	ram, _	        := memory.New(0x400000)		// xxx - add logger?
 
-	platform.CPU.Bus.Attach(ram,            "ram", 0x000000, 0x03FFFF)
+	platform.CPU.Bus.Attach(ram,            "ram", 0x000000, 0x3FFFFF)
 	platform.CPU.Bus.Attach(console, "netconsole", 0x000EF0, 0x000FFF)
 
         platform.CPU.Bus.EaWrite(0xFFFC, 0x00)
