@@ -247,7 +247,7 @@ func (ui *Ui) loadProgram(g *gocui.Gui, tokens []string) {
         ui.updateMemoryView(g)
         ui.updateStackView(g)
 	default:
-		fmt.Fprintf(ui.logView, "load: unknown parameter '%s'\n", tokens[2])
+		fmt.Fprintf(ui.logView, "load: unknown parameter '%s'\n", tokens)
 	}
 }
 
