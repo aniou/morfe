@@ -17,6 +17,13 @@
 ; dead simple routines that reduces difference between C256 FMX kernel
 ; and go65c816 emulator in current shape
 
+; custom INIT
+
+    * = $1000
+
+    clc
+    xce
+    jml $3a0000
 
 ; PUTC-like
 
@@ -25,7 +32,6 @@
 	sta $eff
 	rtl
 
-
 ; GETC-like
 
 	* = $104c
@@ -33,7 +39,6 @@
 -	lda $f00
 	beq -
 	rtl
-
 
 ; COMMAND PARSER Variables
 ; Command Parser Stuff between $000F00 -> $000F84 (see CMD_Parser.asm)

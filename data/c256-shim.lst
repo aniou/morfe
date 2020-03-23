@@ -1,12 +1,15 @@
 
 ; 64tass Turbo Assembler Macro V1.54.1900 listing file
 ; 64tass --m65816 --long-address --flat --intel-hex -o c256-shim.hex --list c256-shim.lst c256-shim.asm
-; Tue Mar 17 22:31:01 2020
+; Mon Mar 23 21:07:02 2020
 
 ;Offset	;Hex		;Monitor	;Source
 
 ;******  Processing input file: c256-shim.asm
 
+.1000	18		clc		    clc
+.1001	fb		xce		    xce
+.1002	5c 00 00 3a	jmp $3a0000	    jml $3a0000
 .1018	8d ff 0e	sta $0eff		sta $eff
 .101b	6b		rtl			rtl
 .104c	ad 00 0f	lda $0f00	-	lda $f00
