@@ -71,7 +71,7 @@ All values should be provided in hexadecimal form.
 
 ## Input/Output
 
-By default emulator provides simplest I/O via TCP socket opened at `localhost:12321`. Every byte written in emulator to addr `0xDF77` should be sent and every received byte is available from `0xDF75`. Buffer sizes for both directons are arbitraly set at 200 bytes.
+By default emulator provides simplest I/O via TCP socket opened at `localhost:12321`. Every byte written in emulator to addr `0xEFF` should be sent and every received byte is available from `0xF00`. Buffer sizes for both directons are arbitraly set at 200 bytes. 
 
 Almost every program (telnet or nc) should work as client, but best results should be ahieved by client that sends data in character mode (i.e. every pressed key sends one byte). There is available simple client, called `netcon`.
 
@@ -85,13 +85,26 @@ Machine parameters may be tweaked by editing `emulator/platform/platform.go` fil
         console, _      := netconsole.NewNetConsole(logger)    // netconsole - first IO device
         ram, _          := memory.New(0x40000)                 // regular RAM, 256kB
 
-        platform.CPU.Bus.Attach(ram,            "ram", 0x000000, 0x03FFFF)    // atach first region
-        platform.CPU.Bus.Attach(console, "netconsole", 0x00DF00, 0x00DFFF)    // mask area 0xdf00-0xdfff
+        platform.CPU.Bus.Attach(ram,            "ram", 0x000000, 0x3FFFFF)    // 4MB of RAM, like C256 FMX
+        platform.CPU.Bus.Attach(console, "netconsole", 0x000EF0, 0x000FFF)    // mask area by netcon-pseudo I/O
 ```
 
  * minimal area size: **16 bytes**
  * areas **must be** aligned at 4 bits (16 bytes)
  * areas are stacked
+
+## Running FORTH
+
+A this moment emulator is able to run [of816 FORTH port for C256](https://github.com/aniou/of816/tree/C256/platforms/C256),
+from the same `hex` file as C256 platform. Due to drawbacks of emulator itself a small portion of code ("shim") that emulates 
+parts of C256 FMX behaviour is required. Code is located in `data/` directory as well as copy of latest FORTH port.
+
+To run simply execute following commands:
+```
+load hex data/c256-shim.hex
+load hex data/forth.hex
+run
+```
 
 ### TODO
  * interrupts
