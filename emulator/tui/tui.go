@@ -237,7 +237,7 @@ func (ui *Ui) loadProgram(g *gocui.Gui, tokens []string) {
 	switch tokens[1] {
 	case "hex":
 		ui.p.LoadHex(tokens[2])
-		ui.p.CPU.PC = 0x2000
+		ui.p.CPU.PC = 0x1000
 		ui.p.CPU.E  = 0
 		ui.p.CPU.M  = 0
 		ui.p.CPU.X  = 0
