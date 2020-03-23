@@ -30,8 +30,8 @@ func (platform *Platform) Init(logger *mylog.MyLog) {
 	platform.CPU.Bus.Attach(ram,            "ram", 0x000000, 0x3FFFFF)
 	platform.CPU.Bus.Attach(console, "netconsole", 0x000EF0, 0x000FFF)
 
-        platform.CPU.Bus.EaWrite(0xFFFC, 0x00)
-        platform.CPU.Bus.EaWrite(0xFFFD, 0x10)
+    platform.CPU.Bus.EaWrite(0xFFFC, 0x00)
+    platform.CPU.Bus.EaWrite(0xFFFD, 0x10)
 	platform.CPU.Reset()
 
 	platform.Logger = logger
