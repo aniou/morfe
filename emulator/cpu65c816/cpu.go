@@ -346,6 +346,7 @@ type CPU struct {
 	Cycles    byte   // number of cycles for this step
 	PPC       uint16 // previous Program Counter (does not exist in 65c816)
 	stepPC    uint16 // how many bytes should PC be increased in this step?
+    abort     bool   // temporary flag to determine that cpu should stop
 
 	PC        uint16 // Program Counter
 	SP        uint16 // Stack Pointer
@@ -401,6 +402,7 @@ func (cpu *CPU) Reset() {
 	//cpu.PC   = cpu.Read16(0xFFFC)
 	cpu.PC   = cpu.nRead16_cross(0x00, 0xFFFC)
 	cpu.SetFlags(0x34)
+    cpu.abort = false
 }
 
 /* ====================================================================
@@ -821,7 +823,7 @@ type stepInfo struct {
 
 
 // Step executes a single CPU instruction
-func (cpu *CPU) Step() int {
+func (cpu *CPU) Step() (int, bool) {
 
 	//if cpu.stall > 0 {
 	//	cpu.stall--
@@ -1107,7 +1109,12 @@ func (cpu *CPU) Step() int {
 	// counter and PC update
 	cpu.AllCycles += uint64(cpu.Cycles)
 	cpu.PC += cpu.stepPC
-	return int(cpu.Cycles)
+    if cpu.abort {
+        cpu.abort = false
+        return int(cpu.Cycles), true
+    } else {
+	    return int(cpu.Cycles), false
+    }
 }
 
 // NMI - Non-Maskable Interrupt
@@ -2311,6 +2318,7 @@ func (cpu *CPU) wai(info *stepInfo) {
 
 // WDM - William D. Mensch, Jr.
 func (cpu *CPU) op_wdm(info *stepInfo) {
+    cpu.abort = true
 }
 
 // XBA - eXchange B and A accumulator

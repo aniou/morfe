@@ -154,8 +154,11 @@ func (ui *Ui) runCPU(g *gocui.Gui, v *gocui.View) error {
 			//case <-e.C:
 			//	a = 1
 			default:
-				ui.p.CPU.Step()
+				_, abort := ui.p.CPU.Step()
 				b++
+				if abort {
+					a = 1
+				}
 			}
 
 		}
