@@ -165,6 +165,16 @@ func (ui *Ui) runCPU(g *gocui.Gui, v *gocui.View) error {
 
 		g.Update(func(g *gocui.Gui) error {
 			fmt.Fprintf(ui.logView, "runCPU: stop after %d cycles\n", b)
+				g.Update(func(g *gocui.Gui) error {
+					ui.updateStatusView(g)
+				    ui.updateCodeView(g)
+					ui.updateStackView(g)
+					ui.updateMemoryView(g)
+					if ui.isPageMapVisible {
+						ui.updatePageMap(g)
+					}
+					return nil
+				})
 			return nil
 		})
 
