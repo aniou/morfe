@@ -221,6 +221,16 @@ func hex2uint24(hexStr string) (uint32, error) {
 	return uint32(result) & 0x00ffffff, err
 }
 
+func hex2uint16(hexStr string) (uint16, error) {
+	// remove 0x suffix, $ and : characters
+	cleaned := strings.Replace(hexStr,  "0x", "",  1)
+	cleaned  = strings.Replace(cleaned,  "$", "",  1)
+	cleaned  = strings.Replace(cleaned,  ":", "", -1)
+
+	result, err := strconv.ParseUint(cleaned, 16, 16)
+	return uint16(result), err
+}
+
 // not finished yet
 func dec2uint24(in string) (uint32, error) {
 	// remove 0x suffix, $ and : characters
@@ -238,6 +248,13 @@ func (ui *Ui) setParameter(g *gocui.Gui, tokens []string) {
 	case "mem":
 		if ui.memPosition, err = hex2uint24(tokens[2]); err == nil {
 			ui.updateMemoryView(g)
+		} else {
+			fmt.Fprintf(ui.logView, "set: error: %s\n", err)
+		}
+    case "pc":
+		if ui.p.CPU.PC, err = hex2uint16(tokens[2]); err == nil {
+			ui.updateStatusView(g)
+			ui.updateCodeView(g)
 		} else {
 			fmt.Fprintf(ui.logView, "set: error: %s\n", err)
 		}
