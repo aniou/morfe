@@ -394,6 +394,7 @@ func (ui *Ui) updateStatusView(g *gocui.Gui) error {
 	speed, suffix := showCPUSpeed(ui.cpuSpeed)
 
 	// second and third line
+	// XXX - error, pPC should be in form "pRK:pPC"
 	if ui.p.CPU.X == 0 {
 		fmt.Fprintf(v, " X  %04x (%7d) │ DBR    %02x │ pPC 00:%04x │                   │\n",
 			ui.p.CPU.RX, ui.p.CPU.RX, ui.p.CPU.RDBR, ui.p.CPU.PPC)
