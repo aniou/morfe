@@ -1,29 +1,27 @@
-
 package netconsole
 
 import (
-	"net"
 	"fmt"
+	"net"
 
 	"github.com/aniou/go65c816/lib/mylog"
 	"github.com/aniou/go65c816/lib/queue"
 )
 
 type Console struct {
-	out     chan byte     	  // for 'display'
-        InBuf   queue.QueueByte   // for 'keyboard'
-	logger	*mylog.MyLog
+	out    chan byte       // for 'display'
+	InBuf  queue.QueueByte // for 'keyboard'
+	logger *mylog.MyLog
 }
 
-
 func NewNetConsole(logger *mylog.MyLog) (*Console, error) {
-	console  := Console{make(chan byte, 200), queue.NewQueueByte(200), logger}
+	console := Console{make(chan byte, 200), queue.NewQueueByte(200), logger}
 	go console.handle()
-        return &console, nil
+	return &console, nil
 }
 
 func (console *Console) Dump(address uint32) []byte {
-	return nil			// XXX - todo
+	return nil // XXX - todo
 }
 
 func (console *Console) String() string {
@@ -33,43 +31,42 @@ func (console *Console) String() string {
 func (console *Console) Shutdown() {
 }
 
-func (console *Console) Clear() {  // Maybe Reset?
+func (console *Console) Clear() { // Maybe Reset?
 }
 
 func (console *Console) Size() uint32 {
 	return 0x100 // XXX: something
 }
 
-
 func (console *Console) Read(address uint32) byte {
-        switch {
-        case address == 0x000F8B: //  act like KEY_BUFFER_RPOS
+	switch {
+	case address == 0x000F8B: //  act like KEY_BUFFER_RPOS
 		if console.InBuf.Len() > 0 {
 			return 1
 		} else {
 			return 0
 		}
-        case address == 0x000F8D: //  act like KEY_BUFFER_WPOS
+	case address == 0x000F8D: //  act like KEY_BUFFER_WPOS
 		return 0
-        case address == 0x000F00:
+	case address == 0x000F00:
 		if console.InBuf.Len() > 0 {
 			return *console.InBuf.Dequeue()
 		} else {
 			return 0
 		}
-        default:
+	default:
 		return 0
-        }
+	}
 }
 
 func (console *Console) Write(address uint32, val byte) {
-        switch {
-        case address == 0x00EFF:    // random, less conflicting with c256 addr
+	switch {
+	case address == 0x00EFE: // random, less conflicting with c256 addr
+		//console.logger.Log(fmt.Sprintf("netconsole: out %s", val))
 		console.out <- val
-        default:
-        }
+	default:
+	}
 }
-
 
 // in goroutine
 func (console *Console) handle() {
@@ -111,10 +108,9 @@ func (console *Console) handle() {
 				_ = deadOne.Close()
 				console.logger.Log(fmt.Sprintf("netconsole: client closed"))
 				canWrite = false
-			case val := <- console.out:
+			case val := <-console.out:
 				conn.Write([]byte{val})
 			}
 		}
 	}
 }
-
