@@ -23,22 +23,66 @@
 
     clc
     xce
+    ;jsr $1100
+    ;jmp $2000
+    ;WDM  #1
     jml $3a0000
 
 ; PUTC-like
 
 	* = $1018
 
-	sta $eff
+    ; php/pla in this place is somewhat redundant
+    ; see of816 platform-specific routines
+    ;wdm #$10
+    php
+    phb             ; preserve DBR too!
+    sep #$20        ; set A short
+    pha             ; preserve
+    lda #$00        ; set DBR to $00
+    pha
+    plb
+    pla             ; restore A
+	sta $efe
+    plb
+    plp
 	rtl
 
 ; GETC-like
 
 	* = $104c
 
+    ; php/pla in this place is somewhat redundant
+    ; see of816 platform-specific routines
+    php
+    phb             ; preserve DBR too!
+    sep #$20        ; set A short
+    lda #$00        ; set DBR to $00
+    pha
+    plb
 -	lda $f00
 	beq -
+    plb
+    plp
 	rtl
+
+; BANNER-like
+
+   * = $1100
+
+   sep #$20        ; set A short
+   .xl
+   ldx #$0000
+
+b0 lda banner, x
+   beq b1
+   jsl $1018
+   inx
+   bra b0
+b1 jsl $104c
+   rts
+
+banner .text "press any key...", $0a, $00
 
 ; COMMAND PARSER Variables
 ; Command Parser Stuff between $000F00 -> $000F84 (see CMD_Parser.asm)
