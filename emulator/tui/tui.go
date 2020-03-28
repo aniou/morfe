@@ -382,15 +382,14 @@ func (ui *Ui) updateStatusView(g *gocui.Gui) error {
 	speed, suffix := showCPUSpeed(ui.cpuSpeed)
 
 	// second and third line
-	// XXX - error, pPC should be in form "pRK:pPC"
 	if ui.p.CPU.X == 0 {
-		fmt.Fprintf(v, " X  %04x (%7d) │ DBR    %02x │ pPC 00:%04x │                   │\n",
-			ui.p.CPU.RX, ui.p.CPU.RX, ui.p.CPU.RDBR, ui.p.CPU.PPC)
+		fmt.Fprintf(v, " X  %04x (%7d) │ DBR    %02x │ pPC %02x:%04x │                   │\n",
+			ui.p.CPU.RX, ui.p.CPU.RX, ui.p.CPU.RDBR, ui.p.CPU.PRK, ui.p.CPU.PPC)
 		fmt.Fprintf(v, " Y  %04x (%7d) │ D    %04x │ ",
 			ui.p.CPU.RY, ui.p.CPU.RY, ui.p.CPU.RD)
 	} else {
-		fmt.Fprintf(v, " X    %02x (    %3d) │ DBR    %02x │ pPC 00:%04x │                   │\n",
-			ui.p.CPU.RXl, ui.p.CPU.RXl, ui.p.CPU.RDBR, ui.p.CPU.PPC)
+		fmt.Fprintf(v, " X    %02x (    %3d) │ DBR    %02x │ pPC %02x:%04x │                   │\n",
+			ui.p.CPU.RXl, ui.p.CPU.RXl, ui.p.CPU.RDBR, ui.p.CPU.PRK, ui.p.CPU.PPC)
 		fmt.Fprintf(v, " Y    %02x (    %3d) │ D    %04x │ ",
 			ui.p.CPU.RYl, ui.p.CPU.RYl, ui.p.CPU.RD)
 	}

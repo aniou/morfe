@@ -340,14 +340,19 @@ func (c *CPU) createTable() {
 }
 
 type CPU struct {
-	Bus 	*bus.Bus
+	Bus	*bus.Bus
 
+	// additional emulator variables
 	AllCycles uint64 // total number of cycles of CPU instance
 	Cycles    byte   // number of cycles for this step
-	PPC       uint16 // previous Program Counter (does not exist in 65c816)
 	stepPC    uint16 // how many bytes should PC be increased in this step?
-    abort     bool   // temporary flag to determine that cpu should stop
+	abort     bool   // temporary flag to determine that cpu should stop
 
+	// previous register's value exists for debugging purposes
+	PRK	  byte   // previous value of program banK register
+	PPC       uint16 // previous value Program Counter 
+
+	// 65c816 registers
 	PC        uint16 // Program Counter
 	SP        uint16 // Stack Pointer
 
@@ -841,6 +846,7 @@ func (cpu *CPU) Step() (int, bool) {
 	cpu.interrupt = interruptNone
 
 	cpu.PPC    = cpu.PC
+	cpu.PRK    = cpu.RK
 	opcode    := cpu.nRead(cpu.RK, cpu.PC)
 	mode      := instructions[opcode].mode
         cpu.stepPC = uint16(instructions[opcode].size)
