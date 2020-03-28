@@ -37,8 +37,8 @@ func New() *Ui {
 }
 
 func (ui *Ui) Init(g *gocui.Gui, logger *mylog.MyLog, platform *platform.Platform) {
-	ui.active = 0
 	ui.viewArr = []string{"code", "cmd"}
+	ui.active = 1 // "cmd"
 	ui.stepControl = make(chan byte)
 	ui.logger = logger
 	ui.logQuit = make(chan bool)
@@ -701,9 +701,9 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
 		v.Highlight = false
 		v.Autoscroll = true
 		//v.SelBgColor = gocui.ColorGreen
-		if _, err := g.SetCurrentView("code"); err != nil {
-			return err
-		}
+		//if _, err := g.SetCurrentView("code"); err != nil {
+		//	return err
+		//}
 
 		ui.updateCodeView(g)
 	}
@@ -774,6 +774,9 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
 		v.Autoscroll = true
 		v.Title = "Command"
 
+		if _, err := g.SetCurrentView("cmd"); err != nil {
+			return err
+		}
 	}
 
 	/*
