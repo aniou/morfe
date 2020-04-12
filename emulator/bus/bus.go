@@ -48,7 +48,9 @@ type busEntry struct {
 // simplest, fastest and with greater memory usage
 //
 type Bus struct {
-	segment [1048576]memory.Memory   // 2^10 because segments are 4bits length
+	EA        uint32		// last memory access - r/w
+	Write     bool			// is write op?
+	segment [1048576]memory.Memory  // 2^10 because segments are 4bits length
 	entries []busEntry
 	Logger	*mylog.MyLog
 }
@@ -125,7 +127,9 @@ func (b *Bus) EaRead(a uint32) byte {
 	if err != nil {
 		panic(err)			// XXX should log instead and abort of execution, but unwind tooks too many levels now :-/
 	}
-	value := mem.Read(a)
+	b.EA    = a				// for debug interface
+	b.Write = false
+	value  := mem.Read(a)
 	return value
 }
 
@@ -135,6 +139,8 @@ func (b *Bus) EaWrite(a uint32, value byte) {
 	if err != nil {
 		panic(err)
 	}
+	b.EA    = a				// for debug interface
+	b.Write = true
 	mem.Write(a, value)
 }
 

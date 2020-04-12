@@ -369,15 +369,23 @@ func (ui *Ui) updateStatusView(g *gocui.Gui) error {
 	v.Clear()
 
 	// first line
-	if ui.p.CPU.M == 0 {
-		fmt.Fprintf(v, " A  %04x (%7d) │ SP   %04x │  PC %02x:%04x │",
-			ui.p.CPU.RA, ui.p.CPU.RA, ui.p.CPU.SP, ui.p.CPU.RK, ui.p.CPU.PC)
+	op := ""
+	if ui.p.CPU.Bus.Write == true {
+		op = "w"
 	} else {
-		fmt.Fprintf(v, " A %02x %02x (%3d %3d) │ SP   %04x │  PC %02x:%04x │",
-			ui.p.CPU.RAh, ui.p.CPU.RAl, ui.p.CPU.RAh, ui.p.CPU.RAl, ui.p.CPU.SP, ui.p.CPU.RK, ui.p.CPU.PC)
+		op = "r"
+	}
+	bank :=  uint8(ui.p.CPU.Bus.EA >> 16)
+	addr := uint16(ui.p.CPU.Bus.EA & 0x0000ffff)
+	if ui.p.CPU.M == 0 {
+		fmt.Fprintf(v, " A  %04x (%7d) │",          ui.p.CPU.RA, ui.p.CPU.RA)
+	} else {
+		fmt.Fprintf(v, " A %02x %02x (%3d %3d) │", ui.p.CPU.RAh, ui.p.CPU.RAl, ui.p.CPU.RAh, ui.p.CPU.RAl)
 
 	}
-	fmt.Fprintf(v, " cycle %11d │\n", ui.p.CPU.AllCycles)
+	fmt.Fprintf(v, " SP   %04x │  PC %02x:%04x │", ui.p.CPU.SP, ui.p.CPU.RK, ui.p.CPU.PC)
+	fmt.Fprintf(v, " cycle %11d │", ui.p.CPU.AllCycles)
+	fmt.Fprintf(v, " EA%s %02x:%04x\n", op, bank, addr)
 
 	speed, suffix := showCPUSpeed(ui.cpuSpeed)
 
