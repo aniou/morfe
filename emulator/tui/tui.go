@@ -643,6 +643,12 @@ func (ui *Ui) keybindings(g *gocui.Gui) error {
 	if err := g.SetKeybinding("", gocui.KeyTab, gocui.ModNone, ui.nextView); err != nil {
 		return err
 	}
+	if err := g.SetKeybinding("", gocui.KeyF5, gocui.ModNone, ui.runCPU); err != nil {
+		return err
+	}
+	if err := g.SetKeybinding("", gocui.KeyF6, gocui.ModNone, ui.executeStep); err != nil {
+		return err
+	}
 	if err := g.SetKeybinding("", gocui.KeyCtrlSpace, gocui.ModNone, ui.runCPU); err != nil {
 		return err
 	}
