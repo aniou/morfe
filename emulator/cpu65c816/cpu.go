@@ -1293,24 +1293,58 @@ func (cpu *CPU) op_beq(info *stepInfo) {
 }
 
 // BIT - test BITs
+// TODO: there is a mistake here, immediate mode should not set N nor V!
+
+
+/*
+OP LEN CYCLES      MODE      nvmxdizc e SYNTAX
+-- --- ----------- --------- ---------- ------
+24 2   4-m+w       dir       mm....m. . BIT $10
+2C 3   5-m         abs       mm....m. . BIT $9876
+34 2   5-m+w       dir,X     mm....m. . BIT $10,X
+3C 3   6-m-x+x*p   abs,X     mm....m. . BIT $9876,X
+89 3-m 3-m         imm       ......m. . BIT #$54
+
+Immediate addressing only affects the z flag (with the result of the bitwise
+And), but does not affect the n and v flags. All other addressing modes of BIT
+affect the n, v, and z flags. This is the only instruction in the 6502 family
+where the flags affected depends on the addressing mode.
+
+-  The n flag reflects the high bit of the data (note: just the data, not the
+bitwise And of the accumulator and the data).
+
+-  The v flag reflects the second highest bit of the data (i.e. bit 14 of the
+data when the m flag is 0, and bit 6 of the data when the m flag is 1, and
+again, just the data, not the bitwise And).
+
+-  The z flag reflects whether the result (of the bitwise And) is zero. 
+*/
+
 func (cpu *CPU) op_bit(info *stepInfo) {
 	if cpu.M == 1 {
 		val := cpu.cmdRead(info)
 		cpu.setZ8(cpu.RAl & val)
-		cpu.setN8(val)
-		if val&0x40 != 0 {
-			cpu.V = 1
-		} else {
-			cpu.V = 0
+
+		if info.mode != m_Immediate {
+			cpu.setN8(val)
+			if val&0x40 != 0 {
+				cpu.V = 1
+			} else {
+				cpu.V = 0
+			}
 		}
+
 	} else {
 		val := cpu.cmdRead16(info)
 		cpu.setZ16(cpu.RA & val)
-		cpu.setN16(val)
-		if val&0x4000 != 0 {
-			cpu.V = 1
-		} else {
-			cpu.V = 0
+
+		if info.mode != m_Immediate {
+			cpu.setN16(val)
+			if val&0x4000 != 0 {
+				cpu.V = 1
+			} else {
+				cpu.V = 0
+			}
 		}
 	}
 }
