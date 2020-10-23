@@ -1,7 +1,7 @@
 
 ; 64tass Turbo Assembler Macro V1.55.2176 listing file
 ; 64tass --m65816 --long-address --flat --intel-hex -o c256-shim.hex --list c256-shim.lst c256-shim.asm
-; Thu Mar 26 23:20:04 2020
+; Sat Sep 26 12:22:22 2020
 
 ;Offset	;Hex		;Monitor	;Source
 
@@ -9,7 +9,10 @@
 
 .1000	18		clc		    clc
 .1001	fb		xce		    xce
-.1002	5c 00 00 3a	jmp $3a0000	    jml $3a0000
+.1002	c2 40		rep #$40	    rep #$40        ; set X long
+.1004	a2 ff fe	ldx #$feff	    ldx #$FEFF
+.1007	9a		txs		    txs
+.1008	5c 00 00 3a	jmp $3a0000	    jml $3a0000
 .1018	08		php		    php
 .1019	8b		phb		    phb             ; preserve DBR too!
 .101a	e2 20		sep #$20	    sep #$20        ; set A short

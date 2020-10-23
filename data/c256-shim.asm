@@ -23,6 +23,12 @@
 
     clc
     xce
+    ; like in foenix kernel
+    rep #$40        ; set X long
+    .xl
+    ldx #$FEFF
+    txs
+    ;
     ;jsr $1100
     ;jmp $2000
     ;WDM  #1
