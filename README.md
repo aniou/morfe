@@ -46,6 +46,8 @@ go get github.com/aniou/go65c816/cmd/netcon
 ---------|----------|--------
 any      |TAB       |next window
 any      |Ctrl+Space|run/stop CPU
+any      |F5        |run/stop CPU
+any      |F6        |step
 any      |Ctrl+C    |exit emulator
 any      |Ctrl+Q    |exit emulator
 any      |Ctrl+P    |load hex file data/program.hex
