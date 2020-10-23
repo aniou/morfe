@@ -6,13 +6,18 @@
 
 package memory
 
+//import (
+//	"fmt"
+//)
+
 type Ram struct {
 	data	[]byte
+	offset  uint32
 }
 
-func New(size uint32) (*Ram, error) {
+func New(size uint32, offset uint32) (*Ram, error) {
 	ram := make([]byte, size)
-	mem := Ram{data: ram}
+	mem := Ram{data: ram, offset: offset}
 	return &mem, nil
 }
 
@@ -23,11 +28,15 @@ func (mem *Ram) Clear() {
 }
 
 func (mem *Ram) Dump(start uint32) []byte {
-	return mem.data[start:start+0x10]		// XXX: configurable?
+	addr := start - mem.offset
+	//fmt.Printf(" %06X - %06X - %06X \n", mem.offset, start, addr)
+	//return []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	return mem.data[addr:addr+0x10]		// XXX: configurable?
 }
 
 func (mem *Ram) Read(address uint32) byte {
-	return mem.data[address]
+	addr := address - mem.offset
+	return mem.data[addr]
 }
 
 func (mem *Ram) Size() uint32 {
@@ -42,6 +51,7 @@ func (mem *Ram) String() string {
 }
 
 func (mem *Ram) Write(address uint32, value byte) {
-	mem.data[address] = value
+	addr := address - mem.offset
+	mem.data[addr] = value
 }
 
