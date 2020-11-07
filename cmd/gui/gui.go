@@ -283,8 +283,7 @@ func main() {
 		frames++
 		ticks_now = sdl.GetTicks()
 		if (ticks_now - prev_ticks) >= 1000 {
-			fmt.Printf("xxx: %d\n", (CPU_CLOCK - (p.CPU.AllCycles - prevCycles)))
-			if (CPU_CLOCK - (p.CPU.AllCycles - prevCycles)) > 0 {
+			if (p.CPU.AllCycles - prevCycles) < CPU_CLOCK {
 				cpuSteps+=100
 			}
 
