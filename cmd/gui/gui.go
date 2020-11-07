@@ -286,6 +286,10 @@ func main() {
 			if (p.CPU.AllCycles - prevCycles) < CPU_CLOCK {
 				cpuSteps+=100
 			}
+			if (p.CPU.AllCycles - prevCycles) > CPU_CLOCK+100 {
+				cpuSteps-=20
+			}
+
 
 			cyc, unit := showCPUSpeed(p.CPU.AllCycles - prevCycles)
 			prevCycles = p.CPU.AllCycles
