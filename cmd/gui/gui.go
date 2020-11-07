@@ -11,6 +11,7 @@ import (
 )
 
 const FULLSCREEN = false
+const CPU_CLOCK  = 14318000	// 14.381Mhz
 
 var winTitle string = "Go-SDL2 Events"
 var winWidth, winHeight int32 = 640, 480
@@ -237,6 +238,8 @@ func main() {
 	p.CPU.PC = 0x0000
 	p.CPU.RK = 0x03
 	var prevCycles uint64 = 0
+	var cpuSteps  uint64 = 10000	// CPU steps, low initial
+	var l uint64
 
 	starting_fb_row_pos := 640*vicky.border_y_size + (vicky.border_x_size)
 	for running {
@@ -280,9 +283,14 @@ func main() {
 		frames++
 		ticks_now = sdl.GetTicks()
 		if (ticks_now - prev_ticks) >= 1000 {
+			fmt.Printf("xxx: %d\n", (CPU_CLOCK - (p.CPU.AllCycles - prevCycles)))
+			if (CPU_CLOCK - (p.CPU.AllCycles - prevCycles)) > 0 {
+				cpuSteps+=100
+			}
+
 			cyc, unit := showCPUSpeed(p.CPU.AllCycles - prevCycles)
 			prevCycles = p.CPU.AllCycles
-			fmt.Fprintf(os.Stdout, "frames: %d ticks %d cpu cycles %d speed %d %s cpu.K %02x cpu.PC %04x\n", frames, (ticks_now - prev_ticks), p.CPU.AllCycles, cyc, unit, p.CPU.RK, p.CPU.PC)
+			fmt.Fprintf(os.Stdout, "frames: %d ticks %d desired cycles %d cpu cycles %d speed %d %s cpu.K %02x cpu.PC %04x\n", frames, (ticks_now - prev_ticks), cpuSteps, p.CPU.AllCycles, cyc, unit, p.CPU.RK, p.CPU.PC)
 			prev_ticks = ticks_now
 			frames = 0
 		}
@@ -299,7 +307,7 @@ func main() {
 			}
 		}
 
-		for l := 0; l < 14000; l += 1 {
+		for l = 0; l < cpuSteps; l += 1 {
 			_, _ = p.CPU.Step()
 		}
 		//cycles, stopped := p.CPU.Step()
