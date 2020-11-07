@@ -2,7 +2,9 @@
 package mylog
 
 import (
+	"fmt"
 	"github.com/aniou/go65c816/lib/queue"
+	"time"
 )
 
 type MyLog struct {
@@ -24,6 +26,7 @@ func (l *MyLog) Log(msg string) {
 	//	l.logMsg<-message
 	//}(msg)
 	//l.logMsg<-msg
+        fmt.Printf("| %s\n", msg)
 	l.logBuf.Enqueue(msg)
 }
 
@@ -33,5 +36,16 @@ func (l *MyLog) Len() int {
 
 func (l *MyLog) Dequeue() *string {
 	return l.logBuf.Dequeue()
+}
+
+func (l *MyLog) ConsolePrinter() {
+        go func() {
+		for {
+			time.Sleep(time.Millisecond * 100)
+			if l.logBuf.Len() > 0 {
+				fmt.Printf("> %s\n", *l.logBuf.Dequeue())
+			}
+		}
+        }()
 }
 

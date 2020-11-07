@@ -8,5 +8,6 @@ require (
 	github.com/marcinbor85/gohex v0.0.0-20180128172054-7a43cd876e46
 	github.com/mattn/go-runewidth v0.0.4 // indirect
 	github.com/nsf/termbox-go v0.0.0-20190817171036-93860e161317 // indirect
+	github.com/veandco/go-sdl2 v0.4.4
 	golang.org/x/sys v0.0.0-20190922100055-0a153f010e69 // indirect
 )
