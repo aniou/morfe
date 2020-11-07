@@ -1,18 +1,16 @@
 package main
 
 import (
+	"encoding/binary"
 	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
-	"encoding/binary"
 	"os"
 	//"time"
-        "github.com/aniou/go65c816/emulator/platform"
-        "github.com/aniou/go65c816/lib/mylog"
-
+	"github.com/aniou/go65c816/emulator/platform"
+	"github.com/aniou/go65c816/lib/mylog"
 )
 
-
-
+const FULLSCREEN = false
 
 var winTitle string = "Go-SDL2 Events"
 var winWidth, winHeight int32 = 640, 480
@@ -30,32 +28,32 @@ type VICKY struct {
 }
 
 func (v *VICKY) FillByBorderColor() {
- 	val := binary.LittleEndian.Uint32([]byte{v.border_color_r, v.border_color_g, v.border_color_b, 0xff})
+	val := binary.LittleEndian.Uint32([]byte{v.border_color_r, v.border_color_g, v.border_color_b, 0xff})
 	fb[0] = val
-    	for bp := 1; bp < len(fb); bp *= 2 {
-        	copy(fb[bp:], fb[:bp])
-    	}
+	for bp := 1; bp < len(fb); bp *= 2 {
+		copy(fb[bp:], fb[:bp])
+	}
 }
 
 func (v *VICKY) SetBorderX(size byte) {
-	v.border_x_size = uint32(size & 0xF8)	
+	v.border_x_size = uint32(size & 0xF8)
 	v.FillByBorderColor()
-} 
+}
 
 func (v *VICKY) SetBorderY(size byte) {
-	v.border_y_size = uint32(size & 0xF8)	
+	v.border_y_size = uint32(size & 0xF8)
 	v.FillByBorderColor()
-} 
+}
 
 func showCPUSpeed(cycles uint64) (uint64, string) {
-        switch {
-        case cycles > 1000000:
-                return cycles / 1000000, "MHz"
-        case cycles > 1000:
-                return cycles / 100, "kHz"
-        default:
-                return cycles, "Hz"
-        }
+	switch {
+	case cycles > 1000000:
+		return cycles / 1000000, "MHz"
+	case cycles > 1000:
+		return cycles / 100, "kHz"
+	default:
+		return cycles, "Hz"
+	}
 }
 
 func main() {
@@ -70,7 +68,7 @@ func main() {
 
 	var text [8192]uint32 // CS_TEXT_MEM
 	var fg [8192]uint32   // foreground attributes
-	var bg [8192]uint32  // background attributes
+	var bg [8192]uint32   // background attributes
 
 	pseudoInit()          // fill LUT table
 	for i := range text { // file text memory areas
@@ -81,7 +79,7 @@ func main() {
 
 	// simple conversion font to indexed surface
 	// at start - to two color palette
-	var font [256 * 8 * 8]byte // 256 chars * 8 lines * 8 columns 
+	var font [256 * 8 * 8]byte // 256 chars * 8 lines * 8 columns
 
 	for i, v := range font_st_8x8 {
 		for j := 0; j < 8; j = j + 1 {
@@ -101,7 +99,7 @@ func main() {
 	count := 0
 	for _, char := range "This is sparta!" {
 		text[count] = uint32(char)
-		count+=1
+		count += 1
 	}
 	fmt.Printf("%v\n", text[0:11])
 	fmt.Printf("%d\n", int32(text[0]*8))
@@ -120,7 +118,6 @@ func main() {
 		os.Exit(1)
 	}
 	defer window.Destroy()
-
 
 	pixelformat, err := window.GetPixelFormat()
 	if err != nil {
@@ -181,23 +178,29 @@ func main() {
 	var prev_ticks uint32 = sdl.GetTicks()
 	var ticks_now, frames uint32
 
+	// -----------------------------------------------------------------------------------
 	// zmiana trybu
-	display_index, _ := window.GetDisplayIndex()
-	current_mode, _ := sdl.GetCurrentDisplayMode(display_index)
-	fmt.Printf("current mode width: %d\n", current_mode.W)
-	fmt.Printf("current mode heigtt: %d\n", current_mode.H)
-	var wanted_mode = sdl.DisplayMode{sdl.PIXELFORMAT_ARGB8888, 640, 480, 60, nil}
-	var result_mode sdl.DisplayMode
+	var current_mode sdl.DisplayMode
+	if FULLSCREEN {
+		var wanted_mode = sdl.DisplayMode{sdl.PIXELFORMAT_ARGB8888, 640, 480, 60, nil}
+		var result_mode sdl.DisplayMode
+		display_index, _ := window.GetDisplayIndex()
+		current_mode, _ = sdl.GetCurrentDisplayMode(display_index)
+		fmt.Printf("current mode width: %d\n", current_mode.W)
+		fmt.Printf("current mode heigtt: %d\n", current_mode.H)
 
-	_, err = sdl.GetClosestDisplayMode(display_index, &wanted_mode, &result_mode)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to get ClosesMode: %s\n", err)
-		os.Exit(2)
+
+		_, err = sdl.GetClosestDisplayMode(display_index, &wanted_mode, &result_mode)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Failed to get ClosesMode: %s\n", err)
+			os.Exit(2)
+		}
+		fmt.Printf("wanted mode width: %d\n", result_mode.W)
+		fmt.Printf("wanted mode heigtt: %d\n", result_mode.H)
+		window.SetDisplayMode(&result_mode)
+		window.SetFullscreen(sdl.WINDOW_FULLSCREEN)
 	}
-	fmt.Printf("wanted mode width: %d\n", result_mode.W)
-	fmt.Printf("wanted mode heigtt: %d\n", result_mode.H)
-	window.SetDisplayMode(&result_mode)
-	window.SetFullscreen(sdl.WINDOW_FULLSCREEN)
+	// -----------------------------------------------------------------------------------
 
 	running = true
 	var text_cols, text_rows uint32
@@ -208,35 +211,33 @@ func main() {
 
 	sdl.SetHint("SDL_HINT_RENDER_BATCHING", "1")
 
-
-
 	var text_x, text_y uint32 // row and column of text
-        var text_row_pos   uint32 // beginning of current text row in text memory
-        var fb_row_pos     uint32 // beginning of current FB   row in memory
-        var font_pos       uint32 // position in font array (char * 64 + char_line * 8)
-        var font_line      uint32 // line in current font
-        var font_row_pos   uint32 // position of line in current font (=font_line*8 because every line has 8 bytes)
-	var i 		   uint32
+	var text_row_pos uint32   // beginning of current text row in text memory
+	var fb_row_pos uint32     // beginning of current FB   row in memory
+	var font_pos uint32       // position in font array (char * 64 + char_line * 8)
+	var font_line uint32      // line in current font
+	var font_row_pos uint32   // position of line in current font (=font_line*8 because every line has 8 bytes)
+	var i uint32
 
 	// placeholders recalculated per rows, holds values for text_cols loop
-        var txttmp [128]uint32                                                                                                                         
-        var fgtmp  [128]uint32 // for rgba
-        var bgtmp  [128]uint32 // for rgba
-        var dsttmp [128]uint32
+	var txttmp [128]uint32
+	var fgtmp [128]uint32 // for rgba
+	var bgtmp [128]uint32 // for rgba
+	var dsttmp [128]uint32
 
 	/*
-	go func() {
-		var c uint32;
-		for {
-        		text[c] = 65
-			time.Sleep(2 * time.Second)
-			if c < 8191 {
-				c+=1
-			} else {
-				c=0
+		go func() {
+			var c uint32;
+			for {
+	        		text[c] = 65
+				time.Sleep(2 * time.Second)
+				if c < 8191 {
+					c+=1
+				} else {
+					c=0
+				}
 			}
-		}
-    	}()
+	    	}()
 	*/
 
 	logger := mylog.New()
@@ -253,38 +254,38 @@ func main() {
 	p.CPU.RK = 0x03
 	var prevCycles uint64 = 0
 
-	starting_fb_row_pos := 640 * vicky.border_y_size + (vicky.border_x_size)
+	starting_fb_row_pos := 640*vicky.border_y_size + (vicky.border_x_size)
 	for running {
 		// render text - start
 		fb_row_pos = starting_fb_row_pos
-                for text_y = 0; text_y < text_rows; text_y += 1 {                               // over lines of text
-                        text_row_pos = text_y * 128
-                        for text_x = 0; text_x < text_cols; text_x += 1 {                       // pre-calculate data for x-axis
-                                txttmp[text_x] = text[text_row_pos+text_x] * 64                 // position in font array
-                                dsttmp[text_x] = text_x * 8                      		// position of char in dest FB
+		for text_y = 0; text_y < text_rows; text_y += 1 { // over lines of text
+			text_row_pos = text_y * 128
+			for text_x = 0; text_x < text_cols; text_x += 1 { // pre-calculate data for x-axis
+				txttmp[text_x] = text[text_row_pos+text_x] * 64 // position in font array
+				dsttmp[text_x] = text_x * 8                     // position of char in dest FB
 
-                                f := fg[text_row_pos+text_x]                                    // fg and bg colors
-                                b := bg[text_row_pos+text_x]
-                                fgtmp[text_x] = binary.LittleEndian.Uint32(f_color_lut[f][:])
-                                bgtmp[text_x] = binary.LittleEndian.Uint32(b_color_lut[b][:])
+				f := fg[text_row_pos+text_x] // fg and bg colors
+				b := bg[text_row_pos+text_x]
+				fgtmp[text_x] = binary.LittleEndian.Uint32(f_color_lut[f][:])
+				bgtmp[text_x] = binary.LittleEndian.Uint32(b_color_lut[b][:])
 
-                        }                                                                                                                              
+			}
 
-                        for font_line = 0; font_line < 8; font_line += 1 {                      // for every line of text - over 8 lines of font
-                                font_row_pos = font_line * 8
-                                for text_x = 0; text_x < text_cols; text_x += 1 {               // for each line iterate over columns of text
-                                        font_pos = txttmp[text_x] + font_row_pos
-                                        for i = 0; i < 8; i += 1 {                              // for every font iterate over 8 pixels of font
-                                                if font[font_pos+i] == 0 {
-                                                        fb[ fb_row_pos + dsttmp[text_x] + i ] = bgtmp[text_x]
-                                                } else {
-                                                        fb[ fb_row_pos + dsttmp[text_x] + i ] = fgtmp[text_x]
-                                                }
-                                        }
-                                }
-                                fb_row_pos += 640
-                        }
-                }
+			for font_line = 0; font_line < 8; font_line += 1 { // for every line of text - over 8 lines of font
+				font_row_pos = font_line * 8
+				for text_x = 0; text_x < text_cols; text_x += 1 { // for each line iterate over columns of text
+					font_pos = txttmp[text_x] + font_row_pos
+					for i = 0; i < 8; i += 1 { // for every font iterate over 8 pixels of font
+						if font[font_pos+i] == 0 {
+							fb[fb_row_pos+dsttmp[text_x]+i] = bgtmp[text_x]
+						} else {
+							fb[fb_row_pos+dsttmp[text_x]+i] = fgtmp[text_x]
+						}
+					}
+				}
+				fb_row_pos += 640
+			}
+		}
 		// render text - end
 		texture.UpdateRGBA(nil, fb, 640)
 		//renderer.SetDrawColor(0x40, 0x00, 0x40, 255)
@@ -314,14 +315,15 @@ func main() {
 			}
 		}
 
-		for l := 0; l < 14000; l+= 1 {
+		for l := 0; l < 14000; l += 1 {
 			_, _ = p.CPU.Step()
 		}
 		//cycles, stopped := p.CPU.Step()
 		//fmt.Printf("CPU %d cycles and stopped %v\n", cycles, stopped)
 	}
-	window.SetDisplayMode(&current_mode)
-
+	if FULLSCREEN {
+		window.SetDisplayMode(&current_mode)
+	}
 
 	//renderer.Destroy()
 	//window.Destroy()
