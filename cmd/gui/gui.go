@@ -286,8 +286,8 @@ func main() {
 			if (p.CPU.AllCycles - prevCycles) < CPU_CLOCK {
 				cpuSteps+=100
 			}
-			if (p.CPU.AllCycles - prevCycles) > CPU_CLOCK+100 {
-				cpuSteps-=20
+			if (p.CPU.AllCycles - prevCycles) > CPU_CLOCK+10000 {
+				cpuSteps-=10
 			}
 
 
