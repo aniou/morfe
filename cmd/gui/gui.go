@@ -225,21 +225,6 @@ func main() {
 	var bgtmp [128]uint32 // for rgba
 	var dsttmp [128]uint32
 
-	/*
-		go func() {
-			var c uint32;
-			for {
-	        		text[c] = 65
-				time.Sleep(2 * time.Second)
-				if c < 8191 {
-					c+=1
-				} else {
-					c=0
-				}
-			}
-	    	}()
-	*/
-
 	logger := mylog.New()
 	p := platform.New()
 	p.Init(logger)
@@ -248,7 +233,6 @@ func main() {
 	p.GPU.BG = &bg
 	p.GPU.FG_lut = &f_color_lut
 	p.GPU.BG_lut = &b_color_lut
-	//p.LoadHex("/home/aniou/c256/go65c816/data/kernel.hex")
 	p.LoadHex("/home/aniou/c256/go65c816/data/matrix.hex")
 	p.CPU.PC = 0x0000
 	p.CPU.RK = 0x03
