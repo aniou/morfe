@@ -233,7 +233,9 @@ func main() {
 	p.GPU.BG = &bg
 	p.GPU.FG_lut = &f_color_lut
 	p.GPU.BG_lut = &b_color_lut
-	p.LoadHex("/home/aniou/c256/go65c816/data/matrix.hex")
+	//p.LoadHex("/home/aniou/c256/go65c816/data/matrix.hex")
+	p.LoadHex("/home/aniou/c256/src/c256-gui-shim/c256-gui-shim.hex")
+	p.LoadHex("/home/aniou/c256/src/c256-gui-shim/old-kernel.hex")
 	p.CPU.PC = 0x0000
 	p.CPU.RK = 0x03
 	var prevCycles uint64 = 0
@@ -297,19 +299,33 @@ func main() {
 			frames = 0
 		}
 
+		// keyboard ----------------------------------------------------------
+		// https://github.com/veandco/go-sdl2-examples/blob/master/examples/keyboard-input/keyboard-input.go
 		for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+
 			switch t := event.(type) {
 			case *sdl.QuitEvent:
 				running = false
+
 			case *sdl.KeyboardEvent:
 				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n",
 					t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
-				running = false
+				
+				switch t.Keysym.Sym {
+				case sdl.K_F12:
+					running = false
+				}
 			}
 		}
 
+		// cpu step ----------------------------------------------------------
+		// XXX: change it to regular steps and "stalled" steps in CPU routines
 		for l = 0; l < cpuSteps; l += 1 {
-			_, _ = p.CPU.Step()
+			_, stopped := p.CPU.Step()
+			if stopped {
+				running = false
+				break
+			}
 		}
 		//cycles, stopped := p.CPU.Step()
 		//fmt.Printf("CPU %d cycles and stopped %v\n", cycles, stopped)
