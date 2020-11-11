@@ -155,7 +155,6 @@ func main() {
 
 	var event sdl.Event
 	var running bool
-	rect := sdl.Rect{0, 0, 200, 50}
 
 	// main texture
 	texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, 640, 480)
@@ -305,7 +304,6 @@ func main() {
 			case *sdl.KeyboardEvent:
 				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n",
 					t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
-				rect.X += 10
 				running = false
 			}
 		}
