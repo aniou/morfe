@@ -11,7 +11,7 @@ import (
 )
 
 const FULLSCREEN = false
-const CPU_CLOCK  = 14318000	// 14.381Mhz
+const CPU_CLOCK = 14318000 // 14.381Mhz
 
 var winTitle string = "Go-SDL2 Events"
 var winWidth, winHeight int32 = 640, 480
@@ -57,39 +57,37 @@ func showCPUSpeed(cycles uint64) (uint64, string) {
 	}
 }
 
-
 func memoryDump(p *platform.Platform, address uint32) {
-        var x uint16
-        var a uint16
+	var x uint16
+	var a uint16
 
-        for a = 0; a < 0x100; a = a + 16 {
-                start, data := p.CPU.Bus.EaDump(address + uint32(a))
-                bank := byte(start >> 16)
-                addr := uint16(start)
-                fmt.Printf("\n%02x:%04x│", bank, addr)
-                if data != nil {
-                        fmt.Printf("% x│% x│", data[0:8], data[8:16])
-                        for x = 0; x < 16; x++ {
-                                if data[x] >= 33 && data[x] < 127 {
-                                        fmt.Printf("%s", data[x:x+1])
-                                } else {
-                                        fmt.Printf(".")
-                                }
-                                if x == 7 {
-                                        fmt.Printf(" ")
-                                }
-                        }
-                } else {
-                        fmt.Printf("                       │                       │")
-                }
-        }
+	for a = 0; a < 0x100; a = a + 16 {
+		start, data := p.CPU.Bus.EaDump(address + uint32(a))
+		bank := byte(start >> 16)
+		addr := uint16(start)
+		fmt.Printf("\n%02x:%04x│", bank, addr)
+		if data != nil {
+			fmt.Printf("% x│% x│", data[0:8], data[8:16])
+			for x = 0; x < 16; x++ {
+				if data[x] >= 33 && data[x] < 127 {
+					fmt.Printf("%s", data[x:x+1])
+				} else {
+					fmt.Printf(".")
+				}
+				if x == 7 {
+					fmt.Printf(" ")
+				}
+			}
+		} else {
+			fmt.Printf("                       │                       │")
+		}
+	}
 }
 
 func waitForEnter() {
-    fmt.Println("\nPress the Enter Key")
-    fmt.Scanln() // wait for Enter Key
+	fmt.Println("\nPress the Enter Key")
+	fmt.Scanln() // wait for Enter Key
 }
-
 
 func main() {
 	vicky := VICKY{}
@@ -117,7 +115,7 @@ func main() {
 	var font [256 * 8 * 8]byte // 256 chars * 8 lines * 8 columns
 
 	for i, v := range font_st_8x8 {
-	//for i, v := range font_c256_8x8 {
+		//for i, v := range font_c256_8x8 {
 		for j := 0; j < 8; j = j + 1 {
 			v = v << 1
 			if (v & 256) == 256 {
@@ -140,9 +138,6 @@ func main() {
 	fmt.Printf("%v\n", text[0:11])
 	fmt.Printf("%d\n", int32(text[0]*8))
 
-
-
-
 	logger := mylog.New()
 	p := platform.New()
 	p.Init(logger)
@@ -159,13 +154,6 @@ func main() {
 	p.CPU.RK = 0x03
 	//memoryDump(p, 0x381000)
 	//waitForEnter()
-
-
-
-
-
-
-
 
 	var window *sdl.Window
 	var err error
@@ -251,7 +239,6 @@ func main() {
 		fmt.Printf("current mode width: %d\n", current_mode.W)
 		fmt.Printf("current mode heigtt: %d\n", current_mode.H)
 
-
 		_, err = sdl.GetClosestDisplayMode(display_index, &wanted_mode, &result_mode)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Failed to get ClosesMode: %s\n", err)
@@ -288,7 +275,7 @@ func main() {
 	var dsttmp [128]uint32
 
 	var prevCycles uint64 = 0
-	var cpuSteps  uint64 = 10000	// CPU steps, low initial
+	var cpuSteps uint64 = 10000 // CPU steps, low initial
 	var l uint64
 
 	starting_fb_row_pos := 640*vicky.border_y_size + (vicky.border_x_size)
@@ -334,12 +321,11 @@ func main() {
 		ticks_now = sdl.GetTicks()
 		if (ticks_now - prev_ticks) >= 1000 {
 			if (p.CPU.AllCycles - prevCycles) < CPU_CLOCK {
-				cpuSteps+=100
+				cpuSteps += 100
 			}
 			if (p.CPU.AllCycles - prevCycles) > CPU_CLOCK+10000 {
-				cpuSteps-=10
+				cpuSteps -= 10
 			}
-
 
 			cyc, unit := showCPUSpeed(p.CPU.AllCycles - prevCycles)
 			prevCycles = p.CPU.AllCycles
@@ -360,39 +346,39 @@ func main() {
 			case *sdl.KeyboardEvent:
 				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n",
 					t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
-				
+
 				if t.State == sdl.PRESSED {
-				if t.Repeat > 0 {
-					continue
-				}
-				switch t.Keysym.Sym {
-				case sdl.K_F12:
-					running = false
-				case sdl.K_F11:
-					for i, v := range font_st_8x8 {
-						for j := 0; j < 8; j = j + 1 {
-							v = v << 1
-							if (v & 256) == 256 {
-								font[i*8+j] = 1
-							} else {
-								font[i*8+j] = 0
+					if t.Repeat > 0 {
+						continue
+					}
+					switch t.Keysym.Sym {
+					case sdl.K_F12:
+						running = false
+					case sdl.K_F11:
+						for i, v := range font_st_8x8 {
+							for j := 0; j < 8; j = j + 1 {
+								v = v << 1
+								if (v & 256) == 256 {
+									font[i*8+j] = 1
+								} else {
+									font[i*8+j] = 0
+								}
 							}
 						}
-					}
-				case sdl.K_F10:
-					for i, v := range font_c256_8x8 {
-						for j := 0; j < 8; j = j + 1 {
-							v = v << 1
-							if (v & 256) == 256 {
-								font[i*8+j] = 1
-							} else {
-								font[i*8+j] = 0
+					case sdl.K_F10:
+						for i, v := range font_c256_8x8 {
+							for j := 0; j < 8; j = j + 1 {
+								v = v << 1
+								if (v & 256) == 256 {
+									font[i*8+j] = 1
+								} else {
+									font[i*8+j] = 0
+								}
 							}
 						}
+					default:
+						p.Console.InBuf.Enqueue(byte(t.Keysym.Sym)) // XXX horrible, terrible
 					}
-				default: 
-					p.Console.InBuf.Enqueue(byte(t.Keysym.Sym)) // XXX horrible, terrible
-				}
 				}
 			}
 		}
