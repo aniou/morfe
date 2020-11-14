@@ -1,6 +1,9 @@
 
 package main
 
+// https://en.wikipedia.org/wiki/Atari_ST_character_set
+// https://damieng.com/blog/2011/03/27/typography-in-16-bits-system-fonts
+
 var font_st_8x8 = [2048]uint32{
 
 	     	// char 0x00 (000)
