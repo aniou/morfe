@@ -10,7 +10,7 @@ import (
 	"github.com/aniou/go65c816/lib/mylog"
 )
 
-const FULLSCREEN = false
+const FULLSCREEN = true
 const CPU_CLOCK  = 14318000	// 14.381Mhz
 
 var winTitle string = "Go-SDL2 Events"
@@ -56,6 +56,40 @@ func showCPUSpeed(cycles uint64) (uint64, string) {
 		return cycles, "Hz"
 	}
 }
+
+
+func memoryDump(p *platform.Platform, address uint32) {
+        var x uint16
+        var a uint16
+
+        for a = 0; a < 0x100; a = a + 16 {
+                start, data := p.CPU.Bus.EaDump(address + uint32(a))
+                bank := byte(start >> 16)
+                addr := uint16(start)
+                fmt.Printf("\n%02x:%04x│", bank, addr)
+                if data != nil {
+                        fmt.Printf("% x│% x│", data[0:8], data[8:16])
+                        for x = 0; x < 16; x++ {
+                                if data[x] >= 33 && data[x] < 127 {
+                                        fmt.Printf("%s", data[x:x+1])
+                                } else {
+                                        fmt.Printf(".")
+                                }
+                                if x == 7 {
+                                        fmt.Printf(" ")
+                                }
+                        }
+                } else {
+                        fmt.Printf("                       │                       │")
+                }
+        }
+}
+
+func waitForEnter() {
+    fmt.Println("\nPress the Enter Key")
+    fmt.Scanln() // wait for Enter Key
+}
+
 
 func main() {
 	vicky := VICKY{}
@@ -104,6 +138,33 @@ func main() {
 	}
 	fmt.Printf("%v\n", text[0:11])
 	fmt.Printf("%d\n", int32(text[0]*8))
+
+
+
+
+	logger := mylog.New()
+	p := platform.New()
+	p.Init(logger)
+	p.GPU.FB = &text
+	p.GPU.FG = &fg
+	p.GPU.BG = &bg
+	p.GPU.FG_lut = &f_color_lut
+	p.GPU.BG_lut = &b_color_lut
+	//p.LoadHex("/home/aniou/c256/go65c816/data/matrix.hex")
+	p.LoadHex("/home/aniou/c256/src/c256-gui-shim/old-kernel.hex")
+	p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
+	p.LoadHex("/home/aniou/c256/src/c256-gui-shim/c256-gui-shim.hex")
+	p.CPU.PC = 0x0000
+	p.CPU.RK = 0x03
+	//memoryDump(p, 0x381000)
+	//waitForEnter()
+
+
+
+
+
+
+
 
 	var window *sdl.Window
 	var err error
@@ -225,19 +286,6 @@ func main() {
 	var bgtmp [128]uint32 // for rgba
 	var dsttmp [128]uint32
 
-	logger := mylog.New()
-	p := platform.New()
-	p.Init(logger)
-	p.GPU.FB = &text
-	p.GPU.FG = &fg
-	p.GPU.BG = &bg
-	p.GPU.FG_lut = &f_color_lut
-	p.GPU.BG_lut = &b_color_lut
-	//p.LoadHex("/home/aniou/c256/go65c816/data/matrix.hex")
-	p.LoadHex("/home/aniou/c256/src/c256-gui-shim/c256-gui-shim.hex")
-	p.LoadHex("/home/aniou/c256/src/c256-gui-shim/old-kernel.hex")
-	p.CPU.PC = 0x0000
-	p.CPU.RK = 0x03
 	var prevCycles uint64 = 0
 	var cpuSteps  uint64 = 10000	// CPU steps, low initial
 	var l uint64
@@ -294,9 +342,10 @@ func main() {
 
 			cyc, unit := showCPUSpeed(p.CPU.AllCycles - prevCycles)
 			prevCycles = p.CPU.AllCycles
-			fmt.Fprintf(os.Stdout, "frames: %d ticks %d desired cycles %d cpu cycles %d speed %d %s cpu.K %02x cpu.PC %04x\n", frames, (ticks_now - prev_ticks), cpuSteps, p.CPU.AllCycles, cyc, unit, p.CPU.RK, p.CPU.PC)
+			fmt.Fprintf(os.Stdout, "keyq len: %d frames: %d ticks %d desired cycles %d cpu cycles %d speed %d %s cpu.K %02x cpu.PC %04x\n", p.Console.InBuf.Len(), frames, (ticks_now - prev_ticks), cpuSteps, p.CPU.AllCycles, cyc, unit, p.CPU.RK, p.CPU.PC)
 			prev_ticks = ticks_now
 			frames = 0
+			//memoryDump(p, 0x0)
 		}
 
 		// keyboard ----------------------------------------------------------
@@ -311,9 +360,16 @@ func main() {
 				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n",
 					t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 				
+				if t.State == sdl.PRESSED {
+				if t.Repeat > 0 {
+					continue
+				}
 				switch t.Keysym.Sym {
 				case sdl.K_F12:
 					running = false
+				default: 
+					p.Console.InBuf.Enqueue(byte(t.Keysym.Sym)) // XXX horrible, terrible
+				}
 				}
 			}
 		}
@@ -329,6 +385,7 @@ func main() {
 		}
 		//cycles, stopped := p.CPU.Step()
 		//fmt.Printf("CPU %d cycles and stopped %v\n", cycles, stopped)
+
 	}
 	if FULLSCREEN {
 		window.SetDisplayMode(&current_mode)

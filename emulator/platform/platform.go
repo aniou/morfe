@@ -16,10 +16,11 @@ type Platform struct {
 	CPU    *cpu65c816.CPU
 	Logger *mylog.MyLog
 	GPU    *vicky.Vicky
+	Console *netconsole.Console
 }
 
 func New() (*Platform) {
-	p            := Platform{nil, nil, nil}
+	p            := Platform{nil, nil, nil, nil}
 	return &p
 }
 
@@ -27,6 +28,7 @@ func (platform *Platform) Init(logger *mylog.MyLog) {
 	bus, _		:= bus.New(logger)
 	platform.CPU, _  = cpu65c816.New(bus)
 	console, _	:= netconsole.NewNetConsole(logger)
+	platform.Console = console
 	ram, _	        := memory.New(0x400000, 0x000000)		// xxx - add logger?
 	//vicky, _	:= memory.New(0x010000,	0xaf0000)               // xxx - add logger?
 	platform.GPU, _	 = vicky.New(logger)

@@ -39,6 +39,7 @@ func (console *Console) Size() uint32 {
 }
 
 func (console *Console) Read(address uint32) byte {
+	//console.logger.Log(fmt.Sprintf("."))
 	switch {
 	case address == 0x000F8B: //  act like KEY_BUFFER_RPOS
 		if console.InBuf.Len() > 0 {
