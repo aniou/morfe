@@ -93,9 +93,11 @@ func main() {
 	vicky := VICKY{}
 	fb = make([]uint32, 640*480)
 
-	vicky.border_color_r = 0x20
+	//vicky.border_color_r = 0x20
+	vicky.border_color_r = 0x00
 	vicky.border_color_g = 0x00
-	vicky.border_color_b = 0x20
+	//vicky.border_color_b = 0x20
+	vicky.border_color_b = 0x00
 	vicky.SetBorderX(32)
 	vicky.SetBorderY(32)
 
@@ -278,6 +280,15 @@ func main() {
 	var cpuSteps uint64 = 10000 // CPU steps, low initial
 	var l uint64
 
+
+
+
+	// -----------------------------------------------------------------------------
+	sdl.StartTextInput()
+
+
+
+
 	starting_fb_row_pos := 640*vicky.border_y_size + (vicky.border_x_size)
 	for running {
 		// render text - start
@@ -343,6 +354,16 @@ func main() {
 			case *sdl.QuitEvent:
 				running = false
 
+			case *sdl.TextInputEvent:
+				fmt.Printf("TextInputEvent\n")
+				for _, val := range t.Text {
+					if val == 0 {
+						break
+					}
+					p.Console.InBuf.Enqueue(val) 
+				}
+
+
 			case *sdl.KeyboardEvent:
 				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n",
 					t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
@@ -376,8 +397,12 @@ func main() {
 								}
 							}
 						}
-					default:
+					case sdl.K_BACKSPACE,
+					     sdl.K_RETURN:
 						p.Console.InBuf.Enqueue(byte(t.Keysym.Sym)) // XXX horrible, terrible
+
+					default:
+						//p.Console.InBuf.Enqueue(byte(t.Keysym.Sym)) // XXX horrible, terrible
 					}
 				}
 			}

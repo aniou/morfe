@@ -1,7 +1,7 @@
 package vicky
 
 import (
-	"fmt"
+	//"fmt"
 	"github.com/aniou/go65c816/lib/mylog"
 )
 
@@ -72,7 +72,7 @@ func (vicky *Vicky) Write(address uint32, val byte) {
 		fgc := uint32((val & 0xF0)>> 4)
 		(*vicky.FG)[addr] = fgc
 		(*vicky.BG)[addr] = bgc
-		vicky.logger.Log(fmt.Sprintf("%4x %2x %2x", address, fgc, bgc))
+		//vicky.logger.Log(fmt.Sprintf("%4x %2x %2x", address, fgc, bgc))
 	
 	default:
 	}
