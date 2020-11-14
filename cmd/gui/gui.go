@@ -10,7 +10,7 @@ import (
 	"github.com/aniou/go65c816/lib/mylog"
 )
 
-const FULLSCREEN = true
+const FULLSCREEN = false
 const CPU_CLOCK  = 14318000	// 14.381Mhz
 
 var winTitle string = "Go-SDL2 Events"
@@ -117,6 +117,7 @@ func main() {
 	var font [256 * 8 * 8]byte // 256 chars * 8 lines * 8 columns
 
 	for i, v := range font_st_8x8 {
+	//for i, v := range font_c256_8x8 {
 		for j := 0; j < 8; j = j + 1 {
 			v = v << 1
 			if (v & 256) == 256 {
@@ -367,6 +368,28 @@ func main() {
 				switch t.Keysym.Sym {
 				case sdl.K_F12:
 					running = false
+				case sdl.K_F11:
+					for i, v := range font_st_8x8 {
+						for j := 0; j < 8; j = j + 1 {
+							v = v << 1
+							if (v & 256) == 256 {
+								font[i*8+j] = 1
+							} else {
+								font[i*8+j] = 0
+							}
+						}
+					}
+				case sdl.K_F10:
+					for i, v := range font_c256_8x8 {
+						for j := 0; j < 8; j = j + 1 {
+							v = v << 1
+							if (v & 256) == 256 {
+								font[i*8+j] = 1
+							} else {
+								font[i*8+j] = 0
+							}
+						}
+					}
 				default: 
 					p.Console.InBuf.Enqueue(byte(t.Keysym.Sym)) // XXX horrible, terrible
 				}
