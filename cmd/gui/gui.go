@@ -18,6 +18,7 @@ var winWidth, winHeight int32 = 640, 480
 
 // global, for performance reasons
 var fb []uint32
+var font [256 * 8 * 8]byte // 256 chars * 8 lines * 8 columns
 
 type VICKY struct {
 	border_ctrl_reg byte
@@ -89,6 +90,23 @@ func waitForEnter() {
 	fmt.Scanln() // wait for Enter Key
 }
 
+
+func loadFont(fontset *[2048]uint32) {
+	for i, v := range fontset {
+		for j := 0; j < 8; j = j + 1 {
+			v = v << 1
+			if (v & 256) == 256 {
+				//fmt.Printf("#")
+				font[i*8+j] = 1
+			} else {
+				//fmt.Printf(" ")
+				font[i*8+j] = 0
+			}
+		}
+		//fmt.Printf("\n")
+	}
+}
+
 func main() {
 	vicky := VICKY{}
 	fb = make([]uint32, 640*480)
@@ -112,25 +130,8 @@ func main() {
 		text[i] = 32
 	}
 
-	// simple conversion font to indexed surface
-	// at start - to two color palette
-	var font [256 * 8 * 8]byte // 256 chars * 8 lines * 8 columns
-
-	for i, v := range font_st_8x8 {
-		//for i, v := range font_c256_8x8 {
-		for j := 0; j < 8; j = j + 1 {
-			v = v << 1
-			if (v & 256) == 256 {
-				//fmt.Printf("#")
-				font[i*8+j] = 1
-			} else {
-				//fmt.Printf(" ")
-				font[i*8+j] = 0
-			}
-		}
-		//fmt.Printf("\n")
-	}
-	// end of conversion test
+	// pre-defined font at start
+	loadFont(&font_st_8x8)
 
 	count := 0
 	for _, char := range "This is sparta!" {
@@ -376,27 +377,9 @@ func main() {
 					case sdl.K_F12:
 						running = false
 					case sdl.K_F11:
-						for i, v := range font_st_8x8 {
-							for j := 0; j < 8; j = j + 1 {
-								v = v << 1
-								if (v & 256) == 256 {
-									font[i*8+j] = 1
-								} else {
-									font[i*8+j] = 0
-								}
-							}
-						}
+						loadFont(&font_st_8x8)
 					case sdl.K_F10:
-						for i, v := range font_c256_8x8 {
-							for j := 0; j < 8; j = j + 1 {
-								v = v << 1
-								if (v & 256) == 256 {
-									font[i*8+j] = 1
-								} else {
-									font[i*8+j] = 0
-								}
-							}
-						}
+						loadFont(&font_c256_8x8)
 					case sdl.K_BACKSPACE,
 					     sdl.K_RETURN:
 						p.Console.InBuf.Enqueue(byte(t.Keysym.Sym)) // XXX horrible, terrible
