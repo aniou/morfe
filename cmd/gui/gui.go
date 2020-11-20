@@ -280,8 +280,6 @@ func main() {
 		window.SetDisplayMode(&result_mode)
 		window.SetFullscreen(sdl.WINDOW_FULLSCREEN)
 	}
-	// -----------------------------------------------------------------------------------
-	var l uint64
 
 
 	// text render
@@ -298,23 +296,24 @@ func main() {
 	var font_pos uint32       // position in font array (char * 64 + char_line * 8)
 	var font_line uint32      // line in current font
 	var font_row_pos uint32   // position of line in current font (=font_line*8 because every line has 8 bytes)
-	var i uint32
+	var i uint32		  // counter
 
-	// placeholders recalculated per rows, holds values for text_cols loop
-	var txttmp [128]uint32
-	var fgtmp [128]uint32 // for rgba
-	var bgtmp [128]uint32 // for rgba
-	var dsttmp [128]uint32
-
-	var prevCycles uint64 = 0
-	var cpuSteps uint64 = 10000 // CPU steps, low initial
+	// placeholders recalculated per rows, holds values for text_cols loop ---------
+	var txttmp [128]uint32 	  // position in font array, calculated from char
+	var fgtmp [128]uint32 	  // for rgba
+	var bgtmp [128]uint32 	  // for rgba
+	var dsttmp [128]uint32 	  // position in destination memory array
 
 	// -----------------------------------------------------------------------------
 	sdl.SetHint("SDL_HINT_RENDER_BATCHING", "1")
 	sdl.StartTextInput()
+
+	// variables for performance calculation ---------------------------------------
 	var prev_ticks uint32 = sdl.GetTicks()
 	var ticks_now, frames uint32
-
+	var prevCycles uint64 = 0
+	
+	// main loop -------------------------------------------------------------------
 	starting_fb_row_pos := 640*vicky.border_y_size + (vicky.border_x_size)
 	running = true
 	for running {
@@ -366,7 +365,7 @@ func main() {
 		if (ticks_now - prev_ticks) >= 1000 {
 			cyc, unit := showCPUSpeed(p.CPU.AllCycles - prevCycles)
 			prevCycles = p.CPU.AllCycles
-			fmt.Fprintf(os.Stdout, "keyq len: %d frames: %d ticks %d desired cycles %d cpu cycles %d speed %d %s cpu.K %02x cpu.PC %04x\n", p.Console.InBuf.Len(), frames, (ticks_now - prev_ticks), cpuSteps, p.CPU.AllCycles, cyc, unit, p.CPU.RK, p.CPU.PC)
+			fmt.Fprintf(os.Stdout, "keyq len: %d frames: %d ticks %d cpu cycles %d speed %d %s cpu.K %02x cpu.PC %04x\n", p.Console.InBuf.Len(), frames, (ticks_now - prev_ticks), p.CPU.AllCycles, cyc, unit, p.CPU.RK, p.CPU.PC)
 			prev_ticks = ticks_now
 			frames = 0
 			//memoryDump(p, 0x0)
@@ -416,7 +415,7 @@ func main() {
 		}
 
 		// cpu step ----------------------------------------------------------
-		for l = 0; l < cpuSteps; l += 1 {
+		for {
 			_, stopped := p.CPU.Step()
 			if stopped {
 				running = false
