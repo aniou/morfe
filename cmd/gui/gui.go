@@ -258,8 +258,6 @@ func main() {
 	texture2 := newTexture(renderer)
 
 
-	var prev_ticks uint32 = sdl.GetTicks()
-	var ticks_now, frames uint32
 
 	// -----------------------------------------------------------------------------------
 	// zmiana trybu
@@ -283,14 +281,16 @@ func main() {
 		window.SetFullscreen(sdl.WINDOW_FULLSCREEN)
 	}
 	// -----------------------------------------------------------------------------------
+	var l uint64
 
-	var text_cols, text_rows uint32
+
 	// text render
+	var text_cols, text_rows uint32
 	text_cols = (640 - (vicky.border_x_size * 2)) / 8 // xxx - parametrize screen width
 	text_rows = (480 - (vicky.border_y_size * 2)) / 8 // xxx - parametrize screen height
-	fmt.Printf("text_rows: %d\n", text_rows)
-
-	sdl.SetHint("SDL_HINT_RENDER_BATCHING", "1")
+	if debug.gui {
+		fmt.Printf("text_rows: %d\n", text_rows)
+	}
 
 	var text_x, text_y uint32 // row and column of text
 	var text_row_pos uint32   // beginning of current text row in text memory
@@ -308,10 +308,12 @@ func main() {
 
 	var prevCycles uint64 = 0
 	var cpuSteps uint64 = 10000 // CPU steps, low initial
-	//var l uint64
 
 	// -----------------------------------------------------------------------------
+	sdl.SetHint("SDL_HINT_RENDER_BATCHING", "1")
 	sdl.StartTextInput()
+	var prev_ticks uint32 = sdl.GetTicks()
+	var ticks_now, frames uint32
 
 	starting_fb_row_pos := 640*vicky.border_y_size + (vicky.border_x_size)
 	running = true
@@ -347,23 +349,21 @@ func main() {
 			}
 		}
 		// render text - end
+
+
+		// update screen - start
 		texture.UpdateRGBA(nil, fb, 640)
 		//renderer.SetDrawColor(0x40, 0x00, 0x40, 255)
 		//renderer.Clear()
 		renderer.Copy(texture2, nil, nil)
 		renderer.Copy(texture, nil, nil)
 		renderer.Present()
+		// update screen - end
 
+		// calculate speed
 		frames++
 		ticks_now = sdl.GetTicks()
 		if (ticks_now - prev_ticks) >= 1000 {
-			if (p.CPU.AllCycles - prevCycles) < CPU_CLOCK {
-				cpuSteps += 100
-			}
-			if (p.CPU.AllCycles - prevCycles) > CPU_CLOCK+10000 {
-				cpuSteps -= 10
-			}
-
 			cyc, unit := showCPUSpeed(p.CPU.AllCycles - prevCycles)
 			prevCycles = p.CPU.AllCycles
 			fmt.Fprintf(os.Stdout, "keyq len: %d frames: %d ticks %d desired cycles %d cpu cycles %d speed %d %s cpu.K %02x cpu.PC %04x\n", p.Console.InBuf.Len(), frames, (ticks_now - prev_ticks), cpuSteps, p.CPU.AllCycles, cyc, unit, p.CPU.RK, p.CPU.PC)
@@ -371,6 +371,7 @@ func main() {
 			frames = 0
 			//memoryDump(p, 0x0)
 		}
+		// end of calculate speed
 
 		// keyboard ----------------------------------------------------------
 		// https://github.com/veandco/go-sdl2-examples/blob/master/examples/keyboard-input/keyboard-input.go
@@ -415,20 +416,20 @@ func main() {
 		}
 
 		// cpu step ----------------------------------------------------------
-		// XXX: change it to regular steps and "stalled" steps in CPU routines
-		/*
-			for l = 0; l < cpuSteps; l += 1 {
-				_, stopped := p.CPU.Step()
-				if stopped {
-					running = false
-					break
-				}
+		for l = 0; l < cpuSteps; l += 1 {
+			_, stopped := p.CPU.Step()
+			if stopped {
+				running = false
+				break
 			}
-		*/
-		//cycles, stopped := p.CPU.Step()
-		//fmt.Printf("CPU %d cycles and stopped %v\n", cycles, stopped)
+			if (p.CPU.AllCycles - prevCycles) > CPU_CLOCK {
+				break
+			}
+		}
 
 	}
+
+	// return from FULLSCREEN
 	if FULLSCREEN {
 		window.SetDisplayMode(&current_mode)
 	}
