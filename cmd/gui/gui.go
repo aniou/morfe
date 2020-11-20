@@ -158,9 +158,13 @@ func newTexture(renderer *sdl.Renderer) *sdl.Texture {
 
 func main() {
 	var err error
+	var text [8192]uint32 // CS_TEXT_MEM
+	var fg [8192]uint32   // foreground attributes
+	var bg [8192]uint32   // background attributes
+
+	fb = make([]uint32, 640*480)
 
 	vicky := VICKY{}
-	fb = make([]uint32, 640*480)
 
 	//vicky.border_color_r = 0x20
 	vicky.border_color_r = 0x00
@@ -169,10 +173,6 @@ func main() {
 	vicky.border_color_b = 0x00
 	vicky.SetBorderX(32)
 	vicky.SetBorderY(32)
-
-	var text [8192]uint32 // CS_TEXT_MEM
-	var fg [8192]uint32   // foreground attributes
-	var bg [8192]uint32   // background attributes
 
 	pseudoInit()          // fill LUT table
 	for i := range text { // file text memory areas
@@ -185,10 +185,8 @@ func main() {
 	loadFont(&font_st_8x8)
 
 	// test text
-	count := 0
-	for _, char := range "This is sparta!" {
-		text[count] = uint32(char)
-		count += 1
+	for c, char := range "This is sparta!" {
+		text[c] = uint32(char)
 	}
 
 	// platform init
@@ -283,9 +281,9 @@ func main() {
 
 
 	// text render
-	var text_cols, text_rows uint32
-	text_cols = (640 - (vicky.border_x_size * 2)) / 8 // xxx - parametrize screen width
-	text_rows = (480 - (vicky.border_y_size * 2)) / 8 // xxx - parametrize screen height
+	//var text_cols, text_rows uint32
+	var text_cols uint32 = (640 - (vicky.border_x_size * 2)) / 8 // xxx - parametrize screen width
+	var text_rows uint32 = (480 - (vicky.border_y_size * 2)) / 8 // xxx - parametrize screen height
 	if debug.gui {
 		fmt.Printf("text_rows: %d\n", text_rows)
 	}
@@ -298,10 +296,10 @@ func main() {
 	var font_row_pos uint32   // position of line in current font (=font_line*8 because every line has 8 bytes)
 	var i uint32		  // counter
 
-	// placeholders recalculated per rows, holds values for text_cols loop ---------
-	var txttmp [128]uint32 	  // position in font array, calculated from char
-	var fgtmp [128]uint32 	  // for rgba
-	var bgtmp [128]uint32 	  // for rgba
+	// placeholders recalculated per row of text, holds values for text_cols loop --
+	var fnttmp [128]uint32 	  // position in font array, from char value
+	var fgctmp [128]uint32 	  // foreground color cache (rgba) for one line
+	var bgctmp [128]uint32 	  // background color cache (rgba) for one line
 	var dsttmp [128]uint32 	  // position in destination memory array
 
 	// -----------------------------------------------------------------------------
@@ -322,25 +320,25 @@ func main() {
 		for text_y = 0; text_y < text_rows; text_y += 1 { // over lines of text
 			text_row_pos = text_y * 128
 			for text_x = 0; text_x < text_cols; text_x += 1 { // pre-calculate data for x-axis
-				txttmp[text_x] = text[text_row_pos+text_x] * 64 // position in font array
+				fnttmp[text_x] = text[text_row_pos+text_x] * 64 // position in font array
 				dsttmp[text_x] = text_x * 8                     // position of char in dest FB
 
 				f := fg[text_row_pos+text_x] // fg and bg colors
 				b := bg[text_row_pos+text_x]
-				fgtmp[text_x] = binary.LittleEndian.Uint32(f_color_lut[f][:])
-				bgtmp[text_x] = binary.LittleEndian.Uint32(b_color_lut[b][:])
+				fgctmp[text_x] = binary.LittleEndian.Uint32(f_color_lut[f][:])
+				bgctmp[text_x] = binary.LittleEndian.Uint32(b_color_lut[b][:])
 
 			}
 
 			for font_line = 0; font_line < 8; font_line += 1 { // for every line of text - over 8 lines of font
 				font_row_pos = font_line * 8
 				for text_x = 0; text_x < text_cols; text_x += 1 { // for each line iterate over columns of text
-					font_pos = txttmp[text_x] + font_row_pos
+					font_pos = fnttmp[text_x] + font_row_pos
 					for i = 0; i < 8; i += 1 { // for every font iterate over 8 pixels of font
 						if font[font_pos+i] == 0 {
-							fb[fb_row_pos+dsttmp[text_x]+i] = bgtmp[text_x]
+							fb[fb_row_pos+dsttmp[text_x]+i] = bgctmp[text_x]
 						} else {
-							fb[fb_row_pos+dsttmp[text_x]+i] = fgtmp[text_x]
+							fb[fb_row_pos+dsttmp[text_x]+i] = fgctmp[text_x]
 						}
 					}
 				}
@@ -415,6 +413,7 @@ func main() {
 		}
 
 		// cpu step ----------------------------------------------------------
+		/*
 		for {
 			_, stopped := p.CPU.Step()
 			if stopped {
@@ -425,6 +424,7 @@ func main() {
 				break
 			}
 		}
+		*/
 
 	}
 
