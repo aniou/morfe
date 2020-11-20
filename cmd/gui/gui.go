@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
+	"log"
 	"os"
 	//"time"
 	"github.com/aniou/go65c816/emulator/platform"
@@ -28,6 +29,11 @@ type VICKY struct {
 	border_x_size   uint32
 	border_y_size   uint32
 }
+
+type DEBUG struct {
+	gui	bool
+}
+var debug = DEBUG{true}
 
 func (v *VICKY) FillByBorderColor() {
 	val := binary.LittleEndian.Uint32([]byte{v.border_color_r, v.border_color_g, v.border_color_b, 0xff})
@@ -90,7 +96,6 @@ func waitForEnter() {
 	fmt.Scanln() // wait for Enter Key
 }
 
-
 func loadFont(fontset *[2048]uint32) {
 	for i, v := range fontset {
 		for j := 0; j < 8; j = j + 1 {
@@ -107,7 +112,53 @@ func loadFont(fontset *[2048]uint32) {
 	}
 }
 
+// debug routines
+func debugPixelFormat(window *sdl.Window) {
+	pixelformat, err := window.GetPixelFormat()
+	if err != nil {
+		log.Fatalf("Failed to get pixel format: %s\n", err)
+	}
+	fmt.Printf("window pixel format: %s\n", sdl.GetPixelFormatName(uint(pixelformat)))
+}
+
+func debugRendererInfo(renderer *sdl.Renderer) {
+	r_info, err := renderer.GetInfo()
+	if err != nil {
+		log.Fatalf("Failed to get renderer info: %s\n", err)
+	}
+	fmt.Printf("renderer: %s\n", r_info.Name)
+	fmt.Printf("MaxTextureWidth: %d\n", r_info.MaxTextureWidth)
+	fmt.Printf("MaxTextureHeighh: %d\n", r_info.MaxTextureHeight)
+	for _, v := range r_info.TextureFormats {
+		fmt.Printf("format: %s\n", sdl.GetPixelFormatName(uint(v)))
+	}
+	fmt.Printf("\n")
+}
+
+// TODO - parametryzacja okna
+func newTexture(renderer *sdl.Renderer) *sdl.Texture {
+	texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, 640, 480)
+	if err != nil {
+		log.Fatalf("Failed to create texture font from surface: %s\n", err)
+	}
+	
+	if debug.gui {
+		format, _, w, h, err := texture.Query()
+		if err != nil {
+			log.Fatalf("Failed to query texture: %s\n", err)
+		}
+		fmt.Printf("texture format: %s\n", sdl.GetPixelFormatName(uint(format)))
+		fmt.Printf("texture width: %d\n", w)
+		fmt.Printf("texture heigtt: %d\n", h)
+	}
+
+	return texture
+}
+
+
 func main() {
+	var err error
+
 	vicky := VICKY{}
 	fb = make([]uint32, 640*480)
 
@@ -133,14 +184,14 @@ func main() {
 	// pre-defined font at start
 	loadFont(&font_st_8x8)
 
+	// test text
 	count := 0
 	for _, char := range "This is sparta!" {
 		text[count] = uint32(char)
 		count += 1
 	}
-	fmt.Printf("%v\n", text[0:11])
-	fmt.Printf("%d\n", int32(text[0]*8))
 
+	// platform init
 	logger := mylog.New()
 	p := platform.New()
 	p.Init(logger)
@@ -158,75 +209,54 @@ func main() {
 	//memoryDump(p, 0x381000)
 	//waitForEnter()
 
-	var window *sdl.Window
-	var err error
 
-	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
-		panic(sdl.GetError())
+	// step 1: SDL
+	err = sdl.Init(sdl.INIT_EVERYTHING)
+	if err != nil {
+		log.Panic(sdl.GetError())
 	}
 	defer sdl.Quit()
 
-	window, err = sdl.CreateWindow(winTitle, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, winWidth, winHeight, sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL)
+
+	// step 2: Window
+	var window *sdl.Window
+	window, err = sdl.CreateWindow(
+		winTitle,
+		sdl.WINDOWPOS_UNDEFINED,
+		sdl.WINDOWPOS_UNDEFINED,
+		winWidth, winHeight,
+		sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL,
+	)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create window: %s\n", err)
-		os.Exit(1)
+		log.Fatalf("Failed to create window: %s\n", err)
 	}
 	defer window.Destroy()
+	debugPixelFormat(window)
 
-	pixelformat, err := window.GetPixelFormat()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to get pixel format: %s\n", err)
-		os.Exit(2)
-	}
-	fmt.Printf("window pixel format: %s\n", sdl.GetPixelFormatName(uint(pixelformat)))
 
+	// step 3: Renderer
 	var renderer *sdl.Renderer
 	renderer, err = sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create renderer: %s\n", err)
-		os.Exit(2)
+		log.Fatalf("Failed to create renderer: %s\n", err)
 	}
 	defer renderer.Destroy()
+	debugRendererInfo(renderer)
 
-	// info
-	r_info, err := renderer.GetInfo()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to get renderer info: %s\n", err)
-		os.Exit(2)
-	}
-	fmt.Printf("renderer: %s\n", r_info.Name)
-	fmt.Printf("MaxTextureWidth: %d\n", r_info.MaxTextureWidth)
-	fmt.Printf("MaxTextureHeighh: %d\n", r_info.MaxTextureHeight)
-	for _, v := range r_info.TextureFormats {
-		fmt.Printf("format: %s\n", sdl.GetPixelFormatName(uint(v)))
-	}
-	fmt.Printf("\n")
-	// end of info
-
+	// TODO - move it
 	renderer.SetDrawColor(0, 255, 0, 255)
 	renderer.Clear()
 
 	var event sdl.Event
 	var running bool
+	// end of TODO
 
-	// main texture
-	texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, 640, 480)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create texture font from surface: %s\n", err)
-		os.Exit(2)
-	}
-
-	format, _, w, h, err := texture.Query()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to query texture: %s\n", err)
-		os.Exit(2)
-	}
-	fmt.Printf("texture format: %s\n", sdl.GetPixelFormatName(uint(format)))
-	fmt.Printf("texture width: %d\n", w)
-	fmt.Printf("texture heigtt: %d\n", h)
 	// font texture
+	texture := newTexture(renderer)
 
-	// koniec texture/surface
+	// bit texture
+	texture2 := newTexture(renderer)
+
 
 	var prev_ticks uint32 = sdl.GetTicks()
 	var ticks_now, frames uint32
@@ -240,7 +270,7 @@ func main() {
 		display_index, _ := window.GetDisplayIndex()
 		current_mode, _ = sdl.GetCurrentDisplayMode(display_index)
 		fmt.Printf("current mode width: %d\n", current_mode.W)
-		fmt.Printf("current mode heigtt: %d\n", current_mode.H)
+		fmt.Printf("current mode heigt: %d\n", current_mode.H)
 
 		_, err = sdl.GetClosestDisplayMode(display_index, &wanted_mode, &result_mode)
 		if err != nil {
@@ -254,7 +284,6 @@ func main() {
 	}
 	// -----------------------------------------------------------------------------------
 
-	running = true
 	var text_cols, text_rows uint32
 	// text render
 	text_cols = (640 - (vicky.border_x_size * 2)) / 8 // xxx - parametrize screen width
@@ -279,18 +308,13 @@ func main() {
 
 	var prevCycles uint64 = 0
 	var cpuSteps uint64 = 10000 // CPU steps, low initial
-	var l uint64
-
-
-
+	//var l uint64
 
 	// -----------------------------------------------------------------------------
 	sdl.StartTextInput()
 
-
-
-
 	starting_fb_row_pos := 640*vicky.border_y_size + (vicky.border_x_size)
+	running = true
 	for running {
 		// render text - start
 		fb_row_pos = starting_fb_row_pos
@@ -326,6 +350,7 @@ func main() {
 		texture.UpdateRGBA(nil, fb, 640)
 		//renderer.SetDrawColor(0x40, 0x00, 0x40, 255)
 		//renderer.Clear()
+		renderer.Copy(texture2, nil, nil)
 		renderer.Copy(texture, nil, nil)
 		renderer.Present()
 
@@ -361,9 +386,8 @@ func main() {
 					if val == 0 {
 						break
 					}
-					p.Console.InBuf.Enqueue(val) 
+					p.Console.InBuf.Enqueue(val)
 				}
-
 
 			case *sdl.KeyboardEvent:
 				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n",
@@ -381,11 +405,10 @@ func main() {
 					case sdl.K_F10:
 						loadFont(&font_c256_8x8)
 					case sdl.K_BACKSPACE,
-					     sdl.K_RETURN:
+						sdl.K_RETURN:
 						p.Console.InBuf.Enqueue(byte(t.Keysym.Sym)) // XXX horrible, terrible
 
 					default:
-						//p.Console.InBuf.Enqueue(byte(t.Keysym.Sym)) // XXX horrible, terrible
 					}
 				}
 			}
@@ -393,13 +416,15 @@ func main() {
 
 		// cpu step ----------------------------------------------------------
 		// XXX: change it to regular steps and "stalled" steps in CPU routines
-		for l = 0; l < cpuSteps; l += 1 {
-			_, stopped := p.CPU.Step()
-			if stopped {
-				running = false
-				break
+		/*
+			for l = 0; l < cpuSteps; l += 1 {
+				_, stopped := p.CPU.Step()
+				if stopped {
+					running = false
+					break
+				}
 			}
-		}
+		*/
 		//cycles, stopped := p.CPU.Step()
 		//fmt.Printf("CPU %d cycles and stopped %v\n", cycles, stopped)
 
