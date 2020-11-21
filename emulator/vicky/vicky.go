@@ -38,10 +38,10 @@ func (vicky *Vicky) Size() uint32 {
 
 func (vicky *Vicky) Read(address uint32) byte {
 	switch {
-	case address >= 0xAFA000 && address<=0xAFBFFF:
-		return byte((*vicky.FB)[address-0xafa000])
-	case address >= 0xAFC000 && address<=0xAFDFFF:
-		addr := address - 0xafc000
+	case address >= 0xAF_A000 && address<=0xAF_BFFF:
+		return byte((*vicky.FB)[address-0xAF_A000])
+	case address >= 0xAF_C000 && address<=0xAF_DFFF:
+		addr := address - 0xAF_C000
 		fgc := byte((*vicky.FG)[addr]) << 4
 		bgc := byte((*vicky.BG)[addr])
 		return byte(fgc|bgc)
@@ -53,25 +53,27 @@ func (vicky *Vicky) Read(address uint32) byte {
 
 func (vicky *Vicky) Write(address uint32, val byte) {
 	switch {
-	case address >= 0xAF1F40 && address<=0xAF1F7F:
-		a := address-0xaf1f40
+	case address >= 0xAF_1F40 && address<=0xAF_1F7F:
+		a := address-0xAF_1F40
 		byte_in_lut := byte(a & 0x03)
 		num := byte(a >> 2)
 		(*vicky.FG_lut)[num][byte_in_lut] = val
-	case address >= 0xAF1F80 && address<=0xAF1FFF:
-		a := address-0xaf1f80
+
+	case address >= 0xAF_1F80 && address<=0xAF_1FFF:
+		a := address-0xAF_1F80
 		byte_in_lut := byte(a & 0x03)
 		num := byte(a >> 2)
 		(*vicky.BG_lut)[num][byte_in_lut] = val
-	case address >= 0xAFA000 && address<=0xAFBFFF:
-		(*vicky.FB)[address-0xafa000] = uint32(val)
-	case address >= 0xAFC000 && address<=0xAFDFFF:
-		addr := address - 0xafc000
+
+	case address >= 0xAF_A000 && address<=0xAF_BFFF:
+		(*vicky.FB)[address-0xAF_A000] = uint32(val)
+
+	case address >= 0xAF_C000 && address<=0xAF_DFFF:
+		addr := address - 0xAF_C000
 		bgc := uint32( val & 0x0F)
 		fgc := uint32((val & 0xF0)>> 4)
 		(*vicky.FG)[addr] = fgc
 		(*vicky.BG)[addr] = bgc
-		//vicky.logger.Log(fmt.Sprintf("%4x %2x %2x", address, fgc, bgc))
 	
 	default:
 	}
