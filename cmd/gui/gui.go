@@ -363,7 +363,7 @@ func main() {
 		if (ticks_now - prev_ticks) >= 1000 {
 			cyc, unit := showCPUSpeed(p.CPU.AllCycles - prevCycles)
 			prevCycles = p.CPU.AllCycles
-			fmt.Fprintf(os.Stdout, "frames: %4d ticks %d cpu cycles %10d speed %d %s cpu.K:PC %02x:%04x\n", frames, (ticks_now - prev_ticks), p.CPU.AllCycles, cyc, unit, p.CPU.RK, p.CPU.PC)
+			fmt.Fprintf(os.Stdout, "frames: %4d ticks %d cpu cycles %10d speed %2d %s cpu.K:PC %02x:%04x\n", frames, (ticks_now - prev_ticks), p.CPU.AllCycles, cyc, unit, p.CPU.RK, p.CPU.PC)
 			prev_ticks = ticks_now
 			frames = 0
 			//memoryDump(p, 0x0)
