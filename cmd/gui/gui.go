@@ -8,7 +8,7 @@ import (
 	"os"
 	//"time"
 	"github.com/aniou/go65c816/emulator/platform"
-	"github.com/aniou/go65c816/lib/mylog"
+	//"github.com/aniou/go65c816/lib/mylog"
 )
 
 const FULLSCREEN = false
@@ -190,9 +190,9 @@ func main() {
 	}
 
 	// platform init
-	logger := mylog.New()
+	//logger := mylog.New()
 	p := platform.New()
-	p.Init(logger)
+	p.InitGUI()
 	p.GPU.FB = &text
 	p.GPU.FG = &fg
 	p.GPU.BG = &bg
@@ -363,7 +363,7 @@ func main() {
 		if (ticks_now - prev_ticks) >= 1000 {
 			cyc, unit := showCPUSpeed(p.CPU.AllCycles - prevCycles)
 			prevCycles = p.CPU.AllCycles
-			fmt.Fprintf(os.Stdout, "keyq len: %d frames: %d ticks %d cpu cycles %d speed %d %s cpu.K %02x cpu.PC %04x\n", p.Console.InBuf.Len(), frames, (ticks_now - prev_ticks), p.CPU.AllCycles, cyc, unit, p.CPU.RK, p.CPU.PC)
+			fmt.Fprintf(os.Stdout, "frames: %4d ticks %d cpu cycles %10d speed %d %s cpu.K:PC %02x:%04x\n", frames, (ticks_now - prev_ticks), p.CPU.AllCycles, cyc, unit, p.CPU.RK, p.CPU.PC)
 			prev_ticks = ticks_now
 			frames = 0
 			//memoryDump(p, 0x0)

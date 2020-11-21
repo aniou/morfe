@@ -11,11 +11,10 @@ import (
 type Console struct {
 	out    chan byte       // for 'display'
 	InBuf  queue.QueueByte // for 'keyboard'
-	logger *mylog.MyLog
 }
 
-func NewNetConsole(logger *mylog.MyLog) (*Console, error) {
-	console := Console{make(chan byte, 200), queue.NewQueueByte(200), logger}
+func NewNetConsole() (*Console, error) {
+	console := Console{make(chan byte, 200), queue.NewQueueByte(200)}
 	go console.handle()
 	return &console, nil
 }
@@ -39,7 +38,7 @@ func (console *Console) Size() uint32 {
 }
 
 func (console *Console) Read(address uint32) byte {
-	//console.logger.Log(fmt.Sprintf("."))
+	//mylog.Logger.Log(fmt.Sprintf("."))
 	switch {
 	case address == 0x000F8B: //  act like KEY_BUFFER_RPOS
 		if console.InBuf.Len() > 0 {
@@ -63,7 +62,7 @@ func (console *Console) Read(address uint32) byte {
 func (console *Console) Write(address uint32, val byte) {
 	switch {
 	case address == 0x00EFE: // random, less conflicting with c256 addr
-		//console.logger.Log(fmt.Sprintf("netconsole: out %s", val))
+		//mylog.Logger.Log(fmt.Sprintf("netconsole: out %s", val))
 		console.out <- val
 	default:
 	}
@@ -74,20 +73,20 @@ func (console *Console) handle() {
 	var canWrite bool
 	deadConn := make(chan net.Conn)
 	for {
-		console.logger.Log(fmt.Sprintf("netconsole: listening started"))
+		mylog.Logger.Log(fmt.Sprintf("netconsole: listening started"))
 		l, err := net.Listen("tcp", ":12321")
 		if err != nil {
-			console.logger.Log(fmt.Sprintf("netconsole listen error: %s", err))
+			mylog.Logger.Log(fmt.Sprintf("netconsole listen error: %s", err))
 		}
 		conn, err := l.Accept()
 		if err != nil {
-			console.logger.Log(fmt.Sprintf("netconsole accept error: %s", err))
+			mylog.Logger.Log(fmt.Sprintf("netconsole accept error: %s", err))
 		}
 		canWrite = true
 
 		go func() {
 			p := make([]byte, 1)
-			//console.logger.Log(fmt.Sprintf("netconsole: goroutine started"))
+			//mylog.Logger.Log(fmt.Sprintf("netconsole: goroutine started"))
 			for {
 				size, err := conn.Read(p)
 				if err != nil {
@@ -100,14 +99,14 @@ func (console *Console) handle() {
 					}
 				}
 			}
-			//console.logger.Log(fmt.Sprintf("netconsole: goroutine closed"))
+			//mylog.Logger.Log(fmt.Sprintf("netconsole: goroutine closed"))
 		}()
 
 		for canWrite {
 			select {
 			case deadOne := <-deadConn:
 				_ = deadOne.Close()
-				console.logger.Log(fmt.Sprintf("netconsole: client closed"))
+				mylog.Logger.Log(fmt.Sprintf("netconsole: client closed"))
 				canWrite = false
 			case val := <-console.out:
 				conn.Write([]byte{val})

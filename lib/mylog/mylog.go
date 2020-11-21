@@ -13,9 +13,17 @@ type MyLog struct {
 
 }
 
-func New() *MyLog {
-	return &MyLog{logMsg: make(chan string), logBuf: queue.NewQueueString(200)}
+var Logger MyLog;
+
+func init() {
+	fmt.Println("logger is initialized")
+	Logger = MyLog{logMsg: make(chan string), logBuf: queue.NewQueueString(200)}
 }
+
+
+//func New() *MyLog {
+//	return &MyLog{logMsg: make(chan string), logBuf: queue.NewQueueString(200)}
+//}
 
 func (l *MyLog) GetChannel() (chan string) {
 	return l.logMsg

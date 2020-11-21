@@ -12,6 +12,7 @@ import (
 	"fmt"
 
 	"github.com/aniou/go65c816/emulator/bus"
+	"github.com/aniou/go65c816/lib/mylog"
 )
 
 type instructionType struct {
@@ -393,7 +394,7 @@ func New(bus *bus.Bus) (*CPU, error) {
 	//cpu.LogBuf = bytes.Buffer{}
 	cpu.createTable()
 	//cpu.Reset()
-	cpu.Bus.Logger.Log("cpu: 65c816 initialized")
+	mylog.Logger.Log("cpu: 65c816 initialized")
 	return &cpu, nil
 }
 
@@ -532,7 +533,7 @@ func (cpu *CPU) cmdRead(info *stepInfo) byte {
 
 	default:
 		//fmt.Fprintf(&cpu.LogBuf, "cmdRead8: unknown mode %v\n", info.mode)
-		cpu.Bus.Logger.Log(fmt.Sprintf("cmdRead8: unknown mode %v", info.mode))
+		mylog.Logger.Log(fmt.Sprintf("cmdRead8: unknown mode %v", info.mode))
 
 		return 0
 	}
@@ -571,7 +572,7 @@ func (cpu *CPU) cmdRead16(info *stepInfo) uint16 {
 
 	default:
 		//fmt.Fprintf(&cpu.LogBuf, "cmdRead16: unknown mode %v\n", info.mode)
-		cpu.Bus.Logger.Log(fmt.Sprintf("cmdRead16: unknown mode %v", info.mode))
+		mylog.Logger.Log(fmt.Sprintf("cmdRead16: unknown mode %v", info.mode))
 		return 0
 	}
 
@@ -601,7 +602,7 @@ func (cpu *CPU) cmdWrite(info *stepInfo, value byte) {
 
 
 	default:
-		cpu.Bus.Logger.Log(fmt.Sprintf("cmdWrite: unknown mode %v", info.mode))
+		mylog.Logger.Log(fmt.Sprintf("cmdWrite: unknown mode %v", info.mode))
 	}
 
 }
@@ -633,7 +634,7 @@ func (cpu *CPU) cmdWrite16(info *stepInfo, value uint16) {
                 cpu.nWrite16_cross(cpu.RDBR, info.addr, value)
 
 	default:
-		cpu.Bus.Logger.Log(fmt.Sprintf("cmdWrite16: unknown mode %v", info.mode))
+		mylog.Logger.Log(fmt.Sprintf("cmdWrite16: unknown mode %v", info.mode))
 	}
 }
 
@@ -1083,7 +1084,7 @@ func (cpu *CPU) Step() (int, bool) {
 
 	default:
 		cpu.stepPC = 0
-		cpu.Bus.Logger.Log(fmt.Sprintf("unknown addressing mode PC $%02x:%04x", cpu.RK, cpu.PC))
+		mylog.Logger.Log(fmt.Sprintf("unknown addressing mode PC $%02x:%04x", cpu.RK, cpu.PC))
 	}
 
 

@@ -2,11 +2,10 @@ package vicky
 
 import (
 	//"fmt"
-	"github.com/aniou/go65c816/lib/mylog"
+	//"github.com/aniou/go65c816/lib/mylog"
 )
 
 type Vicky struct {
-	logger *mylog.MyLog
 	FB     *[8192]uint32
 	FG     *[8192]uint32
 	BG     *[8192]uint32
@@ -14,8 +13,8 @@ type Vicky struct {
 	BG_lut *[16][4]byte;
 }
 
-func New(logger *mylog.MyLog) (*Vicky, error) {
-	vicky := Vicky{logger, nil, nil, nil, nil, nil}
+func New() (*Vicky, error) {
+	vicky := Vicky{nil, nil, nil, nil, nil}
 	return &vicky, nil
 }
 

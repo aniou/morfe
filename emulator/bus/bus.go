@@ -10,9 +10,8 @@ package bus
 
 import (
 	"fmt"
-
-	"github.com/aniou/go65c816/lib/mylog"
 	"github.com/aniou/go65c816/emulator/memory"
+	"github.com/aniou/go65c816/lib/mylog"
 )
 
 type busEntry struct {
@@ -48,11 +47,10 @@ type busEntry struct {
 // simplest, fastest and with greater memory usage
 //
 type Bus struct {
-	EA        uint32		// last memory access - r/w
-	Write     bool			// is write op?
-	segment [1048576]memory.Memory  // 2^10 because segments are 4bits length
-	entries []busEntry
-	Logger	*mylog.MyLog
+	EA        uint32		  // last memory access - r/w
+	Write     bool		  	  // is write op?
+	segment   [1048576]memory.Memory  // 2^10 because segments are 4bits length
+	entries   []busEntry
 }
 
 func (b *Bus) String() string {
@@ -63,10 +61,9 @@ func (b *Bus) Clear() {
 	//b.Mem.Clear()        // XXX - not implemented yet
 }
 
-func New(l *mylog.MyLog) (*Bus, error) {
-	return &Bus{entries: make([]busEntry, 0), Logger: l}, nil
+func New() (*Bus, error) {
+       return &Bus{entries: make([]busEntry, 0)}, nil
 }
-
 
 // There are two variants possible:
 // handler, "name", start, size
@@ -74,12 +71,12 @@ func New(l *mylog.MyLog) (*Bus, error) {
 func (b *Bus) Attach(mem memory.Memory, name string, start uint32, end uint32) error {
 
 	if (start & 0xf) != 0 {
-		b.Logger.Log(fmt.Sprintf("start are not 4-bit aligned: %06X", start))
+		mylog.Logger.Log(fmt.Sprintf("start are not 4-bit aligned: %06X", start))
 		return fmt.Errorf("start are not 4-bit aligned: %06X", start)
 	}
 
 	if ((end+1)  & 0xf) != 0 {
-		b.Logger.Log(fmt.Sprintf("bus: end are not 4-bit aligned: %06X", end))
+		mylog.Logger.Log(fmt.Sprintf("bus: end are not 4-bit aligned: %06X", end))
 		return fmt.Errorf("end are not 4-bit aligned: %06X", end)
 	}
 
@@ -91,7 +88,7 @@ func (b *Bus) Attach(mem memory.Memory, name string, start uint32, end uint32) e
 
 
 	entry := busEntry{mem: mem, name: name, start: start, end: end}
-	b.Logger.Log(fmt.Sprintf("bus attach: %-20v %06x %06x", mem, start, end))
+	mylog.Logger.Log(fmt.Sprintf("bus attach: %-20v %06x %06x", mem, start, end))
 	b.entries = append(b.entries, entry)
 	return nil
 }
@@ -125,9 +122,9 @@ func (b *Bus) Shutdown() {
 func (b *Bus) EaRead(a uint32) byte {
 	mem, err := b.backendFor(a)
 	if err != nil {
-		panic(err)			// XXX should log instead and abort of execution, but unwind tooks too many levels now :-/
+		panic(err)		// XXX should log instead and abort of execution, but unwind tooks too many levels now :-/
 	}
-	b.EA    = a				// for debug interface
+	b.EA    = a			// for debug interface
 	b.Write = false
 	value  := mem.Read(a)
 	return value
