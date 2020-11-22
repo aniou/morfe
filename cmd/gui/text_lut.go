@@ -1,8 +1,5 @@
 package main
 
-import (
-)
-
 var fg_color_lut [64]byte
 var bg_color_lut [64]byte
 var f_color_lut [16][4]byte

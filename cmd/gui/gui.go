@@ -1,3 +1,4 @@
+
 package main
 
 import (
@@ -8,7 +9,7 @@ import (
 	"os"
 	//"time"
 	"github.com/aniou/go65c816/emulator/platform"
-	//"github.com/aniou/go65c816/lib/mylog"
+	_ "github.com/aniou/go65c816/lib/mylog"
 )
 
 const FULLSCREEN = false
@@ -21,37 +22,10 @@ var winWidth, winHeight int32 = 640, 480
 var fb []uint32
 var font [256 * 8 * 8]byte // 256 chars * 8 lines * 8 columns
 
-type VICKY struct {
-	border_ctrl_reg byte
-	border_color_b  byte
-	border_color_g  byte
-	border_color_r  byte
-	border_x_size   uint32
-	border_y_size   uint32
-}
-
 type DEBUG struct {
 	gui	bool
 }
 var debug = DEBUG{true}
-
-func (v *VICKY) FillByBorderColor() {
-	val := binary.LittleEndian.Uint32([]byte{v.border_color_r, v.border_color_g, v.border_color_b, 0xff})
-	fb[0] = val
-	for bp := 1; bp < len(fb); bp *= 2 {
-		copy(fb[bp:], fb[:bp])
-	}
-}
-
-func (v *VICKY) SetBorderX(size byte) {
-	v.border_x_size = uint32(size & 0xF8)
-	v.FillByBorderColor()
-}
-
-func (v *VICKY) SetBorderY(size byte) {
-	v.border_y_size = uint32(size & 0xF8)
-	v.FillByBorderColor()
-}
 
 func showCPUSpeed(cycles uint64) (uint64, string) {
 	switch {
@@ -86,7 +60,7 @@ func memoryDump(p *platform.Platform, address uint32) {
 				}
 			}
 		} else {
-			fmt.Printf("                       │                       │")
+			fmt.Printf("		       │		       │")
 		}
 	}
 }
@@ -164,15 +138,6 @@ func main() {
 
 	fb = make([]uint32, 640*480)
 
-	vicky := VICKY{}
-
-	//vicky.border_color_r = 0x20
-	vicky.border_color_r = 0x00
-	vicky.border_color_g = 0x00
-	//vicky.border_color_b = 0x20
-	vicky.border_color_b = 0x00
-	vicky.SetBorderX(32)
-	vicky.SetBorderY(32)
 
 	pseudoInit()          // fill LUT table
 	for i := range text { // file text memory areas
@@ -185,6 +150,9 @@ func main() {
 	loadFont(&font_st_8x8)
 
 	// test text
+	for c, _ := range text {
+		text[c] = 0
+	}
 	for c, char := range "This is sparta!" {
 		text[c] = uint32(char)
 	}
@@ -193,7 +161,8 @@ func main() {
 	//logger := mylog.New()
 	p := platform.New()
 	p.InitGUI()
-	p.GPU.FB = &text
+	p.GPU.FB   = &fb
+	p.GPU.TEXT = &text
 	p.GPU.FG = &fg
 	p.GPU.BG = &bg
 	p.GPU.FG_lut = &f_color_lut
@@ -207,6 +176,12 @@ func main() {
 	//memoryDump(p, 0x381000)
 	//waitForEnter()
 
+	p.CPU.Bus.EaWrite(0xAF_0005, 0x00) // border B - old 0x20
+	p.CPU.Bus.EaWrite(0xAF_0006, 0x00) // border G
+	p.CPU.Bus.EaWrite(0xAF_0007, 0x00) // border R - old 0x20
+
+	p.CPU.Bus.EaWrite(0xAF_0008, 0x20) // border X
+	p.CPU.Bus.EaWrite(0xAF_0009, 0x20) // border Y
 
 	// step 1: SDL
 	err = sdl.Init(sdl.INIT_EVERYTHING)
@@ -282,10 +257,11 @@ func main() {
 
 	// text render
 	//var text_cols, text_rows uint32
-	var text_cols uint32 = (640 - (vicky.border_x_size * 2)) / 8 // xxx - parametrize screen width
-	var text_rows uint32 = (480 - (vicky.border_y_size * 2)) / 8 // xxx - parametrize screen height
+	var text_cols uint32 = (640 - (p.GPU.Border_x_size * 2)) / 8 // xxx - parametrize screen width
+	var text_rows uint32 = (480 - (p.GPU.Border_y_size * 2)) / 8 // xxx - parametrize screen height
 	if debug.gui {
 		fmt.Printf("text_rows: %d\n", text_rows)
+		fmt.Printf("text_cols: %d\n", text_cols)
 	}
 
 	var text_x, text_y uint32 // row and column of text
@@ -312,7 +288,7 @@ func main() {
 	var prevCycles uint64 = 0
 	
 	// main loop -------------------------------------------------------------------
-	starting_fb_row_pos := 640*vicky.border_y_size + (vicky.border_x_size)
+	starting_fb_row_pos := 640*p.GPU.Border_y_size + (p.GPU.Border_x_size)
 	running = true
 	for running {
 		// render text - start
