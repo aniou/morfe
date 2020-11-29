@@ -132,10 +132,6 @@ func newTexture(renderer *sdl.Renderer) *sdl.Texture {
 
 func main() {
 	var err error
-	//var text [8192]uint32 // CS_TEXT_MEM
-	var fg [8192]uint32   // foreground attributes
-	var bg [8192]uint32   // background attributes
-
 	fb = make([]uint32, 640*480)
 
 
@@ -148,8 +144,6 @@ func main() {
 	p := platform.New()
 	p.InitGUI()
 	p.GPU.FB   = &fb
-	p.GPU.FG = &fg
-	p.GPU.BG = &bg
 	p.GPU.FG_lut = &f_color_lut
 	p.GPU.BG_lut = &b_color_lut
 	//p.LoadHex("/home/aniou/c256/go65c816/data/matrix.hex")
@@ -170,8 +164,8 @@ func main() {
 
 	// test text
 	for i := range p.GPU.TEXT { // file text memory areas
-		fg[i] = 0x0e
-		bg[i] = 0x0d
+		p.GPU.FG[i] = 0x0e
+		p.GPU.BG[i] = 0x0d
 		p.GPU.TEXT[i] = 32
 	}
 
@@ -299,8 +293,8 @@ func main() {
 				fnttmp[text_x] = p.GPU.TEXT[text_row_pos+text_x] * 64 // position in font array
 				dsttmp[text_x] = text_x * 8                     // position of char in dest FB
 
-				f := fg[text_row_pos+text_x] // fg and bg colors
-				b := bg[text_row_pos+text_x]
+				f := p.GPU.FG[text_row_pos+text_x] // fg and bg colors
+				b := p.GPU.BG[text_row_pos+text_x]
 				fgctmp[text_x] = binary.LittleEndian.Uint32(f_color_lut[f][:])
 				bgctmp[text_x] = binary.LittleEndian.Uint32(b_color_lut[b][:])
 
