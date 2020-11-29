@@ -6,9 +6,11 @@ import (
 	"github.com/aniou/go65c816/lib/mylog"
 )
 
+var Text []uint32
+
 type Vicky struct {
 	FB     *[]uint32
-	TEXT   *[8192]uint32
+	TEXT   []uint32
 	FG     *[8192]uint32
 	BG     *[8192]uint32
 	FG_lut *[16][4]byte;
@@ -22,9 +24,15 @@ type Vicky struct {
         Border_y_size   uint32
 }
 
+func init() {
+	Text = make([]uint32, 8192)
+	fmt.Println("vicky areas are initialized")
+}
+
+
 func New() (*Vicky, error) {
 	//vicky := Vicky{nil, nil, nil, nil, nil}
-	vicky := Vicky{}
+	vicky := Vicky{nil, Text, nil, nil, nil, nil, 0, 0, 0, 0, 0, 0}
 	return &vicky, nil
 }
 
@@ -60,7 +68,7 @@ func (v *Vicky) Size() uint32 {
 func (v *Vicky) Read(address uint32) byte {
 	switch {
 	case address >= 0xAF_A000 && address<=0xAF_BFFF:
-		return byte((*v.TEXT)[address-0xAF_A000])
+		return byte(Text[address-0xAF_A000])
 
 	case address >= 0xAF_C000 && address<=0xAF_DFFF:
 		addr := address - 0xAF_C000
@@ -109,7 +117,7 @@ func (v *Vicky) Write(address uint32, val byte) {
 		(*v.BG_lut)[num][byte_in_lut] = val
 
 	case address >= 0xAF_A000 && address<=0xAF_BFFF:
-		(*v.TEXT)[address-0xAF_A000] = uint32(val)
+		Text[address-0xAF_A000] = uint32(val)
 
 	case address >= 0xAF_C000 && address<=0xAF_DFFF:
 		addr := address - 0xAF_C000

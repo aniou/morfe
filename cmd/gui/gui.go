@@ -132,7 +132,7 @@ func newTexture(renderer *sdl.Renderer) *sdl.Texture {
 
 func main() {
 	var err error
-	var text [8192]uint32 // CS_TEXT_MEM
+	//var text [8192]uint32 // CS_TEXT_MEM
 	var fg [8192]uint32   // foreground attributes
 	var bg [8192]uint32   // background attributes
 
@@ -140,29 +140,14 @@ func main() {
 
 
 	pseudoInit()          // fill LUT table
-	for i := range text { // file text memory areas
-		fg[i] = 0x0e
-		bg[i] = 0x0d
-		text[i] = 32
-	}
-
 	// pre-defined font at start
 	loadFont(&font_st_8x8)
-
-	// test text
-	for c, _ := range text {
-		text[c] = 0
-	}
-	for c, char := range "This is sparta!" {
-		text[c] = uint32(char)
-	}
 
 	// platform init
 	//logger := mylog.New()
 	p := platform.New()
 	p.InitGUI()
 	p.GPU.FB   = &fb
-	p.GPU.TEXT = &text
 	p.GPU.FG = &fg
 	p.GPU.BG = &bg
 	p.GPU.FG_lut = &f_color_lut
@@ -182,6 +167,21 @@ func main() {
 
 	p.CPU.Bus.EaWrite(0xAF_0008, 0x20) // border X
 	p.CPU.Bus.EaWrite(0xAF_0009, 0x20) // border Y
+
+	// test text
+	for i := range p.GPU.TEXT { // file text memory areas
+		fg[i] = 0x0e
+		bg[i] = 0x0d
+		p.GPU.TEXT[i] = 32
+	}
+
+	for c, _ := range p.GPU.TEXT {
+		p.GPU.TEXT[c] = 0
+	}
+	for c, char := range "This is sparta!" {
+		p.GPU.TEXT[c] = uint32(char)
+	}
+	// end of test text
 
 	// step 1: SDL
 	err = sdl.Init(sdl.INIT_EVERYTHING)
@@ -296,7 +296,7 @@ func main() {
 		for text_y = 0; text_y < text_rows; text_y += 1 { // over lines of text
 			text_row_pos = text_y * 128
 			for text_x = 0; text_x < text_cols; text_x += 1 { // pre-calculate data for x-axis
-				fnttmp[text_x] = text[text_row_pos+text_x] * 64 // position in font array
+				fnttmp[text_x] = p.GPU.TEXT[text_row_pos+text_x] * 64 // position in font array
 				dsttmp[text_x] = text_x * 8                     // position of char in dest FB
 
 				f := fg[text_row_pos+text_x] // fg and bg colors
