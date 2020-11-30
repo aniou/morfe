@@ -36,7 +36,7 @@ func init() {
 
 func New() (*Vicky, error) {
 	//vicky := Vicky{nil, nil, nil, nil, nil}
-	vicky := Vicky{nil, text, fg, bg, nil, nil, 0, 0, 0, 0, 0, 0}
+	vicky := Vicky{nil, text, fg, bg, &f_color_lut, &b_color_lut, 0, 0, 0, 0, 0, 0}
 	return &vicky, nil
 }
 
@@ -112,13 +112,13 @@ func (v *Vicky) Write(address uint32, val byte) {
 		a := address-0xAF_1F40
 		byte_in_lut := byte(a & 0x03)
 		num := byte(a >> 2)
-		(*v.FG_lut)[num][byte_in_lut] = val
+		f_color_lut[num][byte_in_lut] = val
 
 	case address >= 0xAF_1F80 && address<=0xAF_1FFF:
 		a := address-0xAF_1F80
 		byte_in_lut := byte(a & 0x03)
 		num := byte(a >> 2)
-		(*v.BG_lut)[num][byte_in_lut] = val
+		b_color_lut[num][byte_in_lut] = val
 
 	case address >= 0xAF_A000 && address<=0xAF_BFFF:
 		text[address-0xAF_A000] = uint32(val)

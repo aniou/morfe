@@ -14,6 +14,7 @@ import (
 
 const FULLSCREEN = false
 const CPU_CLOCK = 14318000 // 14.381Mhz
+var   CPU_STEP  = CPU_CLOCK/1000 // per milisecond
 
 var winTitle string = "Go-SDL2 Events"
 var winWidth, winHeight int32 = 640, 480
@@ -135,7 +136,7 @@ func main() {
 	fb = make([]uint32, 640*480)
 
 
-	pseudoInit()          // fill LUT table
+	//pseudoInit()          // fill LUT table
 	// pre-defined font at start
 	loadFont(&font_st_8x8)
 
@@ -144,12 +145,14 @@ func main() {
 	p := platform.New()
 	p.InitGUI()
 	p.GPU.FB   = &fb
-	p.GPU.FG_lut = &f_color_lut
-	p.GPU.BG_lut = &b_color_lut
-	//p.LoadHex("/home/aniou/c256/go65c816/data/matrix.hex")
+	//p.GPU.FG_lut = &f_color_lut
+	//p.GPU.BG_lut = &b_color_lut
+	p.LoadHex("/home/aniou/c256/go65c816/data/matrix.hex")
+	/*
 	p.LoadHex("/home/aniou/c256/src/c256-gui-shim/old-kernel.hex")
 	p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
 	p.LoadHex("/home/aniou/c256/src/c256-gui-shim/c256-gui-shim.hex")
+	*/
 	p.CPU.PC = 0x0000
 	p.CPU.RK = 0x03
 	//memoryDump(p, 0x381000)
@@ -295,8 +298,8 @@ func main() {
 
 				f := p.GPU.FG[text_row_pos+text_x] // fg and bg colors
 				b := p.GPU.BG[text_row_pos+text_x]
-				fgctmp[text_x] = binary.LittleEndian.Uint32(f_color_lut[f][:])
-				bgctmp[text_x] = binary.LittleEndian.Uint32(b_color_lut[b][:])
+				fgctmp[text_x] = binary.LittleEndian.Uint32(p.GPU.FG_lut[f][:])
+				bgctmp[text_x] = binary.LittleEndian.Uint32(p.GPU.BG_lut[b][:])
 
 			}
 
@@ -383,7 +386,6 @@ func main() {
 		}
 
 		// cpu step ----------------------------------------------------------
-		/*
 		for {
 			_, stopped := p.CPU.Step()
 			if stopped {
@@ -394,7 +396,6 @@ func main() {
 				break
 			}
 		}
-		*/
 
 	}
 
