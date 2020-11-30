@@ -14,7 +14,7 @@ import (
 
 const FULLSCREEN = false
 const CPU_CLOCK = 14318000 // 14.381Mhz
-var   CPU_STEP  = CPU_CLOCK/1000 // per milisecond
+var   CPU_STEP uint64  = 14318
 
 var winTitle string = "Go-SDL2 Events"
 var winWidth, winHeight int32 = 640, 480
@@ -281,8 +281,9 @@ func main() {
 
 	// variables for performance calculation ---------------------------------------
 	var prev_ticks uint32 = sdl.GetTicks()
+	var mult       uint32 = prev_ticks
 	var ticks_now, frames uint32
-	var prevCycles uint64 = 0
+	var stepCycles, prevCycles uint64 = 0, 0
 	
 	// main loop -------------------------------------------------------------------
 	starting_fb_row_pos := 640*p.GPU.Border_y_size + (p.GPU.Border_x_size)
@@ -332,7 +333,25 @@ func main() {
 
 		// calculate speed
 		frames++
-		ticks_now = sdl.GetTicks()
+		if sdl.GetTicks() > ticks_now {
+			mult = sdl.GetTicks() - ticks_now
+			ticks_now = sdl.GetTicks()
+			stepCycles = p.CPU.AllCycles
+
+			// cpu step ----------------------------------------------------------
+			for {
+				_, stopped := p.CPU.Step()
+				if stopped {
+					running = false
+					break
+				}
+				if (p.CPU.AllCycles - stepCycles) > CPU_STEP * uint64(mult) {
+					break
+				}
+			}
+
+		}
+
 		if (ticks_now - prev_ticks) >= 1000 {
 			cyc, unit := showCPUSpeed(p.CPU.AllCycles - prevCycles)
 			prevCycles = p.CPU.AllCycles
@@ -385,17 +404,6 @@ func main() {
 			}
 		}
 
-		// cpu step ----------------------------------------------------------
-		for {
-			_, stopped := p.CPU.Step()
-			if stopped {
-				running = false
-				break
-			}
-			if (p.CPU.AllCycles - prevCycles) > CPU_CLOCK {
-				break
-			}
-		}
 
 	}
 
