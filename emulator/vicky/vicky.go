@@ -93,7 +93,7 @@ func (v *Vicky) Read(address uint32) byte {
 		return byte(fgc|bgc)
 	
 	default:
-		mylog.Logger.Log(fmt.Sprintf("read from addr %6X is not implemented, 0 returned", address))
+		mylog.Logger.Log(fmt.Sprintf("vicky: read from addr %6X is not implemented, 0 returned", address))
 		return 0
 	}
 }
@@ -143,7 +143,7 @@ func (v *Vicky) Write(address uint32, val byte) {
 		bg[addr] = bgc
 	
 	default:
-		mylog.Logger.Log(fmt.Sprintf("write for addr %6X is not implemented", address))
+		mylog.Logger.Log(fmt.Sprintf("vicky: write for addr %6X is not implemented", address))
 	}
 }
 
