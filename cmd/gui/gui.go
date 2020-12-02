@@ -147,20 +147,27 @@ func main() {
 	p.GPU.FB   = &fb
 	//p.GPU.FG_lut = &f_color_lut
 	//p.GPU.BG_lut = &b_color_lut
-	p.LoadHex("/home/aniou/c256/go65c816/data/matrix.hex")
+	//p.LoadHex("/home/aniou/c256/go65c816/data/matrix.hex")
 	/*
 	p.LoadHex("/home/aniou/c256/src/c256-gui-shim/old-kernel.hex")
 	p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
 	p.LoadHex("/home/aniou/c256/src/c256-gui-shim/c256-gui-shim.hex")
 	*/
-	p.CPU.PC = 0x0000
-	p.CPU.RK = 0x03
+	//p.CPU.PC = 0x0000
+	//p.CPU.RK = 0x03
 	//memoryDump(p, 0x381000)
 	//waitForEnter()
+	//p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
+	p.LoadHex("/home/aniou/c256/Kernel_FMX.old/kernel.hex")
+	p.CPU.PC = 0xff00
+	p.CPU.RK = 0x00
+	//memoryDump(p, 0x00fff0)
+	//memoryDump(p, 0x00ff00)
+	waitForEnter()
 
-	p.CPU.Bus.EaWrite(0xAF_0005, 0x00) // border B - old 0x20
+	p.CPU.Bus.EaWrite(0xAF_0005, 0x20) // border B 
 	p.CPU.Bus.EaWrite(0xAF_0006, 0x00) // border G
-	p.CPU.Bus.EaWrite(0xAF_0007, 0x00) // border R - old 0x20
+	p.CPU.Bus.EaWrite(0xAF_0007, 0x20) // border R
 
 	p.CPU.Bus.EaWrite(0xAF_0008, 0x20) // border X
 	p.CPU.Bus.EaWrite(0xAF_0009, 0x20) // border Y
@@ -338,9 +345,11 @@ func main() {
 			ticks_now = sdl.GetTicks()
 			stepCycles = p.CPU.AllCycles
 
-			// cpu step ----------------------------------------------------------
+			// cpu step ---------------------------------------------------------
+			//fmt.Fprintf(os.Stdout, "cpu.K:PC %02x:%04x\n", p.CPU.RK, p.CPU.PC)
 			for {
 				_, stopped := p.CPU.Step()
+				//fmt.Fprintf(os.Stdout, "cpu.K:PC %02x:%04x\n", p.CPU.RK, p.CPU.PC)
 				if stopped {
 					running = false
 					break
@@ -349,6 +358,7 @@ func main() {
 					break
 				}
 			}
+			//running=false
 
 		}
 
@@ -412,6 +422,7 @@ func main() {
 		window.SetDisplayMode(&current_mode)
 	}
 
+	memoryDump(p, 0x0)
 	//renderer.Destroy()
 	//window.Destroy()
 	//sdl.Quit()
