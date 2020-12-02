@@ -36,7 +36,7 @@ func init() {
 
 func New() (*Vicky, error) {
 	//vicky := Vicky{nil, nil, nil, nil, nil}
-	vicky := Vicky{nil, text, fg, bg, &f_color_lut, &b_color_lut, 0, 0, 0, 0, 0, 0}
+	vicky := Vicky{nil, text, fg, bg, &f_color_lut, &b_color_lut, 0x1, 0x20, 0x00, 0x20, 0x20, 0x20}
 	return &vicky, nil
 }
 
@@ -71,6 +71,18 @@ func (v *Vicky) Size() uint32 {
 
 func (v *Vicky) Read(address uint32) byte {
 	switch {
+	case address == 0xAF_0001:
+		return 0                // XXX should be resolution
+
+	case address == 0xAF_0004:
+		return v.border_ctrl_reg
+
+	case address == 0xAF_0008:
+		return byte(v.Border_x_size)
+
+	case address == 0xAF_0009:
+		return byte(v.Border_y_size)
+
 	case address >= 0xAF_A000 && address<=0xAF_BFFF:
 		return byte(text[address-0xAF_A000])
 
