@@ -10,30 +10,34 @@ import (
 	"github.com/aniou/go65c816/emulator/memory"
 	"github.com/aniou/go65c816/emulator/netconsole"
 	"github.com/aniou/go65c816/emulator/vicky"
+	"github.com/aniou/go65c816/emulator/gabe"
 )
 
 type Platform struct {
 	CPU    *cpu65c816.CPU
 	GPU    *vicky.Vicky
+	GABE   *gabe.Gabe
 	Console *netconsole.Console
 }
 
 func New() (*Platform) {
-	p            := Platform{nil, nil, nil}
+	p            := Platform{nil, nil, nil, nil}
 	return &p
 }
 
 // platform with Vicky I
 func (platform *Platform) InitGUI() {
-	bus, _		:= bus.New()
-	platform.CPU, _  = cpu65c816.New(bus)
-	ram, _	        := memory.New(0x400000, 0x000000)
-	platform.GPU, _	 = vicky.New()
-	vram, _		:= memory.New(0x400000, 0xb00000)		   // XXX - placeholder
+	bus, _		 := bus.New()
+	platform.CPU, _   = cpu65c816.New(bus)
+	ram, _	         := memory.New(0x400000, 0x000000)
+	platform.GPU, _	  = vicky.New()
+	vram, _		 := memory.New(0x400000, 0xb00000)		   // XXX - placeholder
+	platform.GABE, _  = gabe.New()
 	
 
 	platform.CPU.Bus.Attach(ram,            "ram", 0x000000, 0x3FFFFF) // xxx - 1: ram.offset, ram.size 2: get rid that?
 	platform.CPU.Bus.Attach(platform.GPU, "vicky", 0xAF0000, 0xAFFFFF)
+	platform.CPU.Bus.Attach(platform.GABE, "gabe", 0xAF1000, 0xAF13FF) // probably should be splitted
 	platform.CPU.Bus.Attach(vram,          "vram", 0xB00000, 0xEFFFFF)
 
 	platform.CPU.Bus.EaWrite(0xAF070B, 0x01)			   // fake platform version, my HW ha 43 here IDE has 00

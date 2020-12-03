@@ -83,6 +83,12 @@ func (v *Vicky) Read(address uint32) byte {
 	case address == 0xAF_0009:
 		return byte(v.Border_y_size)
 
+	case address == 0xAF_070B:
+		return byte(0)
+
+	case address == 0xAF_070C:
+		return byte(0)
+
 	case address >= 0xAF_A000 && address<=0xAF_BFFF:
 		return byte(text[address-0xAF_A000])
 
