@@ -97,6 +97,9 @@ func (v *Vicky) Read(address uint32) byte {
 		fgc := byte(fg[addr]) << 4
 		bgc := byte(bg[addr])
 		return byte(fgc|bgc)
+
+	case address == 0xAF_E80E:				// this is Trinity, not Vicky, XXX
+		return 0x03					// BASIC
 	
 	default:
 		mylog.Logger.Log(fmt.Sprintf("vicky: read from addr %6X is not implemented, 0 returned", address))

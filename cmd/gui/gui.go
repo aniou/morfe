@@ -12,6 +12,12 @@ import (
 	_ "github.com/aniou/go65c816/lib/mylog"
 )
 
+// keyboard memory registers
+const INT_MASK_REG1    = 0x00_014D
+const INT_PENDING_REG1 = 0x00_0141
+// 
+
+
 const FULLSCREEN = false
 const CPU_CLOCK = 14318000 // 14.381Mhz
 var   CPU_STEP uint64  = 14318
@@ -37,6 +43,14 @@ func showCPUSpeed(cycles uint64) (uint64, string) {
 	default:
 		return cycles, "Hz"
 	}
+}
+
+func printCPUFlags(flag byte, name string) string {
+        if flag > 0 {
+                return name
+        } else {
+                return "-"
+        }
 }
 
 func memoryDump(p *platform.Platform, address uint32) {
@@ -141,25 +155,29 @@ func main() {
 	loadFont(&font_st_8x8)
 
 	// platform init
-	//logger := mylog.New()
 	p := platform.New()
 	p.InitGUI()
 	p.GPU.FB   = &fb
-	//p.GPU.FG_lut = &f_color_lut
-	//p.GPU.BG_lut = &b_color_lut
 	//p.LoadHex("/home/aniou/c256/go65c816/data/matrix.hex")
+
+	/*
 	p.LoadHex("/home/aniou/c256/src/c256-gui-shim/old-kernel.hex")
-	p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
-	p.LoadHex("/home/aniou/c256/src/c256-gui-shim/c256-gui-shim.hex")
+	//p.LoadHex("/home/aniou/c256/src/c256-gui-shim/c256-gui-shim.hex")
 	p.CPU.PC = 0x0000
 	p.CPU.RK = 0x03
+	*/
+
 	//memoryDump(p, 0x381000)
 	//waitForEnter()
 	//p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
-	//p.LoadHex("/home/aniou/c256/Kernel_FMX.old/kernel.hex")
 	//p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
-	//p.CPU.PC = 0xff00
-	//p.CPU.RK = 0x00
+	p.LoadHex("/home/aniou/c256/Kernel_FMX.old/kernel.hex")
+	p.LoadHex("/home/aniou/c256/src/c256-gui-shim/c256-gui-shim2.hex")
+	p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
+	p.CPU.PC = 0xff00
+	p.CPU.RK = 0x00
+	p.CPU.PC = 0x0000
+	p.CPU.RK = 0x03
 	//memoryDump(p, 0x00fff0)
 	//memoryDump(p, 0x00ff00)
 	//waitForEnter()
@@ -234,6 +252,7 @@ func main() {
 	texture2 := newTexture(renderer)
 
 
+	disasm := false
 
 	// -----------------------------------------------------------------------------------
 	// zmiana trybu
@@ -349,6 +368,12 @@ func main() {
 			for {
 				_, stopped := p.CPU.Step()
 				//fmt.Fprintf(os.Stdout, "cpu.K:PC %02x:%04x\n", p.CPU.RK, p.CPU.PC)
+				if p.CPU.PC == 0x4c33 && p.CPU.RK == 0x38 {
+					disasm=true
+				}
+				if p.CPU.PC == 0x4d93 && p.CPU.RK == 0x38 {
+					disasm=false
+				}
 				if stopped {
 					running = false
 					break
@@ -356,7 +381,28 @@ func main() {
 				if (p.CPU.AllCycles - stepCycles) > CPU_STEP * uint64(mult) {
 					break
 				}
-				if (p.CPU.AllCycles > 109681410) {
+				if disasm {
+					        fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.N, "n"))
+						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.V, "v"))
+						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.M, "m"))
+						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.X, "x"))
+						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.D, "d"))
+						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.I, "i"))
+						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.Z, "z"))
+						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.C, "c"))
+						fmt.Fprintf(os.Stdout, " ")
+						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.B, "B"))
+						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.E, "E"))
+
+
+						if p.CPU.M == 0 {
+							fmt.Printf(" A  %04x (%7d) │",          p.CPU.RA, p.CPU.RA)
+						} else {
+							fmt.Printf(" A %02x %02x (%3d %3d) │", p.CPU.RAh, p.CPU.RAl, p.CPU.RAh, p.CPU.RAl)
+
+						}
+
+
 					fmt.Printf(" %4x ", p.CPU.RX)
 					fmt.Printf("%s", p.CPU.DisassembleCurrentPC())
 				}
@@ -383,6 +429,7 @@ func main() {
 			case *sdl.QuitEvent:
 				running = false
 
+				/*
 			case *sdl.TextInputEvent:
 				fmt.Printf("TextInputEvent\n")
 				for _, val := range t.Text {
@@ -391,6 +438,7 @@ func main() {
 					}
 					p.GABE.InBuf.Enqueue(val)
 				}
+				*/
 
 			case *sdl.KeyboardEvent:
 				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n",
@@ -401,20 +449,60 @@ func main() {
 						continue
 					}
 					switch t.Keysym.Sym {
-					case sdl.K_F12:
-						running = false
 					case sdl.K_F11:
-						loadFont(&font_st_8x8)
-					case sdl.K_F10:
-						loadFont(&font_c256_8x8)
+						running = false
+					//case sdl.K_F11:
+					//	loadFont(&font_st_8x8)
+					//case sdl.K_F10:
+					//	loadFont(&font_c256_8x8)
+					case sdl.K_F9:
+						if disasm {
+							disasm = false 
+						} else {
+							disasm = true
+						}
+					/*
 					case sdl.K_BACKSPACE,
 						sdl.K_RETURN:
 						//p.GABE.InBuf.Enqueue(byte(t.Keysym.Sym)) // XXX horrible, terrible
 						p.GABE.InBuf.Enqueue(byte(t.Keysym.Scancode)) // XXX horrible, terrible
-
+					*/
 					default:
+						mask := p.CPU.Bus.EaRead(INT_MASK_REG1)
+						if (^mask & byte(r1_FNX1_INT00_KBD)) == byte(r1_FNX1_INT00_KBD) {
+							fmt.Printf("\nKEY pressed, mask %2X %2X %2X\n", mask, ^mask, byte(r1_FNX1_INT00_KBD))
+							code := PS2ScanCode(t.Keysym.Scancode)
+							if code == sc_null {
+								fmt.Printf("unknown scancode")
+							} else {
+								p.GABE.Data = code
+								p.CPU.Bus.EaWrite(0xAF_1064, 0)
+								irq1 := p.CPU.Bus.EaRead(INT_PENDING_REG1) | r1_FNX1_INT00_KBD
+								p.CPU.Bus.EaWrite(INT_PENDING_REG1, irq1)
+								p.CPU.TriggerIRQ()
+							}
+						}
 					}
 				}
+
+				if t.State == sdl.RELEASED {
+						mask := p.CPU.Bus.EaRead(INT_MASK_REG1)
+						if (^mask & byte(r1_FNX1_INT00_KBD)) == byte(r1_FNX1_INT00_KBD) {
+							fmt.Printf("\nKEY released, mask %2X %2X %2X\n", mask, ^mask, byte(r1_FNX1_INT00_KBD))
+							code := PS2ScanCode(t.Keysym.Scancode)
+							if code == sc_null {
+								fmt.Printf("unknown scancode")
+							} else {
+								p.GABE.Data = code + 0x80
+								p.CPU.Bus.EaWrite(0xAF_1064, 0)
+								irq1 := p.CPU.Bus.EaRead(INT_PENDING_REG1) | r1_FNX1_INT00_KBD
+								p.CPU.Bus.EaWrite(INT_PENDING_REG1, irq1)
+								p.CPU.TriggerIRQ()
+							}
+						}
+				}
+
+
 			}
 		}
 

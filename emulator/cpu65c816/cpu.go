@@ -806,7 +806,7 @@ func (cpu *CPU) triggerNMI() {
 }
 
 // triggerIRQ causes an IRQ interrupt to occur on the next cycle
-func (cpu *CPU) triggerIRQ() {
+func (cpu *CPU) TriggerIRQ() {
 	if cpu.I == 0 {
 		cpu.interrupt = interruptIRQ
 	}
@@ -1054,7 +1054,7 @@ func (cpu *CPU) Step() (int, bool) {
 	case m_PC_Relative_Long:
 		arg16 = cpu.nRead16_wrap(cpu.RK, cpu.PC + 1)
 		if arg16 < 0x8000 {
-			addr = cpu.PC + 2 + arg16
+			addr = cpu.PC + 3 + arg16
 		} else {
 			addr = cpu.PC + 1 + arg16 - 0xffff // zamiast 0x10000 bo overflow na 16 bit
 		}
@@ -1125,23 +1125,29 @@ func (cpu *CPU) Step() (int, bool) {
 }
 
 // NMI - Non-Maskable Interrupt
+// XXXX - valid for 6502
 func (cpu *CPU) nmi() {
 	cpu.push16(cpu.PC)
 	cpu.op_php(nil)
 	//cpu.PC = cpu.Read16(0xFFFA)
-	cpu.PC = cpu.nRead16_cross(0x00, 0xFFFA)
+	cpu.PC = cpu.nRead16_cross(0x00, 0xFFEA)
 	cpu.I = 1
 	cpu.Cycles += 7
 }
 
 // IRQ - IRQ Interrupt
+// XXXX - valid for 6502
 func (cpu *CPU) irq() {
-	cpu.push16(cpu.PC)
-	cpu.op_php(nil)
-	//cpu.PC = cpu.Read16(0xFFFE)
-	cpu.PC = cpu.nRead16_cross(0x00, 0xFFFE)
-	cpu.I = 1
-	cpu.Cycles += 7
+
+	cpu.push(cpu.RK)
+	cpu.push16(cpu.PC)		// "next instruction to be executed" means current pc because irq is processed at start of new comm.
+	cpu.push(cpu.Flags())
+
+	cpu.I  = 1
+	cpu.D  = 0
+	cpu.RK = 0
+	cpu.PC   = cpu.nRead16_cross(0x00, 0xFFEE)
+	mylog.Logger.Log(fmt.Sprintf("\ncpu: irq triggered, PC %4X", cpu.PC))
 }
 
 
@@ -1378,6 +1384,7 @@ func (cpu *CPU) op_bpl(info *stepInfo) {
 }
 
 // BRK - Force Interrupt
+// XXX - from now duplicate with irq?
 func (cpu *CPU) op_brk(info *stepInfo) {
 	if cpu.E == 1 {
 		cpu.push16(cpu.PC+2)
@@ -1804,6 +1811,7 @@ func (cpu *CPU) op_ror(info *stepInfo) {
 
 // RTI - Return from Interrupt
 func (cpu *CPU) op_rti(info *stepInfo) {
+	mylog.Logger.Log("cpu: rti")
 	//cpu.SetFlags(cpu.pull()&0xEF | 0x20)
 	if cpu.E == 1 {
 		cpu.SetFlags(cpu.pull())
