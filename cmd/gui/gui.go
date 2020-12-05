@@ -20,6 +20,8 @@ const INT_PENDING_REG1 = 0x00_0141
 
 const FULLSCREEN = false
 const CPU_CLOCK = 14318000 // 14.381Mhz
+const CURSOR_BLINK_RATE = 500
+
 var   CPU_STEP uint64  = 14318
 
 var winTitle string = "Go-SDL2 Events"
@@ -179,16 +181,16 @@ func main() {
 	//p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
 	//p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
 	p.LoadHex("/home/aniou/c256/Kernel_FMX.old/kernel.hex")
-	p.LoadHex("/home/aniou/c256/src/c256-gui-shim/c256-gui-shim2.hex")
+	//p.LoadHex("/home/aniou/c256/src/c256-gui-shim/c256-gui-shim2.hex")
 	p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
 	//p.LoadHex("/home/aniou/c256/FoenixIDE-release-0.4.2.1/bin/Release/roms/kernel.hex")
 	p.CPU.PC = 0xff00
 	p.CPU.RK = 0x00
-	p.CPU.PC = 0x0000
-	p.CPU.RK = 0x03
+	//p.CPU.PC = 0x0000
+	//p.CPU.RK = 0x03
 	//memoryDump(p, 0x00fff0)
-	//memoryDump(p, 0x00ff00)
-	//waitForEnter()
+	//memoryDump(p, 0x001000)
+
 
 	p.CPU.Bus.EaWrite(0xAF_0005, 0x20) // border B 
 	p.CPU.Bus.EaWrite(0xAF_0006, 0x00) // border G
@@ -201,6 +203,13 @@ func main() {
 	p.CPU.Bus.EaWrite(0xAF_0012, 0xB1) // VKY_TXT_CURSOR_CHAR_REG
 	p.CPU.Bus.EaWrite(0xAF_0013, 0xC4) // VKY_TXT_CURSOR_COLR_REG
 
+	// act as gavin/gabe - copy "flash" area from 38:1000 to 00:1000 (0x200) bytes
+	// jump tables
+	for j := 0x1000; j < 0x1200; j = j + 1 {
+		val := p.CPU.Bus.EaRead(uint32(0x38_0000 + j))
+		p.CPU.Bus.EaWrite(uint32(j), val)
+
+	}
 
 	// test text
 	for i := range p.GPU.TEXT { // file text memory areas
@@ -299,8 +308,11 @@ func main() {
 		fmt.Printf("text_cols: %d\n", text_cols)
 	}
 
+	var cursor_counter int32		// how many ticks remains to flip cursor visible
+	var cursor_visible bool = true		// to implement cursor blinking
 	var cursor_x, cursor_y uint32 // row and column of cursor
 	var cursor_char uint32    // cursor character
+	var cursor_state byte     // cursor register, various states
 	var text_x, text_y uint32 // row and column of text
 	var text_row_pos uint32   // beginning of current text row in text memory
 	var fb_row_pos uint32     // beginning of current FB   row in memory
@@ -328,10 +340,12 @@ func main() {
 	// main loop -------------------------------------------------------------------
 	starting_fb_row_pos := 640*p.GPU.Border_y_size + (p.GPU.Border_x_size)
 	running = true
+	waitForEnter()
 	for running {
-		cursor_char = uint32(p.CPU.Bus.EaRead(0xAF_0012))
-		cursor_x    = uint32(p.CPU.Bus.EaRead(0xAF_0014))
-		cursor_y    = uint32(p.CPU.Bus.EaRead(0xAF_0016))
+		cursor_state =        p.CPU.Bus.EaRead(0xAF_0010)
+		cursor_char  = uint32(p.CPU.Bus.EaRead(0xAF_0012))
+		cursor_x     = uint32(p.CPU.Bus.EaRead(0xAF_0014))
+		cursor_y     = uint32(p.CPU.Bus.EaRead(0xAF_0016))
 
 		// render text - start
 		fb_row_pos = starting_fb_row_pos
@@ -344,7 +358,7 @@ func main() {
 				f := p.GPU.FG[text_row_pos+text_x] // fg and bg colors
 				b := p.GPU.BG[text_row_pos+text_x]
 
-				if (cursor_y == text_y) && (cursor_x == text_x) {
+				if cursor_visible && (cursor_y == text_y) && (cursor_x == text_x) && (cursor_state & 0x01 == 1) {
 					f = uint32((p.CPU.Bus.EaRead(0xAF_0013) & 0xf0) >> 4)
 					b = uint32((p.CPU.Bus.EaRead(0xAF_0013) & 0x0f))
 					fnttmp[text_x] = cursor_char * 64
@@ -387,6 +401,14 @@ func main() {
 			mult = sdl.GetTicks() - ticks_now
 			ticks_now = sdl.GetTicks()
 			stepCycles = p.CPU.AllCycles
+
+			// cursor calculation - flip every CURSOR_BLINK_RATE ticks
+			cursor_counter = cursor_counter - int32(mult)
+			if cursor_counter <= 0 {
+				//fmt.Printf("cursor: %d %v\n", cursor_counter, cursor_visible)
+				cursor_counter = CURSOR_BLINK_RATE
+				cursor_visible = ! cursor_visible
+			}
 
 			// cpu step ---------------------------------------------------------
 			for {

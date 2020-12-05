@@ -3,7 +3,7 @@ package vicky
 import (
 	"fmt"
 	"encoding/binary"
-	"github.com/aniou/go65c816/lib/mylog"
+	_ "github.com/aniou/go65c816/lib/mylog"
 )
 
 var text []uint32
