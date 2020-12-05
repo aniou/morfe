@@ -82,6 +82,7 @@ func memoryDump(p *platform.Platform, address uint32) {
 			fmt.Printf("		       │		       │")
 		}
 	}
+	fmt.Printf("\n")
 }
 
 func waitForEnter() {
@@ -196,6 +197,11 @@ func main() {
 	p.CPU.Bus.EaWrite(0xAF_0008, 0x20) // border X
 	p.CPU.Bus.EaWrite(0xAF_0009, 0x20) // border Y
 
+	p.CPU.Bus.EaWrite(0xAF_0010, 0x03) // VKY_TXT_CURSOR_CTRL_REG
+	p.CPU.Bus.EaWrite(0xAF_0012, 0xB1) // VKY_TXT_CURSOR_CHAR_REG
+	p.CPU.Bus.EaWrite(0xAF_0013, 0xC4) // VKY_TXT_CURSOR_COLR_REG
+
+
 	// test text
 	for i := range p.GPU.TEXT { // file text memory areas
 		p.GPU.FG[i] = 0x0e
@@ -293,6 +299,8 @@ func main() {
 		fmt.Printf("text_cols: %d\n", text_cols)
 	}
 
+	var cursor_x, cursor_y uint32 // row and column of cursor
+	var cursor_char uint32    // cursor character
 	var text_x, text_y uint32 // row and column of text
 	var text_row_pos uint32   // beginning of current text row in text memory
 	var fb_row_pos uint32     // beginning of current FB   row in memory
@@ -321,6 +329,10 @@ func main() {
 	starting_fb_row_pos := 640*p.GPU.Border_y_size + (p.GPU.Border_x_size)
 	running = true
 	for running {
+		cursor_char = uint32(p.CPU.Bus.EaRead(0xAF_0012))
+		cursor_x    = uint32(p.CPU.Bus.EaRead(0xAF_0014))
+		cursor_y    = uint32(p.CPU.Bus.EaRead(0xAF_0016))
+
 		// render text - start
 		fb_row_pos = starting_fb_row_pos
 		for text_y = 0; text_y < text_rows; text_y += 1 { // over lines of text
@@ -331,9 +343,15 @@ func main() {
 
 				f := p.GPU.FG[text_row_pos+text_x] // fg and bg colors
 				b := p.GPU.BG[text_row_pos+text_x]
+
+				if (cursor_y == text_y) && (cursor_x == text_x) {
+					f = uint32((p.CPU.Bus.EaRead(0xAF_0013) & 0xf0) >> 4)
+					b = uint32((p.CPU.Bus.EaRead(0xAF_0013) & 0x0f))
+					fnttmp[text_x] = cursor_char * 64
+				}
+
 				fgctmp[text_x] = binary.LittleEndian.Uint32(p.GPU.FG_lut[f][:])
 				bgctmp[text_x] = binary.LittleEndian.Uint32(p.GPU.BG_lut[b][:])
-
 			}
 
 			for font_line = 0; font_line < 8; font_line += 1 { // for every line of text - over 8 lines of font
@@ -456,10 +474,10 @@ func main() {
 					switch t.Keysym.Sym {
 					case sdl.K_F12:
 						running = false
-					//case sdl.K_F11:
-					//	loadFont(&font_st_8x8)
-					//case sdl.K_F10:
-					//	loadFont(&font_c256_8x8)
+					case sdl.K_F11:
+						loadFont(&font_st_8x8)
+					case sdl.K_F10:
+						loadFont(&font_c256_8x8)
 					case sdl.K_F9:
 						if disasm {
 							disasm = false 
@@ -487,7 +505,7 @@ func main() {
 		window.SetDisplayMode(&current_mode)
 	}
 
-	//memoryDump(p, 0x0)
+	memoryDump(p, 0xaf_0000)
 	//renderer.Destroy()
 	//window.Destroy()
 	//sdl.Quit()
