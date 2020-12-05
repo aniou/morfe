@@ -29,6 +29,10 @@ var winWidth, winHeight int32 = 640, 480
 var fb []uint32
 var font [256 * 8 * 8]byte // 256 chars * 8 lines * 8 columns
 
+type GUI struct {
+	p *platform.Platform
+}
+
 type DEBUG struct {
 	gui	bool
 }
@@ -156,6 +160,8 @@ func main() {
 
 	// platform init
 	p := platform.New()
+	gui := GUI{p}
+
 	p.InitGUI()
 	p.GPU.FB   = &fb
 	//p.LoadHex("/home/aniou/c256/go65c816/data/matrix.hex")
@@ -371,12 +377,12 @@ func main() {
 				}
 				_, stopped := p.CPU.Step()
 
-				if p.CPU.PC == 0x4c33 && p.CPU.RK == 0x38 {
-					disasm=true
-				}
-				if p.CPU.PC == 0x4d93 && p.CPU.RK == 0x38 {
-					disasm=false
-				}
+				//if p.CPU.PC == 0x4c33 && p.CPU.RK == 0x38 {
+				//	disasm=true
+				//}
+				//if p.CPU.PC == 0x4d93 && p.CPU.RK == 0x38 {
+				//	disasm=false
+				//}
 
 				if disasm {
 					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.N, "n"))
@@ -467,6 +473,8 @@ func main() {
 						p.GABE.InBuf.Enqueue(byte(t.Keysym.Scancode)) // XXX horrible, terrible
 					*/
 					default:
+						gui.sendKey(t.Keysym.Scancode, t.State)
+						/*
 						mask := p.CPU.Bus.EaRead(INT_MASK_REG1)
 						if (^mask & byte(r1_FNX1_INT00_KBD)) == byte(r1_FNX1_INT00_KBD) {
 							fmt.Printf("\nKEY pressed, mask %2X %2X %2X\n", mask, ^mask, byte(r1_FNX1_INT00_KBD))
@@ -481,10 +489,13 @@ func main() {
 								p.CPU.TriggerIRQ()
 							}
 						}
+						*/
 					}
 				}
 
 				if t.State == sdl.RELEASED {
+						gui.sendKey(t.Keysym.Scancode, t.State)
+						/*
 						mask := p.CPU.Bus.EaRead(INT_MASK_REG1)
 						if (^mask & byte(r1_FNX1_INT00_KBD)) == byte(r1_FNX1_INT00_KBD) {
 							fmt.Printf("\nKEY released, mask %2X %2X %2X\n", mask, ^mask, byte(r1_FNX1_INT00_KBD))
@@ -499,6 +510,7 @@ func main() {
 								p.CPU.TriggerIRQ()
 							}
 						}
+						*/
 				}
 
 
