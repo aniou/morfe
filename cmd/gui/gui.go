@@ -434,7 +434,7 @@ func main() {
 			case *sdl.QuitEvent:
 				running = false
 
-				/*
+			/*
 			case *sdl.TextInputEvent:
 				fmt.Printf("TextInputEvent\n")
 				for _, val := range t.Text {
@@ -443,7 +443,7 @@ func main() {
 					}
 					p.GABE.InBuf.Enqueue(val)
 				}
-				*/
+			*/
 
 			case *sdl.KeyboardEvent:
 				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n",
@@ -466,51 +466,13 @@ func main() {
 						} else {
 							disasm = true
 						}
-					/*
-					case sdl.K_BACKSPACE,
-						sdl.K_RETURN:
-						//p.GABE.InBuf.Enqueue(byte(t.Keysym.Sym)) // XXX horrible, terrible
-						p.GABE.InBuf.Enqueue(byte(t.Keysym.Scancode)) // XXX horrible, terrible
-					*/
 					default:
 						gui.sendKey(t.Keysym.Scancode, t.State)
-						/*
-						mask := p.CPU.Bus.EaRead(INT_MASK_REG1)
-						if (^mask & byte(r1_FNX1_INT00_KBD)) == byte(r1_FNX1_INT00_KBD) {
-							fmt.Printf("\nKEY pressed, mask %2X %2X %2X\n", mask, ^mask, byte(r1_FNX1_INT00_KBD))
-							code := PS2ScanCode(t.Keysym.Scancode)
-							if code == sc_null {
-								fmt.Printf("unknown scancode")
-							} else {
-								p.GABE.Data = code
-								p.CPU.Bus.EaWrite(0xAF_1064, 0)
-								irq1 := p.CPU.Bus.EaRead(INT_PENDING_REG1) | r1_FNX1_INT00_KBD
-								p.CPU.Bus.EaWrite(INT_PENDING_REG1, irq1)
-								p.CPU.TriggerIRQ()
-							}
-						}
-						*/
 					}
 				}
 
 				if t.State == sdl.RELEASED {
-						gui.sendKey(t.Keysym.Scancode, t.State)
-						/*
-						mask := p.CPU.Bus.EaRead(INT_MASK_REG1)
-						if (^mask & byte(r1_FNX1_INT00_KBD)) == byte(r1_FNX1_INT00_KBD) {
-							fmt.Printf("\nKEY released, mask %2X %2X %2X\n", mask, ^mask, byte(r1_FNX1_INT00_KBD))
-							code := PS2ScanCode(t.Keysym.Scancode)
-							if code == sc_null {
-								fmt.Printf("unknown scancode")
-							} else {
-								p.GABE.Data = code + 0x80
-								p.CPU.Bus.EaWrite(0xAF_1064, 0)
-								irq1 := p.CPU.Bus.EaRead(INT_PENDING_REG1) | r1_FNX1_INT00_KBD
-								p.CPU.Bus.EaWrite(INT_PENDING_REG1, irq1)
-								p.CPU.TriggerIRQ()
-							}
-						}
-						*/
+					gui.sendKey(t.Keysym.Scancode, t.State)
 				}
 
 
