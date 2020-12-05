@@ -174,6 +174,7 @@ func main() {
 	p.LoadHex("/home/aniou/c256/Kernel_FMX.old/kernel.hex")
 	p.LoadHex("/home/aniou/c256/src/c256-gui-shim/c256-gui-shim2.hex")
 	p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
+	//p.LoadHex("/home/aniou/c256/FoenixIDE-release-0.4.2.1/bin/Release/roms/kernel.hex")
 	p.CPU.PC = 0xff00
 	p.CPU.RK = 0x00
 	p.CPU.PC = 0x0000
@@ -364,52 +365,49 @@ func main() {
 			stepCycles = p.CPU.AllCycles
 
 			// cpu step ---------------------------------------------------------
-			//fmt.Fprintf(os.Stdout, "cpu.K:PC %02x:%04x\n", p.CPU.RK, p.CPU.PC)
 			for {
+				if (p.CPU.AllCycles - stepCycles) > CPU_STEP * uint64(mult) {
+					break
+				}
 				_, stopped := p.CPU.Step()
-				//fmt.Fprintf(os.Stdout, "cpu.K:PC %02x:%04x\n", p.CPU.RK, p.CPU.PC)
+
 				if p.CPU.PC == 0x4c33 && p.CPU.RK == 0x38 {
 					disasm=true
 				}
 				if p.CPU.PC == 0x4d93 && p.CPU.RK == 0x38 {
 					disasm=false
 				}
+
+				if disasm {
+					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.N, "n"))
+					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.V, "v"))
+					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.M, "m"))
+					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.X, "x"))
+					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.D, "d"))
+					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.I, "i"))
+					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.Z, "z"))
+					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.C, "c"))
+					fmt.Fprintf(os.Stdout, " ")
+					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.B, "B"))
+					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.E, "E"))
+					if p.CPU.M == 0 {
+						fmt.Printf(" A  %04x (%7d) │",          p.CPU.RA, p.CPU.RA)
+					} else {
+						fmt.Printf(" A %02x %02x (%3d %3d) │", p.CPU.RAh, p.CPU.RAl, p.CPU.RAh, p.CPU.RAl)
+					}
+					fmt.Printf(" %4x ", p.CPU.RX)
+					fmt.Printf("%s", p.CPU.DisassembleCurrentPC())
+				}
+
 				if stopped {
 					running = false
 					break
 				}
-				if (p.CPU.AllCycles - stepCycles) > CPU_STEP * uint64(mult) {
-					break
-				}
-				if disasm {
-					        fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.N, "n"))
-						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.V, "v"))
-						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.M, "m"))
-						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.X, "x"))
-						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.D, "d"))
-						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.I, "i"))
-						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.Z, "z"))
-						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.C, "c"))
-						fmt.Fprintf(os.Stdout, " ")
-						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.B, "B"))
-						fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.E, "E"))
-
-
-						if p.CPU.M == 0 {
-							fmt.Printf(" A  %04x (%7d) │",          p.CPU.RA, p.CPU.RA)
-						} else {
-							fmt.Printf(" A %02x %02x (%3d %3d) │", p.CPU.RAh, p.CPU.RAl, p.CPU.RAh, p.CPU.RAl)
-
-						}
-
-
-					fmt.Printf(" %4x ", p.CPU.RX)
-					fmt.Printf("%s", p.CPU.DisassembleCurrentPC())
-				}
 			}
-			//running=false
-
 		}
+
+
+
 
 		if (ticks_now - prev_ticks) >= 1000 {
 			cyc, unit := showCPUSpeed(p.CPU.AllCycles - prevCycles)
@@ -417,9 +415,10 @@ func main() {
 			fmt.Fprintf(os.Stdout, "frames: %4d ticks %d cpu cycles %10d speed %2d %s cpu.K:PC %02x:%04x\n", frames, (ticks_now - prev_ticks), p.CPU.AllCycles, cyc, unit, p.CPU.RK, p.CPU.PC)
 			prev_ticks = ticks_now
 			frames = 0
-			//memoryDump(p, 0x0)
 		}
-		// end of calculate speed
+
+
+
 
 		// keyboard ----------------------------------------------------------
 		// https://github.com/veandco/go-sdl2-examples/blob/master/examples/keyboard-input/keyboard-input.go
@@ -449,7 +448,7 @@ func main() {
 						continue
 					}
 					switch t.Keysym.Sym {
-					case sdl.K_F11:
+					case sdl.K_F12:
 						running = false
 					//case sdl.K_F11:
 					//	loadFont(&font_st_8x8)
