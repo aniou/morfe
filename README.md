@@ -5,6 +5,13 @@
 
 [![asciicast](https://asciinema.org/a/270744.svg)](https://asciinema.org/a/270744)
 
+## About this branch
+
+There is a bunch of PoC-s related to graphics support, targeted for Vicky.
+Vicky becomes obseolete in favour of Vicky II (and FatVicky), thus further
+developmen will take place at 'vicky-II' branch.
+
+
 ## Supported systems
 
 Program was tested on:
