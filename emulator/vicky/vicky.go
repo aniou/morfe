@@ -20,8 +20,6 @@ type Vicky struct {
 	TEXT   []uint32
 	FG     []uint32
 	BG     []uint32
-	FG_lut *[16][4]byte
-	BG_lut *[16][4]byte
 	FONT   []byte
 	mem    []byte
 
@@ -53,7 +51,7 @@ func init() {
 
 func New() (*Vicky, error) {
 	//vicky := Vicky{nil, nil, nil, nil, nil}
-	vicky := Vicky{tfb, bfb, text, fg, bg, &f_color_lut, &b_color_lut, font, mem, true, 0x1, 0x20, 0x00, 0x20, 0x20, 0x20, 0x00, 0x00, 0x00}
+	vicky := Vicky{tfb, bfb, text, fg, bg, font, mem, true, 0x1, 0x20, 0x00, 0x20, 0x20, 0x20, 0x00, 0x00, 0x00}
 	return &vicky, nil
 }
 
@@ -115,8 +113,8 @@ func (v *Vicky) RederBitmapText() {
 				fnttmp[text_x] = cursor_char * 64
 			}
 
-			fgctmp[text_x] = binary.LittleEndian.Uint32(v.FG_lut[f][:])
-			bgctmp[text_x] = binary.LittleEndian.Uint32(v.BG_lut[b][:])
+			fgctmp[text_x] = binary.LittleEndian.Uint32(f_color_lut[f][:]) // text LUT - xxx: change name
+			bgctmp[text_x] = binary.LittleEndian.Uint32(b_color_lut[b][:]) // text LUT
 		}
 
 		for font_line = 0; font_line < 8; font_line += 1 { // for every line of text - over 8 lines of font
@@ -185,6 +183,12 @@ func (v *Vicky) Read(address uint32) byte {
 
 	case address == 0xAF_070C:
 		return byte(0)
+
+	case address >= 0xAF_8000 && address <= 0xAF_87FF:	// FONT_MEMORY_BANK0
+		return mem[a]
+
+	case address >= 0xAF_8800 && address <= 0xAF_8FFF:	// FONT_MEMORY_BANK1  - xxx: NOT USED?
+	return mem[b]
 
 	case address >= 0xAF_A000 && address<=0xAF_BFFF:
 		return byte(text[address-0xAF_A000])

@@ -311,7 +311,6 @@ func main() {
 	var cursor_counter int32                // how many ticks remains to flip cursor visible
 	
 	// main loop -------------------------------------------------------------------
-	//starting_fb_row_pos := 640*p.GPU.Border_y_size + (p.GPU.Border_x_size)
 	running = true
 	for running {
 		p.GPU.RederBitmapText()
