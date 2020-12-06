@@ -180,9 +180,9 @@ func main() {
 	//waitForEnter()
 	//p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
 	//p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
-	p.LoadHex("/home/aniou/c256/Kernel_FMX.old/kernel.hex")
+	//p.LoadHex("/home/aniou/c256/Kernel_FMX.old/kernel.hex")
 	//p.LoadHex("/home/aniou/c256/src/c256-gui-shim/c256-gui-shim2.hex")
-	p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
+	//p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
 	//p.LoadHex("/home/aniou/c256/FoenixIDE-release-0.4.2.1/bin/Release/roms/kernel.hex")
 	p.CPU.PC = 0xff00
 	p.CPU.RK = 0x00
@@ -191,6 +191,10 @@ func main() {
 	//memoryDump(p, 0x00fff0)
 	//memoryDump(p, 0x001000)
 
+	p.LoadHex("/home/aniou/c256/kernel4.hex")
+	p.LoadHex("/home/aniou/c256/src/graph4.hex")
+	p.CPU.PC = 0x0000
+	p.CPU.RK = 0x03
 
 	p.CPU.Bus.EaWrite(0xAF_0005, 0x20) // border B 
 	p.CPU.Bus.EaWrite(0xAF_0006, 0x00) // border G
@@ -340,7 +344,6 @@ func main() {
 	// main loop -------------------------------------------------------------------
 	starting_fb_row_pos := 640*p.GPU.Border_y_size + (p.GPU.Border_x_size)
 	running = true
-	waitForEnter()
 	for running {
 		cursor_state =        p.CPU.Bus.EaRead(0xAF_0010)
 		cursor_char  = uint32(p.CPU.Bus.EaRead(0xAF_0012))
@@ -388,10 +391,11 @@ func main() {
 
 		// update screen - start
 		texture.UpdateRGBA(nil, fb, 640)
+		texture2.UpdateRGBA(nil, p.GPU.BFB[0xc000:], 640)		// bitmap texture
 		//renderer.SetDrawColor(0x40, 0x00, 0x40, 255)
 		//renderer.Clear()
-		renderer.Copy(texture2, nil, nil)
 		renderer.Copy(texture, nil, nil)
+		renderer.Copy(texture2, nil, nil)
 		renderer.Present()
 		// update screen - end
 

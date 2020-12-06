@@ -3,16 +3,18 @@ package vicky
 import (
 	"fmt"
 	"encoding/binary"
-	_ "github.com/aniou/go65c816/lib/mylog"
+	"github.com/aniou/go65c816/lib/mylog"
 )
 
+var bfb  []uint32
 var text []uint32
 var fg   []uint32
 var bg   []uint32
-var mem  []byte
+var mem   []byte
 
 type Vicky struct {
 	FB     *[]uint32
+	BFB    []uint32		// bitmap framebuffer
 	TEXT   []uint32
 	FG     []uint32
 	BG     []uint32
@@ -32,14 +34,15 @@ func init() {
 	text = make([]uint32,  8192)
 	fg   = make([]uint32,  8192)
 	bg   = make([]uint32,  8192)
-	mem  = make([]byte  , 65536)
+	mem  = make([]byte  , 65536 * 7) // bank $A0 to F0
+	bfb  = make([]uint32, 65536 * 6) // whole bank $B0 for bitmap start from BM_START_ADDY
 	fmt.Println("vicky areas are initialized")
 }
 
 
 func New() (*Vicky, error) {
 	//vicky := Vicky{nil, nil, nil, nil, nil}
-	vicky := Vicky{nil, text, fg, bg, &f_color_lut, &b_color_lut, mem, 0x1, 0x20, 0x00, 0x20, 0x20, 0x20}
+	vicky := Vicky{nil, bfb, text, fg, bg, &f_color_lut, &b_color_lut, mem, 0x1, 0x20, 0x00, 0x20, 0x20, 0x20}
 	return &vicky, nil
 }
 
@@ -112,6 +115,9 @@ func (v *Vicky) Read(address uint32) byte {
 	case address == 0xAF_E80E:				// this is Trinity, not Vicky, XXX
 		return 0x03					// BASIC
 	
+	case address >= 0xB0_0000 && address <= 0xBF_FFFF:
+		return mem[a]
+	
 	default:
 		mylog.Logger.Log(fmt.Sprintf("vicky: read from addr %6X is not implemented, 0 returned", address))
 		return 0
@@ -166,6 +172,17 @@ func (v *Vicky) Write(address uint32, val byte) {
 		fgc := uint32((val & 0xF0)>> 4)
 		fg[addr] = fgc
 		bg[addr] = bgc
+
+	case address >= 0xB0_0000 && address <= 0xBF_FFFF:
+		mem[a] = val
+		if val == 2 {
+			bfb[a-0x01_0000] = (uint32(val) << 8) | 0x000000FF	// just for test, no LUT at this moment
+		} else {
+			fmt.Printf("> %d %d\n", a, val)
+			bfb[a-0x01_0000] = 0xFFFF00FF	// just for test, no LUT at this moment
+		}
+
+		//bfb[a-0x01_0000] = 0x13458BFF 	// just for test, no LUT at this moment
 	
 	default:
 		mylog.Logger.Log(fmt.Sprintf("vicky: write for addr %6X is not implemented", address))
