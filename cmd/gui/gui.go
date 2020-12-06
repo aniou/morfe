@@ -2,7 +2,7 @@
 package main
 
 import (
-	"encoding/binary"
+	_ "encoding/binary"
 	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
 	"log"
@@ -26,10 +26,6 @@ var   CPU_STEP uint64  = 14318
 
 var winTitle string = "Go-SDL2 Events"
 var winWidth, winHeight int32 = 640, 480
-
-// global, for performance reasons
-var fb []uint32
-var font [256 * 8 * 8]byte // 256 chars * 8 lines * 8 columns
 
 type GUI struct {
 	p *platform.Platform
@@ -92,16 +88,16 @@ func waitForEnter() {
 	fmt.Scanln() // wait for Enter Key
 }
 
-func loadFont(fontset *[2048]uint32) {
+func loadFont(p *platform.Platform, fontset *[2048]uint32) {
 	for i, v := range fontset {
 		for j := 0; j < 8; j = j + 1 {
 			v = v << 1
 			if (v & 256) == 256 {
 				//fmt.Printf("#")
-				font[i*8+j] = 1
+				p.GPU.FONT[i*8+j] = 1
 			} else {
 				//fmt.Printf(" ")
-				font[i*8+j] = 0
+				p.GPU.FONT[i*8+j] = 0
 			}
 		}
 		//fmt.Printf("\n")
@@ -154,19 +150,18 @@ func newTexture(renderer *sdl.Renderer) *sdl.Texture {
 
 func main() {
 	var err error
-	fb = make([]uint32, 640*480)
-
 
 	//pseudoInit()          // fill LUT table
 	// pre-defined font at start
-	loadFont(&font_st_8x8)
 
 	// platform init
 	p := platform.New()
 	gui := GUI{p}
 
 	p.InitGUI()
-	p.GPU.FB   = &fb
+	loadFont(p, &font_st_8x8)
+
+
 	//p.LoadHex("/home/aniou/c256/go65c816/data/matrix.hex")
 
 	/*
@@ -178,23 +173,24 @@ func main() {
 
 	//memoryDump(p, 0x381000)
 	//waitForEnter()
-	//p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
 	//p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
 	//p.LoadHex("/home/aniou/c256/Kernel_FMX.old/kernel.hex")
 	//p.LoadHex("/home/aniou/c256/src/c256-gui-shim/c256-gui-shim2.hex")
-	//p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
-	//p.LoadHex("/home/aniou/c256/FoenixIDE-release-0.4.2.1/bin/Release/roms/kernel.hex")
+	//p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
+
+	// testing text mode with old kernel and vicky I
+	p.LoadHex("/home/aniou/c256/FoenixIDE-release-0.4.2.1/bin/Release/roms/kernel.hex")
+	p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
 	p.CPU.PC = 0xff00
 	p.CPU.RK = 0x00
-	//p.CPU.PC = 0x0000
-	//p.CPU.RK = 0x03
-	//memoryDump(p, 0x00fff0)
-	//memoryDump(p, 0x001000)
 
+	/*
+	// testing bitmap with old kernel and vicky I
 	p.LoadHex("/home/aniou/c256/kernel4.hex")
 	p.LoadHex("/home/aniou/c256/src/graph4.hex")
 	p.CPU.PC = 0x0000
 	p.CPU.RK = 0x03
+	*/
 
 	p.CPU.Bus.EaWrite(0xAF_0005, 0x20) // border B 
 	p.CPU.Bus.EaWrite(0xAF_0006, 0x00) // border G
@@ -275,7 +271,7 @@ func main() {
 	texture := newTexture(renderer)
 
 	// bit texture
-	texture2 := newTexture(renderer)
+	//texture2 := newTexture(renderer)		- temporary
 
 
 	disasm := false
@@ -303,34 +299,6 @@ func main() {
 	}
 
 
-	// text render
-	//var text_cols, text_rows uint32
-	var text_cols uint32 = (640 - (p.GPU.Border_x_size * 2)) / 8 // xxx - parametrize screen width
-	var text_rows uint32 = (480 - (p.GPU.Border_y_size * 2)) / 8 // xxx - parametrize screen height
-	if debug.gui {
-		fmt.Printf("text_rows: %d\n", text_rows)
-		fmt.Printf("text_cols: %d\n", text_cols)
-	}
-
-	var cursor_counter int32		// how many ticks remains to flip cursor visible
-	var cursor_visible bool = true		// to implement cursor blinking
-	var cursor_x, cursor_y uint32 // row and column of cursor
-	var cursor_char uint32    // cursor character
-	var cursor_state byte     // cursor register, various states
-	var text_x, text_y uint32 // row and column of text
-	var text_row_pos uint32   // beginning of current text row in text memory
-	var fb_row_pos uint32     // beginning of current FB   row in memory
-	var font_pos uint32       // position in font array (char * 64 + char_line * 8)
-	var font_line uint32      // line in current font
-	var font_row_pos uint32   // position of line in current font (=font_line*8 because every line has 8 bytes)
-	var i uint32		  // counter
-
-	// placeholders recalculated per row of text, holds values for text_cols loop --
-	var fnttmp [128]uint32 	  // position in font array, from char value
-	var fgctmp [128]uint32 	  // foreground color cache (rgba) for one line
-	var bgctmp [128]uint32 	  // background color cache (rgba) for one line
-	var dsttmp [128]uint32 	  // position in destination memory array
-
 	// -----------------------------------------------------------------------------
 	sdl.SetHint("SDL_HINT_RENDER_BATCHING", "1")
 	sdl.StartTextInput()
@@ -340,62 +308,20 @@ func main() {
 	var mult       uint32 = prev_ticks
 	var ticks_now, frames uint32
 	var stepCycles, prevCycles uint64 = 0, 0
+	var cursor_counter int32                // how many ticks remains to flip cursor visible
 	
 	// main loop -------------------------------------------------------------------
-	starting_fb_row_pos := 640*p.GPU.Border_y_size + (p.GPU.Border_x_size)
+	//starting_fb_row_pos := 640*p.GPU.Border_y_size + (p.GPU.Border_x_size)
 	running = true
 	for running {
-		cursor_state =        p.CPU.Bus.EaRead(0xAF_0010)
-		cursor_char  = uint32(p.CPU.Bus.EaRead(0xAF_0012))
-		cursor_x     = uint32(p.CPU.Bus.EaRead(0xAF_0014))
-		cursor_y     = uint32(p.CPU.Bus.EaRead(0xAF_0016))
-
-		// render text - start
-		fb_row_pos = starting_fb_row_pos
-		for text_y = 0; text_y < text_rows; text_y += 1 { // over lines of text
-			text_row_pos = text_y * 128
-			for text_x = 0; text_x < text_cols; text_x += 1 { // pre-calculate data for x-axis
-				fnttmp[text_x] = p.GPU.TEXT[text_row_pos+text_x] * 64 // position in font array
-				dsttmp[text_x] = text_x * 8                     // position of char in dest FB
-
-				f := p.GPU.FG[text_row_pos+text_x] // fg and bg colors
-				b := p.GPU.BG[text_row_pos+text_x]
-
-				if cursor_visible && (cursor_y == text_y) && (cursor_x == text_x) && (cursor_state & 0x01 == 1) {
-					f = uint32((p.CPU.Bus.EaRead(0xAF_0013) & 0xf0) >> 4)
-					b = uint32((p.CPU.Bus.EaRead(0xAF_0013) & 0x0f))
-					fnttmp[text_x] = cursor_char * 64
-				}
-
-				fgctmp[text_x] = binary.LittleEndian.Uint32(p.GPU.FG_lut[f][:])
-				bgctmp[text_x] = binary.LittleEndian.Uint32(p.GPU.BG_lut[b][:])
-			}
-
-			for font_line = 0; font_line < 8; font_line += 1 { // for every line of text - over 8 lines of font
-				font_row_pos = font_line * 8
-				for text_x = 0; text_x < text_cols; text_x += 1 { // for each line iterate over columns of text
-					font_pos = fnttmp[text_x] + font_row_pos
-					for i = 0; i < 8; i += 1 { // for every font iterate over 8 pixels of font
-						if font[font_pos+i] == 0 {
-							fb[fb_row_pos+dsttmp[text_x]+i] = bgctmp[text_x]
-						} else {
-							fb[fb_row_pos+dsttmp[text_x]+i] = fgctmp[text_x]
-						}
-					}
-				}
-				fb_row_pos += 640
-			}
-		}
-		// render text - end
+		p.GPU.RederBitmapText()
 
 
 		// update screen - start
-		texture.UpdateRGBA(nil, fb, 640)
-		texture2.UpdateRGBA(nil, p.GPU.BFB[0xc000:], 640)		// bitmap texture
-		//renderer.SetDrawColor(0x40, 0x00, 0x40, 255)
-		//renderer.Clear()
+		//texture2.UpdateRGBA(nil, p.GPU.BFB[0xc000:], 640)		// bitmap texture
+		texture.UpdateRGBA(nil, p.GPU.TFB, 640)				// overlay should be supported by alpha
 		renderer.Copy(texture, nil, nil)
-		renderer.Copy(texture2, nil, nil)
+		//renderer.Copy(texture2, nil, nil)				// temporary
 		renderer.Present()
 		// update screen - end
 
@@ -409,9 +335,8 @@ func main() {
 			// cursor calculation - flip every CURSOR_BLINK_RATE ticks
 			cursor_counter = cursor_counter - int32(mult)
 			if cursor_counter <= 0 {
-				//fmt.Printf("cursor: %d %v\n", cursor_counter, cursor_visible)
 				cursor_counter = CURSOR_BLINK_RATE
-				cursor_visible = ! cursor_visible
+				p.GPU.Cursor_visible = ! p.GPU.Cursor_visible
 			}
 
 			// cpu step ---------------------------------------------------------
@@ -501,9 +426,9 @@ func main() {
 					case sdl.K_F12:
 						running = false
 					case sdl.K_F11:
-						loadFont(&font_st_8x8)
+						loadFont(p, &font_st_8x8)
 					case sdl.K_F10:
-						loadFont(&font_c256_8x8)
+						loadFont(p, &font_c256_8x8)
 					case sdl.K_F9:
 						if disasm {
 							disasm = false 
@@ -531,7 +456,7 @@ func main() {
 		window.SetDisplayMode(&current_mode)
 	}
 
-	memoryDump(p, 0xaf_0000)
+	//memoryDump(p, 0xaf_0000)
 	//renderer.Destroy()
 	//window.Destroy()
 	//sdl.Quit()
