@@ -1811,7 +1811,7 @@ func (cpu *CPU) op_ror(info *stepInfo) {
 
 // RTI - Return from Interrupt
 func (cpu *CPU) op_rti(info *stepInfo) {
-	mylog.Logger.Log("cpu: rti")
+	//mylog.Logger.Log("cpu: rti")
 	//cpu.SetFlags(cpu.pull()&0xEF | 0x20)
 	if cpu.E == 1 {
 		cpu.SetFlags(cpu.pull())
