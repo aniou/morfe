@@ -20,7 +20,6 @@ type Vicky struct {
 	TEXT   []uint32
 	FG     []uint32
 	BG     []uint32
-	FONT   []byte
 	mem    []byte
 
 	Cursor_visible  bool
@@ -51,11 +50,26 @@ func init() {
 
 func New() (*Vicky, error) {
 	//vicky := Vicky{nil, nil, nil, nil, nil}
-	vicky := Vicky{tfb, bfb, text, fg, bg, font, mem, true, 0x1, 0x20, 0x00, 0x20, 0x20, 0x20, 0x00, 0x00, 0x00}
+	vicky := Vicky{tfb, bfb, text, fg, bg, mem, true, 0x1, 0x20, 0x00, 0x20, 0x20, 0x20, 0x00, 0x00, 0x00}
 	return &vicky, nil
 }
 
 // GUI-specific
+// updates font cache by converting bits to bytes
+// position - position of indyvidual byte in font bank
+// val      - particular value
+func updateFontCache(pos uint32, val byte) {
+	pos = pos * 8
+	for j := uint32(8); j > 0; j = j - 1 {		// counting down spares from shifting val left
+		if (val & 1) == 1 {
+			font[pos + j - 1] = 1
+		} else {
+			font[pos + j - 1] = 0
+		}
+		val = val >> 1
+	}
+}
+
 func (v *Vicky) FillByBorderColor() {
         val := binary.LittleEndian.Uint32([]byte{v.border_color_r, v.border_color_g, v.border_color_b, 0xff})                                             
         tfb[0] = val
@@ -188,7 +202,7 @@ func (v *Vicky) Read(address uint32) byte {
 		return mem[a]
 
 	case address >= 0xAF_8800 && address <= 0xAF_8FFF:	// FONT_MEMORY_BANK1  - xxx: NOT USED?
-	return mem[b]
+		return mem[a]
 
 	case address >= 0xAF_A000 && address<=0xAF_BFFF:
 		return byte(text[address-0xAF_A000])
@@ -249,6 +263,15 @@ func (v *Vicky) Write(address uint32, val byte) {
 		byte_in_lut := byte(a & 0x03)
 		num := byte(a >> 2)
 		b_color_lut[num][byte_in_lut] = val
+
+	case address >= 0xAF_8000 && address <= 0xAF_87FF:	// FONT_MEMORY_BANK0
+		mem[a] = val
+		updateFontCache(address - 0xAF_8000, val)	// every bit in font cache is mapped to byte
+
+	case address >= 0xAF_8800 && address <= 0xAF_8FFF:	// FONT_MEMORY_BANK1  - xxx: NOT USED?
+		mem[a] = val
+		// XXX - at this moment we don't use second bank at all
+		//updateFontCache(address - 0xAF_8800, val)	// every bit in font cache is mapped to byte
 
 	case address >= 0xAF_A000 && address<=0xAF_BFFF:
 		text[address-0xAF_A000] = uint32(val)

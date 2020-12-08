@@ -88,6 +88,7 @@ func waitForEnter() {
 	fmt.Scanln() // wait for Enter Key
 }
 
+/*
 func loadFont(p *platform.Platform, fontset *[2048]uint32) {
 	for i, v := range fontset {
 		for j := 0; j < 8; j = j + 1 {
@@ -103,6 +104,7 @@ func loadFont(p *platform.Platform, fontset *[2048]uint32) {
 		//fmt.Printf("\n")
 	}
 }
+*/
 
 // debug routines
 func debugPixelFormat(window *sdl.Window) {
@@ -159,7 +161,7 @@ func main() {
 	gui := GUI{p}
 
 	p.InitGUI()
-	loadFont(p, &font_st_8x8)
+	//loadFont(p, &font_st_8x8)
 
 
 	//p.LoadHex("/home/aniou/c256/go65c816/data/matrix.hex")
@@ -425,9 +427,9 @@ func main() {
 					case sdl.K_F12:
 						running = false
 					case sdl.K_F11:
-						loadFont(p, &font_st_8x8)
+						//loadFont(p, &font_st_8x8)
 					case sdl.K_F10:
-						loadFont(p, &font_c256_8x8)
+						//loadFont(p, &font_c256_8x8)
 					case sdl.K_F9:
 						if disasm {
 							disasm = false 

@@ -228,8 +228,8 @@ rw  $AF:0017        $AF:0017      VKY_TXT_CURSOR_Y_REG_H
     $AF:6000        $AF:67FF      TILE_MAP2               Tile Map 2 Memory Block
     $AF:6800        $AF:6FFF      TILE_MAP3               Tile Map 3 Memory Block
     $AF:7000        $AF:7FFF      UNDEFINED - RESERVED
-    $AF:8000        $AF:87FF      FONT_MEMORY_BANK0       FONT Character Graphic Mem
-    $AF:8800        $AF:8FFF      FONT_MEMORY_BANK1       FONT Character Graphic Mem
+rw  $AF:8000        $AF:87FF      FONT_MEMORY_BANK0       FONT Character Graphic Mem
+rw  $AF:8800        $AF:8FFF      FONT_MEMORY_BANK1       FONT Character Graphic Mem
     $AF:9000        $AF:9FFF      UNDEFINED - RESERVED
 rw  $AF:A000        $AF:BFFF      CS_TEXT_MEM_PTR         Text Memory Block
 rw  $AF:C000        $AF:DFFF      CS_COLOR_MEM_PTR        Color Text Memory Block
@@ -245,9 +245,15 @@ Master Control Registers
 Modes are enabled and disabled via the Vicky Master Control Register at $AF:0000
 via the control bits:
 
+aa
+--
+
+cc
+++
+
+MASTER_CTRL_REG_L = $AF:0000
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
  ::
-    
-    MASTER_CTRL_REG_L	    = $AF:0000
 
     Mstr_Ctrl_Text_Mode_En  = $01   Enable the Text Mode
     Mstr_Ctrl_Text_Overlay  = $02   Enable the Overlay of the text mode on top of 
@@ -283,9 +289,6 @@ doubled pixels.
 Border Control Registers
 ========================
 
-.. warning::
-   still vicky I
-
  ::
 
   $AF:0004 
@@ -304,14 +307,22 @@ Modes
 The bitmap is stored anywhere in $B0 bank memory. If the bitmap is supposed to
 start at $B0:0000, the BM_START_ADDY has to be set to $00:0000.
 
+test
+  ddsds
+  dsdsd
+
+BM_CONTROL_REG = $AF0140
  ::
 
-    BM_CONTROL_REG = $AF0140
-        Bit 0 = disable/enable
-        Bit 1-3 = Target LUT address located at AF:2000 and up.
-    BM_START_ADDY_L = $AF0141
-    BM_START_ADDY_M = $AF0142
-    BM_START_ADDY_H = $AF0143
+   Bit 0   = disable/enable
+   Bit 1-3 = Target LUT address located at AF:2000 and up.
+
+BM_START_ADDY_L = $AF0141
+BM_START_ADDY_M = $AF0142
+BM_START_ADDY_H = $AF0143
+ ::
+  
+   Test
 
 
 LUT
