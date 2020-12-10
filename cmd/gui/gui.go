@@ -181,10 +181,12 @@ func main() {
 	//p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
 
 	// testing text mode with old kernel and vicky I
+	/*
 	p.LoadHex("/home/aniou/c256/FoenixIDE-release-0.4.2.1/bin/Release/roms/kernel.hex")
 	p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
 	p.CPU.PC = 0xff00
 	p.CPU.RK = 0x00
+	*/
 
 	/*
 	// testing bitmap with old kernel and vicky I
@@ -193,6 +195,12 @@ func main() {
 	p.CPU.PC = 0x0000
 	p.CPU.RK = 0x03
 	*/
+ 
+	// testing new kernel and bitmap
+	p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
+	p.LoadHex("/home/aniou/c256/graph3-1.hex")
+	p.CPU.PC = 0x0000
+	p.CPU.RK = 0x03
 
 	p.CPU.Bus.EaWrite(0xAF_0005, 0x20) // border B 
 	p.CPU.Bus.EaWrite(0xAF_0006, 0x00) // border G
@@ -251,7 +259,6 @@ func main() {
 	defer window.Destroy()
 	debugPixelFormat(window)
 
-
 	// step 3: Renderer
 	var renderer *sdl.Renderer
 	renderer, err = sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
@@ -273,7 +280,7 @@ func main() {
 	texture := newTexture(renderer)
 
 	// bit texture
-	//texture2 := newTexture(renderer)		- temporary
+	texture2 := newTexture(renderer)
 
 
 	disasm := false
@@ -319,10 +326,10 @@ func main() {
 
 
 		// update screen - start
-		//texture2.UpdateRGBA(nil, p.GPU.BFB[0xc000:], 640)		// bitmap texture
+		texture2.UpdateRGBA(nil, p.GPU.BFB, 640)		// bitmap texture
 		texture.UpdateRGBA(nil, p.GPU.TFB, 640)				// overlay should be supported by alpha
 		renderer.Copy(texture, nil, nil)
-		//renderer.Copy(texture2, nil, nil)				// temporary
+		renderer.Copy(texture2, nil, nil)				// temporary
 		renderer.Present()
 		// update screen - end
 
