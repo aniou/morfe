@@ -198,7 +198,7 @@ func main() {
  
 	// testing new kernel and bitmap
 	p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
-	p.LoadHex("/home/aniou/c256/graph3-1.hex")
+	p.LoadHex("/home/aniou/c256/graph5bm0.hex")
 	p.CPU.PC = 0x0000
 	p.CPU.RK = 0x03
 

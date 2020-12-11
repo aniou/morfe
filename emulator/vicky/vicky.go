@@ -81,6 +81,7 @@ func updateFontCache(pos uint32, val byte) {
 }
 
 func (v *Vicky) FillByBorderColor() {
+	// XXX: check this, probably invalid, see LUT table conversion
         val := binary.LittleEndian.Uint32([]byte{v.border_color_r, v.border_color_g, v.border_color_b, 0xff})                                             
         tfb[0] = val
         for bp := 1; bp < len(tfb); bp *= 2 {
@@ -324,10 +325,13 @@ func (v *Vicky) Write(address uint32, val byte) {
 		num := byte(a >> 2)
 		b_color_lut[num][byte_in_lut] = val
 
+	// XXX - probably this needs correction with different
+	//       bitmap format than ARGB
 	case address >= 0xAF_2000 && address <= 0xAF_3FFF:	// GRPH_LUT0_PTR to GRPH_LUT7_PTR
 		src := a & 0xfffffffc
 		dst := ((address - 0xAF_2000) >>2 )		// clear bits 0-1, we need 4 bytes for in mem BGRA
-		pix := binary.LittleEndian.Uint32([]byte{mem[src+2], mem[src+1], mem[src] , mem[src+3]})
+								// in memory representation fo uint32: ARGB
+		pix := binary.LittleEndian.Uint32([]byte{mem[src], mem[src+1], mem[src+2], mem[src+3]})
 		blut[dst] = pix
 		//fmt.Printf("addr: %6x val %2x mem %4x dst: %4d pix: %08x ram: %v\n", address, val, src, dst, pix, mem[src:src+4])
 
