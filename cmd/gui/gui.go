@@ -281,6 +281,7 @@ func main() {
 
 	// bit texture
 	texture2 := newTexture(renderer)
+	texture2.SetBlendMode(sdl.BLENDMODE_BLEND)
 
 
 	disasm := false
@@ -326,9 +327,11 @@ func main() {
 
 
 		// update screen - start
+		renderer.SetDrawColor(0, 255, 0, 255)
+		renderer.Clear()
 		texture2.UpdateRGBA(nil, p.GPU.BFB, 640)		// bitmap texture
 		texture.UpdateRGBA(nil, p.GPU.TFB, 640)				// overlay should be supported by alpha
-		renderer.Copy(texture, nil, nil)
+		//renderer.Copy(texture, nil, nil)
 		renderer.Copy(texture2, nil, nil)				// temporary
 		renderer.Present()
 		// update screen - end

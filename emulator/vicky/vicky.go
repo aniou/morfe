@@ -331,9 +331,18 @@ func (v *Vicky) Write(address uint32, val byte) {
 		src := a & 0xfffffffc
 		dst := ((address - 0xAF_2000) >>2 )		// clear bits 0-1, we need 4 bytes for in mem BGRA
 								// in memory representation fo uint32: ARGB
-		pix := binary.LittleEndian.Uint32([]byte{mem[src], mem[src+1], mem[src+2], mem[src+3]})
-		blut[dst] = pix
-		//fmt.Printf("addr: %6x val %2x mem %4x dst: %4d pix: %08x ram: %v\n", address, val, src, dst, pix, mem[src:src+4])
+		if (dst & 0xff) == 0 {
+			blut[dst] = 0x00FFFFFF                  // LUTx[0] is always transparent, by design
+
+		} else {
+			blut[dst] = binary.LittleEndian.Uint32(
+					[]byte{mem[src], 
+					       mem[src+1], 
+					       mem[src+2], 
+					       mem[src+3],
+				        })
+		}
+		//fmt.Printf("addr: %6x val %2x mem %4x dst: %4d pix: %08x ram: %v\n", address, val, src, dst, blut[dst], mem[src:src+4])
 
 	case address >= 0xAF_8000 && address <= 0xAF_87FF:	// FONT_MEMORY_BANK0
 		updateFontCache(address - 0xAF_8000, val)	// every bit in font cache is mapped to byte
