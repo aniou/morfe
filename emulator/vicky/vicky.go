@@ -6,18 +6,20 @@ import (
 	"github.com/aniou/go65c816/lib/mylog"
 )
 
-var bfb  []uint32	// bitmap0 framebuffer
-var tfb  []uint32	// text    framebuffer
-var text []uint32	// text memory cache
-var fg   []uint32	// text foreground LUT cache
-var bg   []uint32	// text background LUT cache
-var mem  []byte		// main vicky memory area
-var font []byte		// font cache       : 256 chars  * 8 lines * 8 columns
-var blut []uint32	// bitmap LUT cache : 256 colors * 8 banks (lut0 to lut7)
+var bm0fb  []uint32	// bitmap0 framebuffer
+var bm1fb  []uint32	// bitmap1 framebuffer
+var tfb    []uint32	// text    framebuffer
+var text   []uint32	// text memory cache
+var fg     []uint32	// text foreground LUT cache
+var bg     []uint32	// text background LUT cache
+var mem    []byte	// main vicky memory area
+var font   []byte	// font cache       : 256 chars  * 8 lines * 8 columns
+var blut   []uint32	// bitmap LUT cache : 256 colors * 8 banks (lut0 to lut7)
 
 type Vicky struct {
 	TFB    []uint32		// text   framebuffer
-	BFB    []uint32		// bitmap framebuffer
+	BM0FB  []uint32		// bitmap0 framebuffer
+	BM1FB  []uint32		// bitmap1 framebuffer
 	TEXT   []uint32
 	MEM    []byte
 
@@ -32,8 +34,8 @@ type Vicky struct {
         Border_color_b  byte
         Border_color_g  byte
         Border_color_r  byte
-        Border_x_size   uint32
-        Border_y_size   uint32
+        Border_x_size   int32
+        Border_y_size   int32
 	Background      [3]byte		// r, g, b
 
 	starting_fb_row_pos uint32
@@ -53,7 +55,8 @@ func init() {
 	bg   = make([]uint32,  8192)
 	mem  = make([]byte  ,  0x10_0000 + 0x40_0000)	// vicky and bitmap area
 	tfb  = make([]uint32,    480000)		// for max 800x600
-	bfb  = make([]uint32,  0x40_0000)		// max bitmap area - XXX - too large, we always write from 0x00
+	bm0fb  = make([]uint32,  0x40_0000)		// max bitmap area - XXX - too large, we always write from 0x00
+	bm1fb  = make([]uint32,  0x40_0000)		// max bitmap area - XXX - too large, we always write from 0x00
 	font = make([]byte, 256 * 8 * 8)
 	blut = make([]uint32, 256*8)
 	fmt.Println("vicky areas are initialized")
@@ -63,7 +66,8 @@ func init() {
 func New() (*Vicky, error) {
 	v := new(Vicky)
 	v.TFB = tfb
-	v.BFB = bfb
+	v.BM0FB = bm0fb
+	v.BM1FB = bm1fb
 	v.TEXT = text
 	v.Cursor_visible = true
 	v.BM0_visible    = true
@@ -109,16 +113,13 @@ func updateFontCache(pos uint32, val byte) {
 }
 
 func (v *Vicky) recalculateScreen() {
-	// XXX: check this, probably invalid, see LUT table conversion
-        //val := binary.LittleEndian.Uint32([]byte{v.Border_color_r, v.Border_color_g, v.Border_color_b, 0xff}) 
-        //tfb[0] = val
-        //for bp := 1; bp < len(tfb); bp *= 2 {
-        //        copy(tfb[bp:], tfb[:bp])
-        //}
+	if ! v.Border_visible {
+		return
+	}
 
-	v.starting_fb_row_pos = 640*v.Border_y_size + (v.Border_x_size)
-        v.text_cols = (640 - (v.Border_x_size * 2)) / 8 // xxx - parametrize screen width
-        v.text_rows = (480 - (v.Border_y_size * 2)) / 8 // xxx - parametrize screen height
+	v.starting_fb_row_pos = 640*uint32(v.Border_y_size) + uint32(v.Border_x_size)
+        v.text_cols = (640 - (uint32(v.Border_x_size)* 2)) / 8 // xxx - parametrize screen width
+        v.text_rows = (480 - (uint32(v.Border_y_size)* 2)) / 8 // xxx - parametrize screen height
         //if debug.gui {
                 fmt.Printf("text_rows: %d\n", v.text_rows)
                 fmt.Printf("text_cols: %d\n", v.text_cols)
@@ -312,8 +313,14 @@ func (v *Vicky) Write(address uint32, val byte) {
 
 	case address == 0xAF_0004:                              // BORDER_CTRL_REG
 		if (val & 0x01) == 1 {
+			v.Border_x_size  = int32(mem[0x0008])
+			v.Border_y_size  = int32(mem[0x0009])
 			v.Border_visible = true
+			v.recalculateScreen()
 		} else {
+			v.Border_x_size  = 0
+			v.Border_y_size  = 0
+			v.recalculateScreen()
 			v.Border_visible = false
 		}
 		// xxx: v.recalculateScreen()
@@ -331,12 +338,16 @@ func (v *Vicky) Write(address uint32, val byte) {
 		v.recalculateScreen()
 
 	case address == 0xAF_0008:				// BORDER_X_SIZE
-		v.Border_x_size = uint32(val & 0x3F)		// XXX: in spec - 0-32, bitmask allows to 0-63
-		v.recalculateScreen()
+		if v.Border_visible {
+			v.Border_x_size = int32(val & 0x3F)	// XXX: in spec - 0-32, bitmask allows to 0-63
+			v.recalculateScreen()
+		}
 
 	case address == 0xAF_0009:				// BORDER_Y_SIZE
-		v.Border_y_size = uint32(val & 0x3F)		// XXX: in spec - 0-32, bitmask allows to 0-63
-		v.recalculateScreen()
+		if v.Border_visible {
+			v.Border_y_size = int32(val & 0x3F)	// XXX: in spec - 0-32, bitmask allows to 0-63
+			v.recalculateScreen()
+		}
 
 	case address == 0xAF_000D:	// BACKGROUND_COLOR_B
 		v.Background[2] = val
@@ -441,12 +452,13 @@ func (v *Vicky) Write(address uint32, val byte) {
 	case address >= 0xB0_0000 && address <= 0xEF_FFFF:                             // 4MB, xxx: parametrize
 		if address >= v.bm0_start_addr && address<v.bm0_start_addr + 0x75300 { // max 800x600 bytes
 			dst := address - v.bm0_start_addr
-			//fmt.Printf("bfb addr: %6X dst: %6X val %2X blut %4X\n", address, dst, val, blut[v.bm0_blut_pos + uint32(val)])
-			bfb[dst] = blut[v.bm0_blut_pos + uint32(val)]
+			//fmt.Printf("bm0fb addr: %6X dst: %6X val %2X blut %4X\n", address, dst, val, blut[v.bm0_blut_pos + uint32(val)])
+			bm0fb[dst] = blut[v.bm0_blut_pos + uint32(val)]
 		}
 		if address >= v.bm1_start_addr && address<v.bm1_start_addr + 0x75300 {  // max 800x600 bytes
 			dst := address - v.bm1_start_addr
-			bfb[dst] = blut[v.bm1_blut_pos + uint32(val)]
+			//fmt.Printf("bm1fb addr: %6X dst: %6X val %2X blut %4X\n", address, dst, val, blut[v.bm1_blut_pos + uint32(val)])
+			bm1fb[dst] = blut[v.bm1_blut_pos + uint32(val)]
 		}
 	
 	default:

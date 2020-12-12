@@ -195,12 +195,10 @@ func main() {
 	*/
  
 	// testing new kernel and bitmap
-	/*
-	p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
-	p.LoadHex("/home/aniou/c256/graph5bm0.hex")
-	p.CPU.PC = 0x0000
-	p.CPU.RK = 0x03
-	*/
+	//p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
+	//p.LoadHex("/home/aniou/c256/graph5bm0.hex")
+	//p.CPU.PC = 0x0000
+	//p.CPU.RK = 0x03
 
 	p.CPU.Bus.EaWrite(0xAF_0005, 0x20) // border B 
 	p.CPU.Bus.EaWrite(0xAF_0006, 0x00) // border G
@@ -265,6 +263,9 @@ func main() {
 	texture_bm0 := newTexture(renderer)
 	texture_bm0.SetBlendMode(sdl.BLENDMODE_BLEND)
 
+	texture_bm1 := newTexture(renderer)
+	texture_bm1.SetBlendMode(sdl.BLENDMODE_BLEND)
+
 	// TODO - move it
 	disasm := false
 
@@ -305,12 +306,13 @@ func main() {
 	// current draw model ----------------------------------------------------------
 	//
 	// 1. fill by background color
-	// 2. update texture from bm0 fb       - TODO: bm1 too
-	// 3. apply texture with alpha
-	// 4. update texture with text
-	// 5. apply texture with alpha
-	// 6. draw frames
-	// 7. present
+	// 2. update texture from fb and apply with alpha
+	//    - for bm0
+	//    - then for bm1
+	// 3. draw text 
+	// 4. update texture with text and apply texture with alpha
+	// 5. draw frames
+	// 6. present
 
 
 	// main loop -------------------------------------------------------------------
@@ -321,33 +323,40 @@ func main() {
 		renderer.Clear()
 
 		// step 2 - bm0 and bm1 are updated in vicky, when write is made
-		if p.GPU.BM0_visible && p.GPU.Master_L & 0x0C == 0x0C {			// todo ?
-			texture_bm0.UpdateRGBA(nil, p.GPU.BFB, 640)
-			renderer.Copy(texture_bm0, nil, nil)
+		if p.GPU.Master_L & 0x0C == 0x0C {					// todo?
+			if p.GPU.BM0_visible {
+				texture_bm0.UpdateRGBA(nil, p.GPU.BM0FB, 640)
+				renderer.Copy(texture_bm0, nil, nil)
+			}
+
+			if p.GPU.BM1_visible  {
+				texture_bm1.UpdateRGBA(nil, p.GPU.BM1FB, 640)
+				renderer.Copy(texture_bm1, nil, nil)
+			}
 		}
 
-		// step 3, 4, 5
+		// step 3, 4
 		if p.GPU.Master_L & 0x01 == 0x01 {					// todo ?
 			p.GPU.RenderBitmapText()
 			texture_txt.UpdateRGBA(nil, p.GPU.TFB, 640)
 			renderer.Copy(texture_txt, nil, nil)
 		}	
 
-		// step 6: xxx - fix it
+		// stea 5: xxx - fix it
 		if p.GPU.Border_visible {
 			renderer.SetDrawColor(p.GPU.Border_color_r, 
 					      p.GPU.Border_color_g, 
 					      p.GPU.Border_color_b, 
 					      255)
 			renderer.FillRects([]sdl.Rect{
-				sdl.Rect{0, 0, 640, int32(p.GPU.Border_y_size)},
-				sdl.Rect{0, 480-int32(p.GPU.Border_y_size), 640, int32(p.GPU.Border_y_size)},
-				sdl.Rect{0, int32(p.GPU.Border_y_size),  int32(p.GPU.Border_x_size), 480-int32(p.GPU.Border_y_size)},
-				sdl.Rect{640-int32(p.GPU.Border_x_size), int32(p.GPU.Border_y_size), int32(p.GPU.Border_x_size), 480-int32(p.GPU.Border_y_size)},
+				sdl.Rect{0, 0, 640, p.GPU.Border_y_size},
+				sdl.Rect{0, 480-p.GPU.Border_y_size, 640, p.GPU.Border_y_size},
+				sdl.Rect{0, p.GPU.Border_y_size,  p.GPU.Border_x_size, 480-p.GPU.Border_y_size},
+				sdl.Rect{640-p.GPU.Border_x_size, p.GPU.Border_y_size, p.GPU.Border_x_size, 480-p.GPU.Border_y_size},
 			})
 		}
 
-		// step 7
+		// step 6
 		renderer.Present()
 		// update screen - end
 

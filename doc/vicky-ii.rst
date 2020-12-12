@@ -317,11 +317,12 @@ BM_CONTROL_REG = $AF0140
    Bit 0   = disable/enable
    Bit 1-3 = Target LUT address located at AF:2000 and up.
 
-BM_START_ADDY_L = $AF0141
-BM_START_ADDY_M = $AF0142
-BM_START_ADDY_H = $AF0143
+$AF:1041 - BM_START_ADDY_L
+$AF:1042 - BM_START_ADDY_M
+$AF:1042 - BM_START_ADDY_H
+ 
  ::
-  
+
    Test
 
 
