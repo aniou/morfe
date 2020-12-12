@@ -19,9 +19,6 @@ type Vicky struct {
 	TFB    []uint32		// text   framebuffer
 	BFB    []uint32		// bitmap framebuffer
 	TEXT   []uint32
-	FG     []uint32
-	BG     []uint32
-	mem    []byte
 
 	Cursor_visible  bool
 	BM0_visible     bool
@@ -60,8 +57,28 @@ func init() {
 
 func New() (*Vicky, error) {
 	//vicky := Vicky{nil, nil, nil, nil, nil}
-	vicky := Vicky{tfb, bfb, text, fg, bg, mem, true, true, true, 0x1, 0x20, 0x00, 0x20, 0x20, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0xB0_0000, 0xB0_0000}
-	return &vicky, nil
+	//vicky := Vicky{tfb, bfb, text, fg, bg, mem, true, true, true, 0x1, 0x20, 0x00, 0x20, 0x20, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0xB0_0000, 0xB0_0000}
+	v := new(Vicky)
+	v.TFB = tfb
+	v.BFB = bfb
+	v.TEXT = text
+	v.Cursor_visible = true
+	v.BM0_visible    = true
+	v.BM1_visible    = true
+	v.border_ctrl_reg = 0x01
+	v.border_color_b = 0x20
+	v.border_color_g = 0x00
+	v.border_color_r = 0x20
+	v.Border_x_size = 0x20
+	v.Border_y_size = 0x20
+	v.starting_fb_row_pos =  0x00
+	v.text_cols = 0x00
+	v.text_rows = 0x00
+	v.bm0_blut_pos = 0x00
+	v.bm1_blut_pos = 0x00
+	v.bm0_start_addr = 0xB0_0000
+	v.bm1_start_addr = 0xB0_0000
+	return v, nil
 }
 
 // GUI-specific
@@ -168,7 +185,7 @@ func (v *Vicky) Dump(address uint32) []byte {
         addr := address - 0xAF_0000
         //fmt.Printf(" %06X - %06X - %06X \n", mem.offset, start, addr)
         //return []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
-        return v.mem[addr:addr+0x10]         // XXX: configurable?
+        return mem[addr:addr+0x10]         // XXX: configurable?
 }
 
 func (v *Vicky) String() string {

@@ -222,11 +222,11 @@ func main() {
 	}
 
 	// test text
-	for i := range p.GPU.TEXT { // file text memory areas
-		p.GPU.FG[i] = 0x0e
-		p.GPU.BG[i] = 0x0d
-		p.GPU.TEXT[i] = 32
-	}
+	//for i := range p.GPU.TEXT { // file text memory areas
+	//	p.GPU.FG[i] = 0x0e
+	//	p.GPU.BG[i] = 0x0d
+	//	p.GPU.TEXT[i] = 32
+	//}
 
 	for c, _ := range p.GPU.TEXT {
 		p.GPU.TEXT[c] = 0
