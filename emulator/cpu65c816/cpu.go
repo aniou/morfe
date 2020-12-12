@@ -1147,7 +1147,7 @@ func (cpu *CPU) irq() {
 	cpu.D  = 0
 	cpu.RK = 0
 	cpu.PC   = cpu.nRead16_cross(0x00, 0xFFEE)
-	mylog.Logger.Log(fmt.Sprintf("\ncpu: irq triggered, PC %4X", cpu.PC))
+	//mylog.Logger.Log(fmt.Sprintf("\ncpu: irq triggered, PC %4X", cpu.PC))
 }
 
 
