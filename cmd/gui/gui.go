@@ -28,7 +28,8 @@ var winTitle string = "go65c816 / c256 emu"
 var winWidth, winHeight int32 = 640, 480
 
 type GUI struct {
-	p *platform.Platform
+	p	   *platform.Platform
+	fullscreen bool
 }
 
 type DEBUG struct {
@@ -149,8 +150,35 @@ func newTexture(renderer *sdl.Renderer) *sdl.Texture {
 	return texture
 }
 
+/*
+   a 'nicer' form, i.e. func (g *GUI) setFullscreen { ... } with 
+   orig_mode as field of GUI struct leads to error:
+   "panic: runtime error: cgo argument has Go pointer to Go pointer",
+   during return to original mode,  so don't improve following in this way
+*/
+
+func setFullscreen(window *sdl.Window) sdl.DisplayMode {
+	var wanted_mode = sdl.DisplayMode{sdl.PIXELFORMAT_ARGB8888, 640, 480, 60, nil}
+	var result_mode sdl.DisplayMode
+	display_index, _ := window.GetDisplayIndex()
+	orig_mode, _ := sdl.GetCurrentDisplayMode(display_index)
+	fmt.Printf("original mode width: %d\n", orig_mode.W)
+	fmt.Printf("original mode heigt: %d\n", orig_mode.H)
+
+	_, err := sdl.GetClosestDisplayMode(display_index, &wanted_mode, &result_mode)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to get ClosestMode: %s\n", err)
+		os.Exit(2)
+	}
+	fmt.Printf("wanted mode width: %d\n", result_mode.W)
+	fmt.Printf("wanted mode heigt: %d\n", result_mode.H)
+	window.SetDisplayMode(&result_mode)
+	window.SetFullscreen(sdl.WINDOW_FULLSCREEN)
+	return orig_mode
+}
 
 func main() {
+	var   orig_mode  sdl.DisplayMode
 	var err error
 
 	//pseudoInit()          // fill LUT table
@@ -158,7 +186,9 @@ func main() {
 
 	// platform init
 	p := platform.New()
-	gui := GUI{p}
+	gui := new(GUI)
+	gui.fullscreen = false
+	gui.p = p			// xxx - fix that mess
 
 	p.InitGUI()
 	//loadFont(p, &font_st_8x8)
@@ -269,28 +299,6 @@ func main() {
 	// TODO - move it
 	disasm := false
 
-	// -----------------------------------------------------------------------------------
-	// zmiana trybu
-	var current_mode sdl.DisplayMode
-	if FULLSCREEN {
-		var wanted_mode = sdl.DisplayMode{sdl.PIXELFORMAT_ARGB8888, 640, 480, 60, nil}
-		var result_mode sdl.DisplayMode
-		display_index, _ := window.GetDisplayIndex()
-		current_mode, _ = sdl.GetCurrentDisplayMode(display_index)
-		fmt.Printf("current mode width: %d\n", current_mode.W)
-		fmt.Printf("current mode heigt: %d\n", current_mode.H)
-
-		_, err = sdl.GetClosestDisplayMode(display_index, &wanted_mode, &result_mode)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to get ClosesMode: %s\n", err)
-			os.Exit(2)
-		}
-		fmt.Printf("wanted mode width: %d\n", result_mode.W)
-		fmt.Printf("wanted mode heigtt: %d\n", result_mode.H)
-		window.SetDisplayMode(&result_mode)
-		window.SetFullscreen(sdl.WINDOW_FULLSCREEN)
-	}
-
 
 	// -----------------------------------------------------------------------------
 	sdl.SetHint("SDL_HINT_RENDER_BATCHING", "1")
@@ -342,7 +350,7 @@ func main() {
 			renderer.Copy(texture_txt, nil, nil)
 		}	
 
-		// stea 5: xxx - fix it
+		// stea 5
 		if p.GPU.Border_visible {
 			renderer.SetDrawColor(p.GPU.Border_color_r, 
 					      p.GPU.Border_color_g, 
@@ -461,7 +469,14 @@ func main() {
 					case sdl.K_F12:
 						running = false
 					case sdl.K_F11:
-						//loadFont(p, &font_st_8x8)
+						if gui.fullscreen {
+							gui.fullscreen = false
+							window.SetDisplayMode(&orig_mode)
+							window.SetFullscreen(0)
+						} else {
+							gui.fullscreen = true
+							orig_mode = setFullscreen(window)
+						}
 					case sdl.K_F10:
 						//loadFont(p, &font_c256_8x8)
 					case sdl.K_F9:
@@ -476,7 +491,14 @@ func main() {
 				}
 
 				if t.State == sdl.RELEASED {
-					gui.sendKey(t.Keysym.Scancode, t.State)
+					switch t.Keysym.Sym {
+					case sdl.K_F12,
+					     sdl.K_F11,
+					     sdl.K_F10,
+					     sdl.K_F9:
+					default:
+						gui.sendKey(t.Keysym.Scancode, t.State)
+					}
 				}
 
 
@@ -487,8 +509,9 @@ func main() {
 	}
 
 	// return from FULLSCREEN
-	if FULLSCREEN {
-		window.SetDisplayMode(&current_mode)
+	if gui.fullscreen {
+		window.SetDisplayMode(&orig_mode)
+		window.SetFullscreen(0)
 	}
 
 	//memoryDump(p, 0xaf_0000)
