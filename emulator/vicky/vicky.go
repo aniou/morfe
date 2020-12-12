@@ -19,7 +19,10 @@ type Vicky struct {
 	TFB    []uint32		// text   framebuffer
 	BFB    []uint32		// bitmap framebuffer
 	TEXT   []uint32
+	MEM    []byte
 
+	Master_L	byte	// MASTER_CTRL_REG_L
+	Master_H	byte	// MASTER_CTRL_REG_H
 	Cursor_visible  bool
 	BM0_visible     bool
 	BM1_visible     bool
@@ -30,7 +33,7 @@ type Vicky struct {
         border_color_r  byte
         Border_x_size   uint32
         Border_y_size   uint32
-	Background      []byte{0, 0, 0}
+	Background      [3]byte		// r, g, b
 
 	starting_fb_row_pos uint32
 	text_cols	uint32
@@ -77,6 +80,14 @@ func New() (*Vicky, error) {
 	v.bm1_blut_pos = 0x00
 	v.bm0_start_addr = 0xB0_0000
 	v.bm1_start_addr = 0xB0_0000
+
+	// XXX - just for test
+        for i := range text { // file text memory areas
+              fg[i] = 0x00
+              bg[i] = 0x0d
+              text[i] = 0x20
+        } 
+
 	return v, nil
 }
 
@@ -96,13 +107,13 @@ func updateFontCache(pos uint32, val byte) {
 	}
 }
 
-func (v *Vicky) FillByBorderColor() {
+func (v *Vicky) recalculateScreen() {
 	// XXX: check this, probably invalid, see LUT table conversion
-        val := binary.LittleEndian.Uint32([]byte{v.border_color_r, v.border_color_g, v.border_color_b, 0xff})                                             
-        tfb[0] = val
-        for bp := 1; bp < len(tfb); bp *= 2 {
-                copy(tfb[bp:], tfb[:bp])
-        }
+        //val := binary.LittleEndian.Uint32([]byte{v.border_color_r, v.border_color_g, v.border_color_b, 0xff}) 
+        //tfb[0] = val
+        //for bp := 1; bp < len(tfb); bp *= 2 {
+        //        copy(tfb[bp:], tfb[:bp])
+        //}
 
 	v.starting_fb_row_pos = 640*v.Border_y_size + (v.Border_x_size)
         v.text_cols = (640 - (v.Border_x_size * 2)) / 8 // xxx - parametrize screen width
@@ -115,7 +126,7 @@ func (v *Vicky) FillByBorderColor() {
 }
 
 // still vicky-i
-func (v *Vicky) RederBitmapText() {
+func (v *Vicky) RenderBitmapText() {
         var cursor_x, cursor_y uint32 // row and column of cursor
         var cursor_char uint32    // cursor character
         var cursor_state byte     // cursor register, various states
@@ -126,6 +137,7 @@ func (v *Vicky) RederBitmapText() {
         var font_line uint32      // line in current font
         var font_row_pos uint32   // position of line in current font (=font_line*8 because every line has 8 bytes)
         var i uint32              // counter
+	var is_overlay bool	  // is overlay text over bm0 enabled?
 
         // placeholders recalculated per row of text, holds values for text_cols loop --
         var fnttmp [128]uint32    // position in font array, from char value
@@ -137,6 +149,12 @@ func (v *Vicky) RederBitmapText() {
 	cursor_char  = uint32(mem[0x00_0012])
 	cursor_x     = uint32(mem[0x00_0014])
 	cursor_y     = uint32(mem[0x00_0016])
+	
+	if (mem[0x0000] & 0x02) == 0x02 {	// MASTER_CTRL_REG_L
+		is_overlay = true
+	} else {
+		is_overlay = false
+	}
 
 	// render text - start
 	fb_row_pos = v.starting_fb_row_pos
@@ -156,7 +174,11 @@ func (v *Vicky) RederBitmapText() {
 			}
 
 			fgctmp[text_x] = binary.LittleEndian.Uint32(f_color_lut[f][:]) // text LUT - xxx: change name
-			bgctmp[text_x] = binary.LittleEndian.Uint32(b_color_lut[b][:]) // text LUT
+			if is_overlay == false {
+				bgctmp[text_x] = binary.LittleEndian.Uint32(b_color_lut[b][:]) // text LUT
+			} else {
+				bgctmp[text_x] = 0x00FFFFFF			// full alpha
+			}
 		}
 
 		for font_line = 0; font_line < 8; font_line += 1 { // for every line of text - over 8 lines of font
@@ -201,21 +223,35 @@ func (v *Vicky) Size() uint32 {
 	return 0x100 // XXX: something
 }
 
+// XXX - balance between number of entries and possibility to identify
+//       not implemented reads
 func (v *Vicky) Read(address uint32) byte {
 	a := address - 0xAF_0000
 
 	switch {
+	case address == 0xAF_0000:
+		return mem[a]
+
 	case address == 0xAF_0001:
-		return 0                // XXX should be resolution
+		return mem[a]
 
 	case address == 0xAF_0004:
-		return v.border_ctrl_reg
+		return mem[a]
 
 	case address == 0xAF_0008:
-		return byte(v.Border_x_size)
+		return mem[a]
 
 	case address == 0xAF_0009:
-		return byte(v.Border_y_size)
+		return mem[a]
+
+	case address == 0xAF_000D:	// BACKGROUND_COLOR_B
+		return mem[a]
+
+	case address == 0xAF_000E:	// BACKGROUND_COLOR_G
+		return mem[a]
+
+	case address == 0xAF_000F:	// BACKGROUND_COLOR_R
+		return mem[a]
 
 	case address >= 0xAF_0010 && address<=0xAF_0017:	// cursor registers
 		return mem[a]
@@ -267,26 +303,41 @@ func (v *Vicky) Write(address uint32, val byte) {
 	mem[a] = val
 
 	switch {
-	case address == 0xAF_0005:				// BORDER_COLOR_B
+	case address == 0xAF_0000:				// MASTER_CTRL_REG_L
+		v.Master_L = val
+
+	case address == 0xAF_0001:				// MASTER_CTRL_REG_H
+		v.Master_H = val
+
+	case address == 0xAF_0005:                              // BORDER_COLOR_B
 		v.border_color_b = val
-		v.FillByBorderColor()
+		v.recalculateScreen()
 
 	case address == 0xAF_0006:				// BORDER_COLOR_G
 		v.border_color_g = val
-		v.FillByBorderColor()
+		v.recalculateScreen()
 
 	case address == 0xAF_0007:				// BORDER_COLOR_R
 		v.border_color_r = val
-		v.FillByBorderColor()
+		v.recalculateScreen()
 
 	case address == 0xAF_0008:				// BORDER_X_SIZE
 		v.Border_x_size = uint32(val & 0x3F)		// XXX: in spec - 0-32, bitmask allows to 0-63
-		v.FillByBorderColor()
+		v.recalculateScreen()
 
 	case address == 0xAF_0009:				// BORDER_Y_SIZE
 		v.Border_y_size = uint32(val & 0x3F)		// XXX: in spec - 0-32, bitmask allows to 0-63
-		v.FillByBorderColor()
+		v.recalculateScreen()
 
+	case address == 0xAF_000D:	// BACKGROUND_COLOR_B
+		v.Background[2] = val
+
+	case address == 0xAF_000E:	// BACKGROUND_COLOR_G
+		v.Background[1] = val
+
+	case address == 0xAF_000F:	// BACKGROUND_COLOR_R
+		v.Background[0] = val
+		
 	case address >= 0xAF_0012 && address<=0xAF_0017:	// cursor registers
 		return
 

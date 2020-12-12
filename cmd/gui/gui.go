@@ -181,12 +181,10 @@ func main() {
 	//p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
 
 	// testing text mode with old kernel and vicky I
-	/*
-	p.LoadHex("/home/aniou/c256/FoenixIDE-release-0.4.2.1/bin/Release/roms/kernel.hex")
-	p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
-	p.CPU.PC = 0xff00
-	p.CPU.RK = 0x00
-	*/
+	//p.LoadHex("/home/aniou/c256/FoenixIDE-release-0.4.2.1/bin/Release/roms/kernel.hex")
+	//p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
+	//p.CPU.PC = 0xff00
+	//p.CPU.RK = 0x00
 
 	/*
 	// testing bitmap with old kernel and vicky I
@@ -206,8 +204,8 @@ func main() {
 	p.CPU.Bus.EaWrite(0xAF_0006, 0x00) // border G
 	p.CPU.Bus.EaWrite(0xAF_0007, 0x20) // border R
 
-	p.CPU.Bus.EaWrite(0xAF_0008, 0x20) // border X
-	p.CPU.Bus.EaWrite(0xAF_0009, 0x20) // border Y
+	p.CPU.Bus.EaWrite(0xAF_0008, 0x00) // border X
+	p.CPU.Bus.EaWrite(0xAF_0009, 0x00) // border Y
 
 	p.CPU.Bus.EaWrite(0xAF_0010, 0x03) // VKY_TXT_CURSOR_CTRL_REG
 	p.CPU.Bus.EaWrite(0xAF_0012, 0xB1) // VKY_TXT_CURSOR_CHAR_REG
@@ -220,21 +218,6 @@ func main() {
 		p.CPU.Bus.EaWrite(uint32(j), val)
 
 	}
-
-	// test text
-	//for i := range p.GPU.TEXT { // file text memory areas
-	//	p.GPU.FG[i] = 0x0e
-	//	p.GPU.BG[i] = 0x0d
-	//	p.GPU.TEXT[i] = 32
-	//}
-
-	for c, _ := range p.GPU.TEXT {
-		p.GPU.TEXT[c] = 0
-	}
-	for c, char := range "This is sparta!" {
-		p.GPU.TEXT[c] = uint32(char)
-	}
-	// end of test text
 
 	// step 1: SDL
 	err = sdl.Init(sdl.INIT_EVERYTHING)
@@ -269,21 +252,18 @@ func main() {
 	debugRendererInfo(renderer)
 
 	// TODO - move it
-	renderer.SetDrawColor(0, 255, 0, 255)
-	renderer.Clear()
-
 	var event sdl.Event
 	var running bool
 	// end of TODO
 
-	// font texture
-	texture := newTexture(renderer)
+	// textures
+	texture_txt := newTexture(renderer)
+	texture_txt.SetBlendMode(sdl.BLENDMODE_BLEND)
 
-	// bit texture
-	texture2 := newTexture(renderer)
-	texture2.SetBlendMode(sdl.BLENDMODE_BLEND)
+	texture_bm0 := newTexture(renderer)
+	texture_bm0.SetBlendMode(sdl.BLENDMODE_BLEND)
 
-
+	// TODO - move it
 	disasm := false
 
 	// -----------------------------------------------------------------------------------
@@ -320,19 +300,38 @@ func main() {
 	var stepCycles, prevCycles uint64 = 0, 0
 	var cursor_counter int32                // how many ticks remains to flip cursor visible
 	
+	// current draw model ----------------------------------------------------------
+	//
+	// 1. fill by background color
+	// 2. update texture from bm0 fb       - TODO: bm1 too
+	// 3. apply texture with alpha
+	// 4. update texture with text
+	// 5. apply texture with alpha
+	// 6. draw frames
+	// 7. present
+
+
 	// main loop -------------------------------------------------------------------
 	running = true
 	for running {
-		p.GPU.RederBitmapText()
-
-
-		// update screen - start
-		renderer.SetDrawColor(0, 255, 0, 255)
+		// step 1
+		renderer.SetDrawColor(p.GPU.Background[0], p.GPU.Background[1], p.GPU.Background[2], 255)
 		renderer.Clear()
-		texture2.UpdateRGBA(nil, p.GPU.BFB, 640)		// bitmap texture
-		texture.UpdateRGBA(nil, p.GPU.TFB, 640)				// overlay should be supported by alpha
-		//renderer.Copy(texture, nil, nil)
-		renderer.Copy(texture2, nil, nil)				// temporary
+
+		// step 2 - bm0 and bm1 are updated in vicky, when write is made
+		if p.GPU.BM0_visible && p.GPU.Master_L & 0x0C == 0x0C {			// todo ?
+			texture_bm0.UpdateRGBA(nil, p.GPU.BFB, 640)
+			renderer.Copy(texture_bm0, nil, nil)
+		}
+
+		// step 3, 4, 5
+		if p.GPU.Master_L & 0x01 == 0x01 {					// todo ?
+			p.GPU.RenderBitmapText()
+			texture_txt.UpdateRGBA(nil, p.GPU.TFB, 640)
+			renderer.Copy(texture_txt, nil, nil)
+		}	
+
+		// step 7
 		renderer.Present()
 		// update screen - end
 
