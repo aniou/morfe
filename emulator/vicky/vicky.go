@@ -24,13 +24,14 @@ type Vicky struct {
 	Master_L	byte	// MASTER_CTRL_REG_L
 	Master_H	byte	// MASTER_CTRL_REG_H
 	Cursor_visible  bool
+	Border_visible  bool
 	BM0_visible     bool
 	BM1_visible     bool
 
         border_ctrl_reg byte
-        border_color_b  byte
-        border_color_g  byte
-        border_color_r  byte
+        Border_color_b  byte
+        Border_color_g  byte
+        Border_color_r  byte
         Border_x_size   uint32
         Border_y_size   uint32
 	Background      [3]byte		// r, g, b
@@ -68,9 +69,9 @@ func New() (*Vicky, error) {
 	v.BM0_visible    = true
 	v.BM1_visible    = true
 	v.border_ctrl_reg = 0x01
-	v.border_color_b = 0x20
-	v.border_color_g = 0x00
-	v.border_color_r = 0x20
+	v.Border_color_b = 0x20
+	v.Border_color_g = 0x00
+	v.Border_color_r = 0x20
 	v.Border_x_size = 0x20
 	v.Border_y_size = 0x20
 	v.starting_fb_row_pos =  0x00
@@ -109,7 +110,7 @@ func updateFontCache(pos uint32, val byte) {
 
 func (v *Vicky) recalculateScreen() {
 	// XXX: check this, probably invalid, see LUT table conversion
-        //val := binary.LittleEndian.Uint32([]byte{v.border_color_r, v.border_color_g, v.border_color_b, 0xff}) 
+        //val := binary.LittleEndian.Uint32([]byte{v.Border_color_r, v.Border_color_g, v.Border_color_b, 0xff}) 
         //tfb[0] = val
         //for bp := 1; bp < len(tfb); bp *= 2 {
         //        copy(tfb[bp:], tfb[:bp])
@@ -309,16 +310,24 @@ func (v *Vicky) Write(address uint32, val byte) {
 	case address == 0xAF_0001:				// MASTER_CTRL_REG_H
 		v.Master_H = val
 
+	case address == 0xAF_0004:                              // BORDER_CTRL_REG
+		if (val & 0x01) == 1 {
+			v.Border_visible = true
+		} else {
+			v.Border_visible = false
+		}
+		// xxx: v.recalculateScreen()
+
 	case address == 0xAF_0005:                              // BORDER_COLOR_B
-		v.border_color_b = val
+		v.Border_color_b = val
 		v.recalculateScreen()
 
 	case address == 0xAF_0006:				// BORDER_COLOR_G
-		v.border_color_g = val
+		v.Border_color_g = val
 		v.recalculateScreen()
 
 	case address == 0xAF_0007:				// BORDER_COLOR_R
-		v.border_color_r = val
+		v.Border_color_r = val
 		v.recalculateScreen()
 
 	case address == 0xAF_0008:				// BORDER_X_SIZE

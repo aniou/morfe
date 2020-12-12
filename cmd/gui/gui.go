@@ -24,7 +24,7 @@ const CURSOR_BLINK_RATE = 500
 
 var   CPU_STEP uint64  = 14318
 
-var winTitle string = "Go-SDL2 Events"
+var winTitle string = "go65c816 / c256 emu"
 var winWidth, winHeight int32 = 640, 480
 
 type GUI struct {
@@ -181,10 +181,10 @@ func main() {
 	//p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
 
 	// testing text mode with old kernel and vicky I
-	//p.LoadHex("/home/aniou/c256/FoenixIDE-release-0.4.2.1/bin/Release/roms/kernel.hex")
-	//p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
-	//p.CPU.PC = 0xff00
-	//p.CPU.RK = 0x00
+	p.LoadHex("/home/aniou/c256/FoenixIDE-release-0.4.2.1/bin/Release/roms/kernel.hex")
+	p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
+	p.CPU.PC = 0xff00
+	p.CPU.RK = 0x00
 
 	/*
 	// testing bitmap with old kernel and vicky I
@@ -195,17 +195,19 @@ func main() {
 	*/
  
 	// testing new kernel and bitmap
+	/*
 	p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
 	p.LoadHex("/home/aniou/c256/graph5bm0.hex")
 	p.CPU.PC = 0x0000
 	p.CPU.RK = 0x03
+	*/
 
 	p.CPU.Bus.EaWrite(0xAF_0005, 0x20) // border B 
 	p.CPU.Bus.EaWrite(0xAF_0006, 0x00) // border G
 	p.CPU.Bus.EaWrite(0xAF_0007, 0x20) // border R
 
-	p.CPU.Bus.EaWrite(0xAF_0008, 0x00) // border X
-	p.CPU.Bus.EaWrite(0xAF_0009, 0x00) // border Y
+	p.CPU.Bus.EaWrite(0xAF_0008, 0x20) // border X
+	p.CPU.Bus.EaWrite(0xAF_0009, 0x20) // border Y
 
 	p.CPU.Bus.EaWrite(0xAF_0010, 0x03) // VKY_TXT_CURSOR_CTRL_REG
 	p.CPU.Bus.EaWrite(0xAF_0012, 0xB1) // VKY_TXT_CURSOR_CHAR_REG
@@ -330,6 +332,20 @@ func main() {
 			texture_txt.UpdateRGBA(nil, p.GPU.TFB, 640)
 			renderer.Copy(texture_txt, nil, nil)
 		}	
+
+		// step 6: xxx - fix it
+		if p.GPU.Border_visible {
+			renderer.SetDrawColor(p.GPU.Border_color_r, 
+					      p.GPU.Border_color_g, 
+					      p.GPU.Border_color_b, 
+					      255)
+			renderer.FillRects([]sdl.Rect{
+				sdl.Rect{0, 0, 640, int32(p.GPU.Border_y_size)},
+				sdl.Rect{0, 480-int32(p.GPU.Border_y_size), 640, int32(p.GPU.Border_y_size)},
+				sdl.Rect{0, int32(p.GPU.Border_y_size),  int32(p.GPU.Border_x_size), 480-int32(p.GPU.Border_y_size)},
+				sdl.Rect{640-int32(p.GPU.Border_x_size), int32(p.GPU.Border_y_size), int32(p.GPU.Border_x_size), 480-int32(p.GPU.Border_y_size)},
+			})
+		}
 
 		// step 7
 		renderer.Present()
