@@ -30,6 +30,7 @@ type Vicky struct {
         border_color_r  byte
         Border_x_size   uint32
         Border_y_size   uint32
+	Background      []byte{0, 0, 0}
 
 	starting_fb_row_pos uint32
 	text_cols	uint32
@@ -56,8 +57,6 @@ func init() {
 
 
 func New() (*Vicky, error) {
-	//vicky := Vicky{nil, nil, nil, nil, nil}
-	//vicky := Vicky{tfb, bfb, text, fg, bg, mem, true, true, true, 0x1, 0x20, 0x00, 0x20, 0x20, 0x20, 0x00, 0x00, 0x00, 0x00, 0x00, 0xB0_0000, 0xB0_0000}
 	v := new(Vicky)
 	v.TFB = tfb
 	v.BFB = bfb
