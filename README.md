@@ -63,6 +63,7 @@ See [here](https://wiki.c256foenix.com/index.php?title=VICKY_II) for VICKY II sp
 - [ ] tiles
 - [ ] sprites
 - [ ] GAMMA LUT
+- [ ] 8-bit writes (Vicky writes are 8-bit even if A/X/Y are 16-bits wide)
 
 ### GABE
 
