@@ -94,11 +94,13 @@ func New() (*Vicky, error) {
 	v.pixel_size	= 1
 
 	// XXX - just for test
+	/*
         for i := range text { // file text memory areas
               fg[i] = 0x00
               bg[i] = 0x0d
               text[i] = 0x20
         } 
+	*/
 
 	v.recalculateScreen()
 

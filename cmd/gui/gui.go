@@ -13,19 +13,12 @@ import (
 )
 
 // keyboard memory registers
-const INT_MASK_REG1    = 0x00_014D
-const INT_PENDING_REG1 = 0x00_0141
-// 
+const INT_MASK_REG1	= 0x00_014D
+const INT_PENDING_REG1	= 0x00_0141
 
-
-const FULLSCREEN = false
-const CPU_CLOCK = 14318000 // 14.381Mhz
+// some general consts
+const CPU_CLOCK		= 14318000 // 14.381Mhz
 const CURSOR_BLINK_RATE = 500
-
-var   CPU_STEP uint64  = 14318
-
-var winTitle string = "go65c816 / c256 emu"
-var winWidth, winHeight int32 = 640, 480
 
 type GUI struct {
 	p	   *platform.Platform
@@ -37,6 +30,9 @@ type DEBUG struct {
 }
 var debug = DEBUG{true}
 
+
+// some support routines
+// xxx - move it
 func showCPUSpeed(cycles uint64) (uint64, string) {
 	switch {
 	case cycles > 1000000:
@@ -130,7 +126,7 @@ func debugRendererInfo(renderer *sdl.Renderer) {
 	fmt.Printf("\n")
 }
 
-// TODO - parametryzacja okna
+// xxx - window parametrization
 func newTexture(renderer *sdl.Renderer) *sdl.Texture {
 	texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, 640, 480)
 	if err != nil {
@@ -177,23 +173,30 @@ func setFullscreen(window *sdl.Window) sdl.DisplayMode {
 	return orig_mode
 }
 
+
+// -----------------------------------------------------------------------------
+// MAIN HERE
+// -----------------------------------------------------------------------------
 func main() {
 	var orig_mode	sdl.DisplayMode
+	var event	sdl.Event
 	var err		error
+	var running	bool
+	var disasm	bool
+	var winWidth    int32 = 640
+	var winHeight   int32 = 480
+	var CPU_STEP	uint64 = 14318
 
 
-
-	//pseudoInit()          // fill LUT table
-	// pre-defined font at start
-
-	// platform init
+	// platform init ---------------------------------------------------------------
 	p := platform.New()
 	gui := new(GUI)
 	gui.fullscreen = false
 	gui.p = p			// xxx - fix that mess
-
 	p.InitGUI()
 
+
+	// code load and PC set --------------------------------------------------------
 	if len(os.Args) < 2 {
 		log.Fatalf("Usage: %s filename.ini\n", os.Args[0])
 	} else {
@@ -201,6 +204,8 @@ func main() {
 	}
  
 
+	// some additional tweaks ------------------------------------------------------
+	// XXX - move it somewhere
 	p.CPU.Bus.EaWrite(0xAF_0005, 0x20) // border B 
 	p.CPU.Bus.EaWrite(0xAF_0006, 0x00) // border G
 	p.CPU.Bus.EaWrite(0xAF_0007, 0x20) // border R
@@ -210,7 +215,7 @@ func main() {
 
 	p.CPU.Bus.EaWrite(0xAF_0010, 0x03) // VKY_TXT_CURSOR_CTRL_REG
 	p.CPU.Bus.EaWrite(0xAF_0012, 0xB1) // VKY_TXT_CURSOR_CHAR_REG
-	p.CPU.Bus.EaWrite(0xAF_0013, 0xC4) // VKY_TXT_CURSOR_COLR_REG
+	p.CPU.Bus.EaWrite(0xAF_0013, 0xED) // VKY_TXT_CURSOR_COLR_REG
 
 	// act as gavin/gabe - copy "flash" area from 38:1000 to 00:1000 (0x200) bytes
 	// jump tables
@@ -221,7 +226,7 @@ func main() {
 	}
 
 
-
+	// graphics init ---------------------------------------------------------------
 	// step 1: SDL
 	err = sdl.Init(sdl.INIT_EVERYTHING)
 	if err != nil {
@@ -229,11 +234,10 @@ func main() {
 	}
 	defer sdl.Quit()
 
-
 	// step 2: Window
 	var window *sdl.Window
 	window, err = sdl.CreateWindow(
-		winTitle,
+		"go65c816 / c256 emu",
 		sdl.WINDOWPOS_UNDEFINED,
 		sdl.WINDOWPOS_UNDEFINED,
 		winWidth, winHeight,
@@ -254,12 +258,7 @@ func main() {
 	defer renderer.Destroy()
 	debugRendererInfo(renderer)
 
-	// TODO - move it
-	var event sdl.Event
-	var running bool
-	// end of TODO
-
-	// textures
+	// step 4: textures 
 	texture_txt := newTexture(renderer)
 	texture_txt.SetBlendMode(sdl.BLENDMODE_BLEND)
 
@@ -269,21 +268,20 @@ func main() {
 	texture_bm1 := newTexture(renderer)
 	texture_bm1.SetBlendMode(sdl.BLENDMODE_BLEND)
 
-	// TODO - move it
-	disasm := false
-
 
 	// -----------------------------------------------------------------------------
 	sdl.SetHint("SDL_HINT_RENDER_BATCHING", "1")
-	sdl.StartTextInput()
+	//sdl.StartTextInput()
+
 
 	// variables for performance calculation ---------------------------------------
-	var prev_ticks uint32 = sdl.GetTicks()
-	var mult       uint32 = prev_ticks
-	var ticks_now, frames uint32
-	var stepCycles, prevCycles uint64 = 0, 0
-	var cursor_counter int32                // how many ticks remains to flip cursor visible
+	var prev_ticks uint32 = sdl.GetTicks()   // FPS calculation
+	var mult       uint32 = prev_ticks	 // CPU speed calculation
+	var ticks_now, frames uint32             // CPU step and FPS calculation
+	var stepCycles, prevCycles uint64 = 0, 0 // CPU speed calculation
+	var cursor_counter int32                 // how many ticks remains to blink cursor 
 	
+
 	// current draw model ----------------------------------------------------------
 	//
 	// 1. fill by background color
@@ -295,9 +293,9 @@ func main() {
 	// 5. draw frames
 	// 6. present
 
-
 	// main loop -------------------------------------------------------------------
 	running = true
+	disasm  = false
 	for running {
 		// step 1
 		renderer.SetDrawColor(p.GPU.Background[0], p.GPU.Background[1], p.GPU.Background[2], 255)
@@ -339,16 +337,16 @@ func main() {
 
 		// step 6
 		renderer.Present()
-		// update screen - end
 
-		// calculate speed
+
+		// cpu speed calculation --------------------------------------------
 		frames++
 		if sdl.GetTicks() > ticks_now {
 			mult = sdl.GetTicks() - ticks_now
 			ticks_now = sdl.GetTicks()
 			stepCycles = p.CPU.AllCycles
 
-			// cursor calculation - flip every CURSOR_BLINK_RATE ticks
+			// cursor calculation - flip every CURSOR_BLINK_RATE ticks ----------
 			cursor_counter = cursor_counter - int32(mult)
 			if cursor_counter <= 0 {
 				cursor_counter = CURSOR_BLINK_RATE
@@ -370,6 +368,7 @@ func main() {
 				//}
 
 				if disasm {
+					// XXX - move it do subroutine
 					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.N, "n"))
 					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.V, "v"))
 					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.M, "m"))
@@ -397,9 +396,7 @@ func main() {
 			}
 		}
 
-
-
-
+		// performance info --------------------------------------------------
 		if (ticks_now - prev_ticks) >= 1000 {
 			cyc, unit := showCPUSpeed(p.CPU.AllCycles - prevCycles)
 			prevCycles = p.CPU.AllCycles
@@ -408,9 +405,6 @@ func main() {
 			frames = 0
 		}
 
-
-
-
 		// keyboard ----------------------------------------------------------
 		// https://github.com/veandco/go-sdl2-examples/blob/master/examples/keyboard-input/keyboard-input.go
 		for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
@@ -418,7 +412,6 @@ func main() {
 			switch t := event.(type) {
 			case *sdl.QuitEvent:
 				running = false
-
 			/*
 			case *sdl.TextInputEvent:
 				fmt.Printf("TextInputEvent\n")
@@ -429,10 +422,9 @@ func main() {
 					p.GABE.InBuf.Enqueue(val)
 				}
 			*/
-
 			case *sdl.KeyboardEvent:
-				fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n",
-					t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
+				//fmt.Printf("[%d ms] Keyboard\ttype:%d\tsym:%c\tmodifiers:%d\tstate:%d\trepeat:%d\n",
+				//	t.Timestamp, t.Type, t.Keysym.Sym, t.Keysym.Mod, t.State, t.Repeat)
 
 				if t.State == sdl.PRESSED {
 					if t.Repeat > 0 {
@@ -474,12 +466,9 @@ func main() {
 					}
 				}
 
-
-			}
-		}
-
-
-	}
+			} // SDL event switch/case
+		} // SDL event loop
+	} // main loop
 
 	// return from FULLSCREEN
 	if gui.fullscreen {
@@ -487,8 +476,4 @@ func main() {
 		window.SetFullscreen(0)
 	}
 
-	//memoryDump(p, 0xaf_0000)
-	//renderer.Destroy()
-	//window.Destroy()
-	//sdl.Quit()
 }

@@ -220,7 +220,7 @@ func (g *GUI) sendKey(code sdl.Scancode, state byte) {
 	mask := g.p.CPU.Bus.EaRead(INT_MASK_REG1)
 	if (^mask & byte(r1_FNX1_INT00_KBD)) == byte(r1_FNX1_INT00_KBD) {
 		code := PS2ScanCode(code)
-		fmt.Printf("\nKEY pressed?:%v, mask %2X %2X %2X\n", state, mask, ^mask, byte(r1_FNX1_INT00_KBD))
+		//fmt.Printf("\nKEY pressed?:%v, mask %2X %2X %2X\n", state, mask, ^mask, byte(r1_FNX1_INT00_KBD))
 
 		if code == sc_null {
 			fmt.Printf("unknown scancode\n")
