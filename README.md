@@ -1,9 +1,9 @@
 # go65c816
-64c816 / [c256](https://c256foenix.com/) emulator written in Go
+64c816 / [C256 Foenix](https://c256foenix.com/) emulator written in Go
 
 ## Preface
 
-* That project was created for my personal needs and lacks more of features.
+* That project was created for my personal needs and lacks many features.
   If You are interested in official, full-blown C256 Foenix emulator, You
   should take a look at [Foenix IDE](https://github.com/Trinity-11/FoenixIDE)
 
@@ -121,7 +121,7 @@ There are few keybindings now.
 
 |Key     |Effect
 ---------|---------------------------
-F9       |Toggole disassembler output
+F9       |Toggle disassembler output
 F10      |- (nothing)
 F11      |Toggle full-screen
 F12      |Exit emulator
