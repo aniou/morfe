@@ -10,7 +10,7 @@
   FoenixIDE is a .NET application but can run on Linux thanks to Wine.
 
 * At this moment text-based interface doesn't work. If You need it, there
-  is a [separate branch](https://github.com/aniou/go65c816/tree/vicky-ii)
+  is a [separate branch](https://github.com/aniou/go65c816/tree/tui)
 
 * There is a problem with BASIC embedded into official C256 kernel - it
   does not work properly on emulator. The case is under investigation.
@@ -18,14 +18,13 @@
 ## Some screenshots
 
 [of816 port](https://github.com/aniou/of816/tree/C256/platforms/C256)
-[!of816port](images/of816.png)
+![of816port](images/of816.png)
 
 Simple overlay test
-[!overlay test](images/graph5bm0.png)
+![overlay test](images/graph5bm0.png)
 
 Simple disassembler
-[!disassembler](images/disasm.png)
-
+![disassembler](images/disasm.png)
 
 ## Supported systems
 
