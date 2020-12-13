@@ -1,129 +1,160 @@
 # go65c816
-65c816 emulator in Go
+64c816 / [c256](https://c256foenix.com/) emulator written in Go
 
-*The project is at very early stage and lacks many of CPU and debugger features*
+## Preface
 
-[![asciicast](https://asciinema.org/a/270744.svg)](https://asciinema.org/a/270744)
+* That project was created for my personal needs and lacks more of features.
+  If You are interested in official, full-blown C256 Foenix emulator, You
+  should take a look at [Foenix IDE](https://github.com/Trinity-11/FoenixIDE)
 
-## About this branch
+  FoenixIDE is a .NET application but can run on Linux thanks to Wine.
 
-There is a bunch of PoC-s related to graphics support, targeted for Vicky.
-Vicky becomes obseolete in favour of Vicky II (and FatVicky), thus further
-developmen will take place at 'vicky-II' branch.
+* At this moment text-based interface doesn't work. If You need it, there
+  is a [separate branch](https://github.com/aniou/go65c816/tree/vicky-ii)
+
+* There is a problem with BASIC embedded into official C256 kernel - it
+  does not work properly on emulator. The case is under investigation.
+
+## Some screenshots
+
+[of816 port](https://github.com/aniou/of816/tree/C256/platforms/C256)
+[!of816port](images/of816.png)
+
+Simple overlay test
+[!overlay test](images/graph5bm0.png)
+
+Simple disassembler
+[!disassembler](images/disasm.png)
 
 
 ## Supported systems
 
 Program was tested on:
 
-* NetBSD 9 / Go 1.12
-* Ubuntu 18.04 / Go 1.13
+* Ubuntu 20.04 / Go 1.13
  
-Program should work on:
+Word of warning: my SDL code is rather naive, so there is a possibility that
+it would not work on Your system (bizarre colors or something). It may be
+corrected in future.
 
-* MS Windows / Go >=1.12
+## Emulation state
+
+Current emulation state is rather sparse - C256 has 
+[plenty of features](https://wiki.c256foenix.com/index.php?title=Main_Page),
+and at this moment I was able to implement only small subset of them. For
+full-fledged emulator see [Foenix IDE](https://github.com/Trinity-11/FoenixIDE).
+
+### Vicky II
+
+See [here](https://wiki.c256foenix.com/index.php?title=VICKY_II) for VICKY II spec
+
+- [x] 640x480 mode
+- [ ] 800x600 mode
+- [ ] double pixel mode
+- [x] fullscreen mode
+- [x] border support
+- [x] text mode (partial, no scroll)
+- [x] text LUT
+- [x] cursor (but no second font bank)
+- [x] fonts
+- [x] bm0 bitmap
+- [x] bm1 bitmap
+- [x] bitmap LUT
+- [x] overlay and background support
+- [ ] tiles
+- [ ] sprites
+- [ ] GAMMA LUT
+
+### GABE
+
+See [here](https://wiki.c256foenix.com/index.php?title=GABE) for GABE spec
+
+- [x] keyboard input (GABE)
+- [ ] mouse
+- [ ] all other
+
+### general features
+
+- [x] IRQ (partial: only 65c816 mode)
+- [ ] NMI
+- [ ] reset button
 
 ## Installing
 
-### version A
-
 ```bash
 git clone https://github.com/aniou/go65c816
-cd go65c816
-go run cmd/go65c816/main.go
-
-# go to another terminal and run
-go run cmd/netcon/main.go    
+cd go65c816/cmd/gui
+go build -o gui *go
 ```
 
-### version B
+## Running
 
 ```bash
-go get github.com/aniou/go65c816/cmd/go65c816
-go get github.com/aniou/go65c816/cmd/netcon
-~/go/bin/go65c816
+cd go65c816/cmd/gui
+./gui of816.ini 
+./gui bm0.ini
+```
 
-# spawn another terminal emulator and run console
-~/go/bin/netcon
+## ini files
+
+`*.ini` files specifies code (only Intel hex format at this moment) and 
+initial state of PC (to be strick K and PC registers of 65c816). There
+may be multiple files loaded, specified by `file1` to `file999` keys.
+
+Memory isn't cleared between before load, so there is a possibility to
+patch or combine programs, like in following example.
+
+At this moment only `file` and `start` keys are supported.
+
+```ini
+[load]
+file1=../../data/kernel.hex
+file2=../../data/graph5bm0.hex
+
+[cpu]
+start = $03:0000
 ```
 
 ## Keybindings
 
-|Window  |Key       |Meaning|
----------|----------|--------
-any      |TAB       |next window
-any      |Ctrl+Space|run/stop CPU
-any      |F5        |run/stop CPU
-any      |F6        |step
-any      |Ctrl+C    |exit emulator
-any      |Ctrl+Q    |exit emulator
-any      |Ctrl+P    |load hex file data/program.hex
-any      |~ (tilde) |switch to/from command window
-command  |Enter     |execute command
-log, code|UP arrow  |cursor up
-log, code|DOWN arrow|cursor down
-code     |Space     |execute one step
+There are few keybindings now. 
+*Warning:* following keys aren't passed to emulator!
 
-## Commands
-
-All values should be provided in hexadecimal form.
-
-|Command           | Meaning |
--------------------|----------
-|set mem [addr]    |set memory dump window do addr
-|load hex [path]   |load program in hex format 
-|run               |run/stop CPU
-|peek, peek8 [addr]|peek one byte 
-|peek16 [addr]     |peek word (without wraping at bank boundary) 
-|peek24 [addr]     |peek 24-bit value (without wrapping at bank boundary)
-|quit              |quit emulator
-
-## Input/Output
-
-By default emulator provides simplest I/O via TCP socket opened at `localhost:12321`. Every byte written in emulator to addr `0xEFF` should be sent and every received byte is available from `0xF00`. Buffer sizes for both directons are arbitraly set at 200 bytes. 
-
-Almost every program (telnet or nc) should work as client, but best results should be ahieved by client that sends data in character mode (i.e. every pressed key sends one byte). There is available simple client, called `netcon`.
+|Key     |Effect
+---------|---------------------------
+F9       |Toggole disassembler output
+F10      |- (nothing)
+F11      |Toggle full-screen
+F12      |Exit emulator
 
 ## Memory map
 
 Machine parameters may be tweaked by editing `emulator/platform/platform.go` file. Every memory area should be attached to internal bus, like in following example:
 
 ```go
-        bus, _          := bus.New(logger)                     // new bus
-        platform.CPU, _  = cpu65c816.New(bus)                  // new CPU
-        console, _      := netconsole.NewNetConsole(logger)    // netconsole - first IO device
-        ram, _          := memory.New(0x40000)                 // regular RAM, 256kB
+        bus, _           := bus.New()
+        platform.CPU, _   = cpu65c816.New(bus)
+        ram, _           := memory.New(0x400000, 0x000000)
+        platform.GPU, _   = vicky.New()
+        platform.GABE, _  = gabe.New()
 
-        platform.CPU.Bus.Attach(ram,            "ram", 0x000000, 0x3FFFFF)    // 4MB of RAM, like C256 FMX
-        platform.CPU.Bus.Attach(console, "netconsole", 0x000EF0, 0x000FFF)    // mask area by netcon-pseudo I/O
+        platform.CPU.Bus.Attach(ram,            "ram", 0x000000, 0x3FFFFF)
+        platform.CPU.Bus.Attach(platform.GPU, "vicky", 0xAF0000, 0xEFFFFF)
+        platform.CPU.Bus.Attach(platform.GABE, "gabe", 0xAF1000, 0xAF13FF)
+
+        platform.CPU.Bus.EaWrite(0xFFFC, 0x00)  // boot vector
+        platform.CPU.Bus.EaWrite(0xFFFD, 0x10)
+        platform.CPU.Reset()
+
 ```
 
  * minimal area size: **16 bytes**
  * areas **must be** aligned at 4 bits (16 bytes)
- * areas are stacked
+ * areas are stacked, i.e. later shadows previous 
 
-## Running FORTH
-
-A this moment emulator is able to run [of816 FORTH port for C256](https://github.com/aniou/of816/tree/C256/platforms/C256),
-from the same `hex` file as C256 platform. Due to drawbacks of emulator itself a small portion of code ("shim") that emulates 
-parts of C256 FMX behaviour is required. Code is located in `data/` directory as well as copy of latest FORTH port.
-
-To run simply execute following commands:
-```
-load hex data/c256-shim.hex
-load hex data/forth.hex
-run
-```
-
-### TODO
- * interrupts
- * speed limit
- * real graphics
- * breakpoints
- * conditional breakpoints
- * additional commands
- * performance improvements
-
-### Foreword
+## Foreword
 
 Project was inspired by [NES emulator](https://github.com/fogleman/nes) created by Michael Fogleman and [MOS 6502 emulator](https://github.com/pda/go6502) by Paul Annesley and contains files or concepts from both projects. Some algorithms and behaviours are modeled on the [C++ 65c816 emulator](https://github.com/andrew-jacobs/emu816) by Andrew Jacobs.
+
+Project draws inspiration and code snippets from [Foenix IDE](https://github.com/Trinity-11/FoenixIDE)
+
