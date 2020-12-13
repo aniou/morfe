@@ -211,10 +211,10 @@ func main() {
 	//p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
 
 	// testing text mode with old kernel and vicky I
-	p.LoadHex("/home/aniou/c256/FoenixIDE-release-0.4.2.1/bin/Release/roms/kernel.hex")
-	p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
-	p.CPU.PC = 0xff00
-	p.CPU.RK = 0x00
+	//p.LoadHex("/home/aniou/c256/FoenixIDE-release-0.4.2.1/bin/Release/roms/kernel.hex")
+	//p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
+	//p.CPU.PC = 0xff00
+	//p.CPU.RK = 0x00
 
 	/*
 	// testing bitmap with old kernel and vicky I
@@ -225,10 +225,10 @@ func main() {
 	*/
  
 	// testing new kernel and bitmap
-	//p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
-	//p.LoadHex("/home/aniou/c256/graph5bm0.hex")
-	//p.CPU.PC = 0x0000
-	//p.CPU.RK = 0x03
+	p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
+	p.LoadHex("/home/aniou/c256/graph5bm0.hex")
+	p.CPU.PC = 0x0000
+	p.CPU.RK = 0x03
 
 	p.CPU.Bus.EaWrite(0xAF_0005, 0x20) // border B 
 	p.CPU.Bus.EaWrite(0xAF_0006, 0x00) // border G
