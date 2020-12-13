@@ -1,19 +1,21 @@
-// Copyright 2014 The gocui Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
 
 package main
 
 import (
 	"log"
-	"github.com/jroimartin/gocui"
-	"github.com/aniou/go65c816/lib/mylog"
-	"github.com/aniou/go65c816/emulator/platform"
-	"github.com/aniou/go65c816/emulator/tui"
+	_ "github.com/jroimartin/gocui"
+	_ "github.com/aniou/go65c816/lib/mylog"
+	_ "github.com/aniou/go65c816/emulator/platform"
+	_ "github.com/aniou/go65c816/emulator/tui"
 )
 
 
 func main() {
+	log.Fatalf("TUI code doesn't work at this moment. " + 
+	           "See branch https://github.com/aniou/go65c816/tree/tui for older version")
+
+
+	/*
         g, err := gocui.NewGui(gocui.Output256)
         if err != nil {
                 log.Panicln(err)
@@ -28,4 +30,5 @@ func main() {
 	p.Init(logger)
 
 	ui.Run(g)
+	*/
 }
