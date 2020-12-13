@@ -387,6 +387,7 @@ func main() {
 					}
 					fmt.Printf(" %4x ", p.CPU.RX)
 					fmt.Printf("%s", p.CPU.DisassembleCurrentPC())
+					break
 				}
 
 				if stopped {
@@ -400,7 +401,12 @@ func main() {
 		if (ticks_now - prev_ticks) >= 1000 {
 			cyc, unit := showCPUSpeed(p.CPU.AllCycles - prevCycles)
 			prevCycles = p.CPU.AllCycles
-			fmt.Fprintf(os.Stdout, "frames: %4d ticks %d cpu cycles %10d speed %2d %s cpu.K:PC %02x:%04x\n", frames, (ticks_now - prev_ticks), p.CPU.AllCycles, cyc, unit, p.CPU.RK, p.CPU.PC)
+			if ! disasm {
+				fmt.Fprintf(os.Stdout, "frames: %4d ticks %d cpu cycles %10d speed %2d %s cpu.K:PC %02x:%04x\n", 
+				                        frames, (ticks_now - prev_ticks), 
+							p.CPU.AllCycles, cyc, unit, 
+							p.CPU.RK, p.CPU.PC)
+			}
 			prev_ticks = ticks_now
 			frames = 0
 		}
@@ -447,6 +453,7 @@ func main() {
 					case sdl.K_F9:
 						if disasm {
 							disasm = false 
+							fmt.Printf("... disasm stopped\n")
 						} else {
 							disasm = true
 						}
