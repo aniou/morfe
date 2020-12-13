@@ -178,8 +178,10 @@ func setFullscreen(window *sdl.Window) sdl.DisplayMode {
 }
 
 func main() {
-	var   orig_mode  sdl.DisplayMode
-	var err error
+	var orig_mode	sdl.DisplayMode
+	var err		error
+
+
 
 	//pseudoInit()          // fill LUT table
 	// pre-defined font at start
@@ -191,44 +193,13 @@ func main() {
 	gui.p = p			// xxx - fix that mess
 
 	p.InitGUI()
-	//loadFont(p, &font_st_8x8)
 
-
-	//p.LoadHex("/home/aniou/c256/go65c816/data/matrix.hex")
-
-	/*
-	p.LoadHex("/home/aniou/c256/src/c256-gui-shim/old-kernel.hex")
-	//p.LoadHex("/home/aniou/c256/src/c256-gui-shim/c256-gui-shim.hex")
-	p.CPU.PC = 0x0000
-	p.CPU.RK = 0x03
-	*/
-
-	//memoryDump(p, 0x381000)
-	//waitForEnter()
-	//p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
-	//p.LoadHex("/home/aniou/c256/Kernel_FMX.old/kernel.hex")
-	//p.LoadHex("/home/aniou/c256/src/c256-gui-shim/c256-gui-shim2.hex")
-	//p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
-
-	// testing text mode with old kernel and vicky I
-	//p.LoadHex("/home/aniou/c256/FoenixIDE-release-0.4.2.1/bin/Release/roms/kernel.hex")
-	//p.LoadHex("/home/aniou/c256/of816/platforms/C256/forth.hex")
-	//p.CPU.PC = 0xff00
-	//p.CPU.RK = 0x00
-
-	/*
-	// testing bitmap with old kernel and vicky I
-	p.LoadHex("/home/aniou/c256/kernel4.hex")
-	p.LoadHex("/home/aniou/c256/src/graph4.hex")
-	p.CPU.PC = 0x0000
-	p.CPU.RK = 0x03
-	*/
+	if len(os.Args) < 2 {
+		log.Fatalf("Usage: %s filename.ini\n", os.Args[0])
+	} else {
+		gui.loadConfig(os.Args[1])
+	}
  
-	// testing new kernel and bitmap
-	p.LoadHex("/home/aniou/c256/IDE/bin/Release/roms/kernel.hex")
-	p.LoadHex("/home/aniou/c256/graph5bm0.hex")
-	p.CPU.PC = 0x0000
-	p.CPU.RK = 0x03
 
 	p.CPU.Bus.EaWrite(0xAF_0005, 0x20) // border B 
 	p.CPU.Bus.EaWrite(0xAF_0006, 0x00) // border G
@@ -248,6 +219,8 @@ func main() {
 		p.CPU.Bus.EaWrite(uint32(j), val)
 
 	}
+
+
 
 	// step 1: SDL
 	err = sdl.Init(sdl.INIT_EVERYTHING)
