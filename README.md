@@ -51,8 +51,8 @@ See [here](https://wiki.c256foenix.com/index.php?title=VICKY_II) for VICKY II sp
 - [ ] 800x600 mode
 - [ ] double pixel mode
 - [x] fullscreen mode
-- [x] border support
-- [x] text mode (partial, no scroll)
+- [x] border support (partial, no scroll)
+- [x] text mode 
 - [x] text LUT
 - [x] cursor (but no second font bank)
 - [x] fonts
