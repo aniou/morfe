@@ -3,6 +3,9 @@
 
 ## Preface
 
+* Warning! There is a bug, introduced probably during release process,
+  that prevents scrolling in text mode. It should be fixed soon.
+
 * That project was created for my personal needs and lacks many features.
   If You are interested in official, full-blown C256 Foenix emulator, You
   should take a look at [Foenix IDE](https://github.com/Trinity-11/FoenixIDE)
