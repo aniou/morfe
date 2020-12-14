@@ -2112,6 +2112,26 @@ func (cpu *CPU) op_cop(info *stepInfo) {
 }
 
 // MVN - MoVe memory Negative
+/*
+65802/65816: MVN/MVP
+MVN and MVP require two operands, usually code or data labels from which the assembler strips the
+bank bytes, in sourcebank,destbank order (opposite of object code order). Eight-bit index registers will cause
+these two instructions to move only zero page memory. But eight-bit accumulator mode is irrelevant to the
+count value; the accumulator is expanded to sixteen bits using hidden B accumulator as the high byte of the
+count. Finally, the count in the accumulator is one less than the count of bytes to be moved: five in the
+accumulator means six bytes will be moved.
+
+(Programming the 65816)
+*/
+/*
+  mvn/mvp can be interrupted by IRQ after every byte move (7 cycles), the simplest way
+  to achieve it is treat mvn/mvp as recurrent instructions, not single one. We achieve
+  it by settin stepPC to 0, that means that CPU doesn't skip to next command as long
+  as accumulator is diffrent than 0xffff
+
+  BTW: specification says that mvn/mvp use full C accumulator
+
+*/
 func (cpu *CPU) op_mvn(info *stepInfo) {
 	dst := cpu.nRead(cpu.RK, info.addr)
 	src := cpu.nRead(cpu.RK, info.addr+1)
@@ -2127,17 +2147,11 @@ func (cpu *CPU) op_mvn(info *stepInfo) {
 		cpu.RX++
 	}
 
-
-	if cpu.M == 1 {
-		cpu.RAl--
-		if cpu.RAl != 0xff {
-			cpu.stepPC = 0
-		}
-	} else {
-		cpu.RA--
-		if cpu.RA != 0xffff {
-			cpu.stepPC = 0
-		}
+	cpu.RA--
+	cpu.RAl = uint8(cpu.RA &  0x00ff)
+	cpu.RAh = uint8(cpu.RA >> 8)
+	if cpu.RA != 0xffff {
+		cpu.stepPC = 0
 	}
 }	
 
@@ -2157,17 +2171,11 @@ func (cpu *CPU) op_mvp(info *stepInfo) {
 		cpu.RX--
 	}
 
-
-	if cpu.M == 1 {
-		cpu.RAl--
-		if cpu.RAl != 0xff {
-			cpu.stepPC = 0
-		}
-	} else {
-		cpu.RA--
-		if cpu.RA != 0xffff {
-			cpu.stepPC = 0
-		}
+	cpu.RA--
+	cpu.RAl = uint8(cpu.RA &  0x00ff)
+	cpu.RAh = uint8(cpu.RA >> 8)
+	if cpu.RA != 0xffff {
+		cpu.stepPC = 0
 	}
 }
 
