@@ -372,13 +372,15 @@ func (v *Vicky) Read(address uint32) byte {
 		return mem[a]
 
 	case address >= 0xAF_A000 && address<=0xAF_BFFF:
-		return byte(text[address-0xAF_A000])
+		//return byte(text[address-0xAF_A000])		// there is no need to recalculate
+		return mem[a]					// because we have a 'generic' mem
 
 	case address >= 0xAF_C000 && address<=0xAF_DFFF:
-		addr := address - 0xAF_C000
-		fgc := byte(fg[addr]) << 4
-		bgc := byte(bg[addr])
-		return byte(fgc|bgc)
+		//addr := address - 0xAF_C000			// same as above
+		//fgc := byte(fg[addr]) << 4
+		//bgc := byte(bg[addr])
+		//return byte(fgc|bgc)
+		return mem[a]
 
 	case address == 0xAF_E80E:				// this is Trinity, not Vicky, XXX
 		return 0x03					// BASIC
@@ -449,6 +451,13 @@ func (v *Vicky) Write(address uint32, val byte) {
 
 	case address == 0xAF_000F:	// BACKGROUND_COLOR_R
 		v.Background[0] = val
+
+	case address == 0xAF_0010:	// xxx - implement rest of that
+		if (val & 0x01) == 0 {
+			v.Cursor_visible = false
+		} else {
+			v.Cursor_visible = true
+		}
 		
 	case address >= 0xAF_0012 && address<=0xAF_0017:	// cursor registers
 		return
