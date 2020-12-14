@@ -15,7 +15,7 @@
 ## Important changes
 
 * 2020-12-14: GABE Math Coop (copied from FoenixIDE) added!
-  Now text scrolling na BASIC works!
+  Now text scrolling and embedded BASIC works!
 
   [More about GABE Coop](https://wiki.c256foenix.com/index.php?title=GABE#GABE_Integer_Math_Coprocessor_.28.2400:0100_.E2.80.93_.2400:012B.29)
 
