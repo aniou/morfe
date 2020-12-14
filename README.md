@@ -3,9 +3,6 @@
 
 ## Preface
 
-* Warning! There is a bug, introduced probably during release process,
-  that prevents scrolling in text mode. It should be fixed soon.
-
 * That project was created for my personal needs and lacks many features.
   If You are interested in official, full-blown C256 Foenix emulator, You
   should take a look at [Foenix IDE](https://github.com/Trinity-11/FoenixIDE)
@@ -15,18 +12,25 @@
 * At this moment text-based interface doesn't work. If You need it, there
   is a [separate branch](https://github.com/aniou/go65c816/tree/tui)
 
-* There is a problem with BASIC embedded into official C256 kernel - it
-  does not work properly on emulator. The case is under investigation.
+## Important changes
+
+* 2020-12-14: GABE Math Coop (copied from FoenixIDE) added!
+  Now text scrolling na BASIC works!
+
+  [More about GABE Coop](https://wiki.c256foenix.com/index.php?title=GABE#GABE_Integer_Math_Coprocessor_.28.2400:0100_.E2.80.93_.2400:012B.29)
 
 ## Some screenshots
 
 [of816 port](https://github.com/aniou/of816/tree/C256/platforms/C256)
+
 ![of816port](images/of816.png)
 
 Simple overlay test
+
 ![overlay test](images/graph5bm0.png)
 
 Simple disassembler
+
 ![disassembler](images/disasm.png)
 
 ## Supported systems
