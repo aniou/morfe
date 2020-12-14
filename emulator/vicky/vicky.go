@@ -373,7 +373,6 @@ func (v *Vicky) Read(address uint32) byte {
 
 	case address >= 0xAF_A000 && address<=0xAF_BFFF:
 		//return byte(text[address-0xAF_A000])		// there is no need to recalculate
-		fmt.Printf("r")
 		return mem[a]					// because we have a 'generic' mem
 
 	case address >= 0xAF_C000 && address<=0xAF_DFFF:
@@ -543,7 +542,6 @@ func (v *Vicky) Write(address uint32, val byte) {
 
 	case address >= 0xAF_A000 && address<=0xAF_BFFF:
 		text[address-0xAF_A000] = uint32(val)
-		fmt.Printf("w")
 
 	case address >= 0xAF_C000 && address<=0xAF_DFFF:
 		addr := address - 0xAF_C000

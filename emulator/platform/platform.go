@@ -35,9 +35,10 @@ func (platform *Platform) InitGUI() {
 	platform.GABE, _  = gabe.New()
 	
 
-	platform.CPU.Bus.Attach(ram,            "ram", 0x000000, 0x3FFFFF) // xxx - 1: ram.offset, ram.size 2: get rid that?
-	platform.CPU.Bus.Attach(platform.GPU, "vicky", 0xAF0000, 0xEFFFFF)
-	platform.CPU.Bus.Attach(platform.GABE, "gabe", 0xAF1000, 0xAF13FF) // probably should be splitted
+	platform.CPU.Bus.Attach(ram,           "ram",       0x00_0000, 0x3F_FFFF)  // xxx - 1: ram.offset, ram.size 2: get rid that?
+	platform.CPU.Bus.Attach(platform.GPU,  "vicky",     0xAF_0000, 0xEF_FFFF)
+	platform.CPU.Bus.Attach(platform.GABE, "gabe",      0xAF_1000, 0xAF_13FF)  // probably should be splitted
+	platform.CPU.Bus.Attach(platform.GABE, "gabe-math", 0x00_0100, 0x00_012F)  // XXX error GABE coop is 0x2c bytes but we need mult of 16
 
 	platform.CPU.Bus.EaWrite(0xAF070B, 0x01)			   // fake platform version, my HW ha 43 here IDE has 00
 

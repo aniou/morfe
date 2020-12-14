@@ -359,14 +359,14 @@ func main() {
 					break
 				}
 				_, stopped := p.CPU.Step()
-				/*
-				if p.CPU.PC == 0x0a67 && p.CPU.RK == 0x39 {
-					disasm=true
-				}
-				if p.CPU.PC == 0x0ad6 && p.CPU.RK == 0x39 {
-					disasm=false
-				}
-				*/
+				
+				//if p.CPU.PC == 0x0a67 && p.CPU.RK == 0x39 {
+				//	disasm=true
+				//}
+				//if p.CPU.PC == 0x0ad6 && p.CPU.RK == 0x39 {
+				//	disasm=false
+				//}
+				
 
 				if disasm {
 					// XXX - move it do subroutine
