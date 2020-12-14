@@ -127,10 +127,10 @@ func updateFontCache(pos uint32, val byte) {
 func (v *Vicky) recalculateScreen() {
 	v.starting_fb_row_pos = v.x_res * uint32(v.Border_y_size) + uint32(v.Border_x_size)
 
-        //v.text_cols = (640 - (uint32(v.Border_x_size)* 2)) / 8 // xxx - parametrize screen width
-        //v.text_rows = (480 - (uint32(v.Border_y_size)* 2)) / 8 // xxx - parametrize screen height
-	v.text_cols = v.x_res / (v.pixel_size * 8)
-	v.text_rows = v.y_res / (v.pixel_size * 8)
+        //v.text_cols = (640 - (uint32(v.Border_x_size) * 2)) / 8 // xxx - parametrize screen width
+        //v.text_rows = (480 - (uint32(v.Border_y_size) * 2)) / 8 // xxx - parametrize screen height
+	v.text_cols = (v.x_res - (uint32(v.Border_x_size) * 2)) / (v.pixel_size * 8)
+	v.text_rows = (v.y_res - (uint32(v.Border_y_size) * 2)) / (v.pixel_size * 8)
 
 
         //if debug.gui {
@@ -179,7 +179,7 @@ func (v *Vicky) RenderBitmapText() {
 	// by manupipulating starting point (now 0) and end clause (now <v.text_rows)
 	fb_row_pos = v.starting_fb_row_pos
 	for text_y = 0; text_y < v.text_rows; text_y += 1 { // over lines of text
-		text_row_pos = text_y * v.text_cols
+		text_row_pos = text_y * 80				// calculate from resolution / 8 !
 		for text_x = 0; text_x < v.text_cols; text_x += 1 { // pre-calculate data for x-axis
 			fnttmp[text_x] = text[text_row_pos+text_x] * 64 // position in font array
 			dsttmp[text_x] = text_x * 8                     // position of char in dest FB
@@ -373,6 +373,7 @@ func (v *Vicky) Read(address uint32) byte {
 
 	case address >= 0xAF_A000 && address<=0xAF_BFFF:
 		//return byte(text[address-0xAF_A000])		// there is no need to recalculate
+		fmt.Printf("r")
 		return mem[a]					// because we have a 'generic' mem
 
 	case address >= 0xAF_C000 && address<=0xAF_DFFF:
@@ -542,6 +543,7 @@ func (v *Vicky) Write(address uint32, val byte) {
 
 	case address >= 0xAF_A000 && address<=0xAF_BFFF:
 		text[address-0xAF_A000] = uint32(val)
+		fmt.Printf("w")
 
 	case address >= 0xAF_C000 && address<=0xAF_DFFF:
 		addr := address - 0xAF_C000
