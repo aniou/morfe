@@ -1,5 +1,5 @@
 # go65c816
-64c816 / [C256 Foenix](https://c256foenix.com/) emulator written in Go
+65c816 / [C256 Foenix](https://c256foenix.com/) emulator written in Go
 
 ## Preface
 
@@ -76,6 +76,7 @@ See [here](https://wiki.c256foenix.com/index.php?title=VICKY_II) for VICKY II sp
 
 See [here](https://wiki.c256foenix.com/index.php?title=GABE) for GABE spec
 
+- [x] math coprocessor
 - [x] keyboard input (GABE)
 - [ ] mouse
 - [ ] all other
@@ -105,7 +106,7 @@ cd go65c816/cmd/gui
 ## ini files
 
 `*.ini` files specifies code (only Intel hex format at this moment) and 
-initial state of PC (to be strick K and PC registers of 65c816). There
+initial state of PC (to be strict K and PC registers of 65c816). There
 may be multiple files loaded, specified by `file1` to `file999` keys.
 
 Memory isn't cleared between before load, so there is a possibility to
