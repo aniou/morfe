@@ -17,7 +17,7 @@ type Gabe struct {
 
 func New() (*Gabe, error) {
 	//g := Gabe{make(chan byte, 200), queue.NewQueueByte(200)}
-	gabe := Gabe{queue.NewQueueByte(200), 0, 0, make([]byte, 0x2B)}
+	gabe := Gabe{queue.NewQueueByte(200), 0, 0, make([]byte, 0x30)}
 	return &gabe, nil
 }
 
@@ -42,10 +42,7 @@ func (g *Gabe) Size() uint32 {
 func (g *Gabe) Read(address uint32) byte {
 	//mylog.Logger.Log(fmt.Sprintf("."))
 	switch {
-	case address >= 0x00_0100 && address <= 0x00_012B:		// MATH Coprocessor
-		return g.mem[address - 0x00_0100]
-
-	case address >= 0x00_012E && address <= 0x00_012F:		// grey area of errors, we simulate memory here
+	case address >= 0x00_0100 && address <= 0x00_012F:		// MATH Coprocessor
 		return g.mem[address - 0x00_0100]
 
 	case address == 0xAF1060:
@@ -55,6 +52,7 @@ func (g *Gabe) Read(address uint32) byte {
 		} else {
 			return 0
 		}
+
 	case address == 0xAF1064:			// we support only bit 0 
 		return g.command
 		/*
@@ -172,7 +170,7 @@ func (g *Gabe) Write(address uint32, val byte) {
 	case address >= 0x00_0100 && address <= 0x00_012B:	// MATH Coprocessor
 		g.mathCoop(address, val)
 
-	case address >= 0x00_012E && address <= 0x00_012F:	// grey area of errors, we simulate memory here
+	case address >= 0x00_012C && address <= 0x00_012F:	// grey area of errors, we simulate memory here
 		g.mem[address - 0x00_0100] = val
 
 	case address == 0xAF1060:
