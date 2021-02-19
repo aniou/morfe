@@ -365,13 +365,17 @@ func main() {
 				if stopped {
 					switch p.CPU.WDM {
 					case 0:			// do nothing
-					case 10:		// enable disasm
-						disasm = true
-						fmt.Printf("%s", p.CPU.DisassemblePreviousPC())
-					case 11:		// disable disasm
-						disasm = false
-						fmt.Printf("... disassembling stopped\n")
-					case 20:		// leave stopped=true, thus break at end of loop
+					case 0x10:		// enable disasm
+						//if disasm == false {
+						//	disasm = true
+						//	fmt.Printf("%s", p.CPU.DisassemblePreviousPC())
+						//}
+					case 0x11:		// disable disasm
+						if disasm {
+							disasm = false
+							fmt.Printf("... disassembling stopped\n")
+						}
+					case 0x20:		// stop emulator
 						running = false
 						break cpu_loop
 					default:
@@ -394,28 +398,25 @@ func main() {
 					fmt.Fprintf(os.Stdout, " ")
 					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.B, "B"))
 					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.E, "E"))
+					fmt.Fprintf(os.Stdout, " DBR %02x", p.CPU.RDBR)
 					if p.CPU.M == 0 {
-						fmt.Printf(" A  %04x (%7d) │",          p.CPU.RA, p.CPU.RA)
+						fmt.Printf("│A  %04x (%7d)",          p.CPU.RA, p.CPU.RA)
 					} else {
-						fmt.Printf(" A %02x %02x (%3d %3d) │", p.CPU.RAh, p.CPU.RAl, p.CPU.RAh, p.CPU.RAl)
+						fmt.Printf("│A %02x %02x (%3d %3d)", p.CPU.RAh, p.CPU.RAl, p.CPU.RAh, p.CPU.RAl)
 					}
 					if p.CPU.X == 0 {
-						fmt.Printf(" X  %04x (%7d)",          p.CPU.RX, p.CPU.RX)
+						fmt.Printf("│X  %04x (%7d)",          p.CPU.RX, p.CPU.RX)
+						fmt.Printf("│Y  %04x (%7d)│",         p.CPU.RY, p.CPU.RY)
 					} else {
-						fmt.Printf(" X    %02x (    %3d)  │", p.CPU.RXl, p.CPU.RXl)
+						fmt.Printf("│X    %02x (    %3d)",  p.CPU.RXl, p.CPU.RXl)
+						fmt.Printf("│Y    %02x (    %3d)│", p.CPU.RYl, p.CPU.RYl)
 					}
-					fmt.Printf(" %4x ", p.CPU.RX)
+					fmt.Printf("IP %02x%02x│", p.CPU.Bus.EaRead(0xf1), p.CPU.Bus.EaRead(0xf0))
+					fmt.Printf("SP %02x%02x│", p.CPU.Bus.EaRead(0xf3), p.CPU.Bus.EaRead(0xf2))
+					fmt.Printf("RP %02x%02x│", p.CPU.Bus.EaRead(0xf5), p.CPU.Bus.EaRead(0xf4))
 					fmt.Printf("%s", p.CPU.DisassembleCurrentPC())
 					//break
 				}
-
-				/*
-				if stopped {
-						running = false
-					break
-				}
-				*/
-				
 			}
 		}
 
