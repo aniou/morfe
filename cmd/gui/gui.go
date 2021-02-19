@@ -354,20 +354,33 @@ func main() {
 			}
 
 			// cpu step ---------------------------------------------------------
+			cpu_loop:
 			for {
 				if (p.CPU.AllCycles - stepCycles) > CPU_STEP * uint64(mult) {
 					break
 				}
 				_, stopped := p.CPU.Step()
 				
-				//if p.CPU.PC == 0x0a67 && p.CPU.RK == 0x39 {
-				//	disasm=true
-				//}
-				//if p.CPU.PC == 0x0ad6 && p.CPU.RK == 0x39 {
-				//	disasm=false
-				//}
+				// debugging interface, created around WDM opcode
+				if stopped {
+					switch p.CPU.WDM {
+					case 0:			// do nothing
+					case 10:		// enable disasm
+						disasm = true
+						fmt.Printf("%s", p.CPU.DisassemblePreviousPC())
+					case 11:		// disable disasm
+						disasm = false
+						fmt.Printf("... disassembling stopped\n")
+					case 20:		// leave stopped=true, thus break at end of loop
+						running = false
+						break cpu_loop
+					default:
+						fmt.Fprintf(os.Stdout, "%WARN: unknown WDM opcode %d\n", p.CPU.WDM)
+					}
+					p.CPU.WDM = 0
+					stopped = false
+				}
 				
-
 				if disasm {
 					// XXX - move it do subroutine
 					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.N, "n"))
@@ -386,15 +399,23 @@ func main() {
 					} else {
 						fmt.Printf(" A %02x %02x (%3d %3d) │", p.CPU.RAh, p.CPU.RAl, p.CPU.RAh, p.CPU.RAl)
 					}
+					if p.CPU.X == 0 {
+						fmt.Printf(" X  %04x (%7d)",          p.CPU.RX, p.CPU.RX)
+					} else {
+						fmt.Printf(" X    %02x (    %3d)  │", p.CPU.RXl, p.CPU.RXl)
+					}
 					fmt.Printf(" %4x ", p.CPU.RX)
 					fmt.Printf("%s", p.CPU.DisassembleCurrentPC())
 					//break
 				}
 
+				/*
 				if stopped {
-					running = false
+						running = false
 					break
 				}
+				*/
+				
 			}
 		}
 
@@ -484,6 +505,6 @@ func main() {
 		window.SetFullscreen(0)
 	}
 
-	memoryDump(p, 0)
+	//memoryDump(p, 0)
 
 }

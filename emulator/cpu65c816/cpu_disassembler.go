@@ -98,8 +98,17 @@ func (c *CPU) formatInstructionMode(mode byte, w0 byte, w1 byte, w2 byte, w3 byt
 }
 
 // XXX - create disassemble line
+func (c *CPU) DisassemblePreviousPC() string {
+	return c.Disassemble(c.PPC)
+}
+
 func (c *CPU) DisassembleCurrentPC() string {
-	var myPC uint16 = c.PC
+	return c.Disassemble(c.PC)
+}
+
+
+func (c *CPU) Disassemble(myPC uint16) string {
+	//var myPC uint16 = c.PC
 	var numeric string
 	var output string
 

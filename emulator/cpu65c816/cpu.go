@@ -352,6 +352,7 @@ type CPU struct {
 	// previous register's value exists for debugging purposes
 	PRK	  byte   // previous value of program banK register
 	PPC       uint16 // previous value Program Counter 
+	WDM	  byte	 // argument WDM command, for debugging purposes
 
 	// 65c816 registers
 	PC        uint16 // Program Counter
@@ -391,6 +392,7 @@ type CPU struct {
 
 func New(bus *bus.Bus) (*CPU, error) {
 	cpu    := CPU{Bus: bus}
+	cpu.WDM = 0
 	//cpu.LogBuf = bytes.Buffer{}
 	cpu.createTable()
 	//cpu.Reset()
@@ -2320,7 +2322,7 @@ func (cpu *CPU) op_trb(info *stepInfo) {
 		value := cpu.cmdRead16(info)
 		cpu.cmdWrite16(info, value & (^cpu.RA))
 		cpu.setZN16(value & cpu.RA)
-	}
+	}  
 }
 
 // Test and Set Bits
@@ -2375,6 +2377,7 @@ func (cpu *CPU) wai(info *stepInfo) {
 
 // WDM - William D. Mensch, Jr.
 func (cpu *CPU) op_wdm(info *stepInfo) {
+    cpu.WDM   = cpu.cmdRead(info)
     cpu.abort = true
 }
 
