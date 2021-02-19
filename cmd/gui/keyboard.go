@@ -185,6 +185,8 @@ func PS2ScanCode(code sdl.Scancode) byte {
 		return sc_backslash
 	case sdl.SCANCODE_LSHIFT:
 		return sc_shiftLeft
+	case sdl.SCANCODE_RSHIFT:
+		return sc_shiftRight
 	case sdl.SCANCODE_LALT:
 		return sc_altLeft
 	case sdl.SCANCODE_LCTRL:
