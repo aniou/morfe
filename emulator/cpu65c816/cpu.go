@@ -353,6 +353,7 @@ type CPU struct {
 	PRK	  byte   // previous value of program banK register
 	PPC       uint16 // previous value Program Counter 
 	WDM	  byte	 // argument WDM command, for debugging purposes
+	Counter	  uint64 // custom counter driven by WDM command
 
 	// 65c816 registers
 	PC        uint16 // Program Counter
@@ -2376,9 +2377,16 @@ func (cpu *CPU) wai(info *stepInfo) {
 }
 
 // WDM - William D. Mensch, Jr.
+//
+// values: 0-9  increase counter
+//         >=10 are interpreted by emulator
 func (cpu *CPU) op_wdm(info *stepInfo) {
-    cpu.WDM   = cpu.cmdRead(info)
-    cpu.abort = true
+	cpu.WDM   = cpu.cmdRead(info)
+	if cpu.WDM < 10 {
+		cpu.Counter+=uint64(cpu.WDM)
+	} else {
+		cpu.abort = true
+	}
 }
 
 // XBA - eXchange B and A accumulator
