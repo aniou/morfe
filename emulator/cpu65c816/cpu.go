@@ -2382,9 +2382,12 @@ func (cpu *CPU) wai(info *stepInfo) {
 //         >=10 are interpreted by emulator
 func (cpu *CPU) op_wdm(info *stepInfo) {
 	cpu.WDM   = cpu.cmdRead(info)
-	if cpu.WDM < 10 {
+	switch {
+	case cpu.WDM == 0:
+		cpu.Counter = 0
+	case cpu.WDM > 0 && cpu.WDM < 10:
 		cpu.Counter+=uint64(cpu.WDM)
-	} else {
+	default:
 		cpu.abort = true
 	}
 }
