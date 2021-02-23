@@ -69,4 +69,14 @@ func (g *GUI) loadConfig(filename string) {
 		g.p.CPU.PC = uint16(addr & 0x0000FFFF)
 		g.p.CPU.RK = uint8(addr >> 16)
 	}
+
+	if cfg.Section("cpu").HasKey("wdm_mode") {
+		wdm_mode := cfg.Section("cpu").Key("wdm_mode").String()
+		switch wdm_mode {
+		case "debug":
+			debug.cpu = true	// XXX - bad behaviour, globals!
+		default:
+			debug.cpu = false
+		}
+	}
 }

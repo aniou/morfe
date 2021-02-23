@@ -27,8 +27,9 @@ type GUI struct {
 
 type DEBUG struct {
 	gui	bool
+	cpu	bool
 }
-var debug = DEBUG{true}
+var debug = DEBUG{true, false}
 
 
 // some support routines
@@ -275,11 +276,12 @@ func main() {
 
 
 	// variables for performance calculation ---------------------------------------
-	var prev_ticks uint32 = sdl.GetTicks()   // FPS calculation
-	var mult       uint32 = prev_ticks	 // CPU speed calculation
-	var ticks_now, frames uint32             // CPU step and FPS calculation
-	var stepCycles, prevCycles uint64 = 0, 0 // CPU speed calculation
-	var cursor_counter int32                 // how many ticks remains to blink cursor 
+	var prev_ticks uint32 = sdl.GetTicks()    // FPS calculation
+	var mult       uint32 = prev_ticks	  // CPU speed calculation
+	var ticks_now, frames uint32              // CPU step and FPS calculation
+	var stepCycles, prevCycles uint64 = 0, 0  // CPU speed calculation
+	var prevCounter, maxCounter uint64 = 0, 0 // measuring speed of custom CPU counter
+	var cursor_counter int32                  // how many ticks remains to blink cursor 
 	
 
 	// current draw model ----------------------------------------------------------
@@ -296,6 +298,13 @@ func main() {
 	// main loop -------------------------------------------------------------------
 	running = true
 	disasm  = false
+	/* nga debug only - XXX - move to plugin
+	var ipptr uint32 = 0
+	var tval uint32 = 0
+	var nval uint32 = 0
+	var tos uint32 = 0
+	var nos uint32 = 0
+	*/
 	for running {
 		// step 1
 		renderer.SetDrawColor(p.GPU.Background[0], p.GPU.Background[1], p.GPU.Background[2], 255)
@@ -362,14 +371,14 @@ func main() {
 				_, stopped := p.CPU.Step()
 				
 				// debugging interface, created around WDM opcode
-				if stopped {
+				if debug.cpu && stopped {
 					switch p.CPU.WDM {
 					case 0:			// do nothing
 					case 0x10:		// enable disasm
-						//if disasm == false {
-						//	disasm = true
-						//	fmt.Printf("%s", p.CPU.DisassemblePreviousPC())
-						//}
+						if disasm == false {
+							disasm = true
+							fmt.Printf("%s", p.CPU.DisassemblePreviousPC())
+						}
 					case 0x11:		// disable disasm
 						if disasm {
 							disasm = false
@@ -377,9 +386,10 @@ func main() {
 						}
 					case 0x20:		// stop emulator
 						running = false
+						fmt.Printf("...emulator stopped by WDM #$20 at cpu.K:PC %02x:%04x\n", p.CPU.PRK, p.CPU.PPC)
 						break cpu_loop
 					default:
-						fmt.Fprintf(os.Stdout, "%WARN: unknown WDM opcode %d\n", p.CPU.WDM)
+						fmt.Printf("%WARN: unknown WDM opcode %d\n", p.CPU.WDM)
 					}
 					p.CPU.WDM = 0
 					stopped = false
@@ -387,18 +397,18 @@ func main() {
 				
 				if disasm {
 					// XXX - move it do subroutine
-					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.N, "n"))
-					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.V, "v"))
-					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.M, "m"))
-					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.X, "x"))
-					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.D, "d"))
-					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.I, "i"))
-					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.Z, "z"))
-					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.C, "c"))
-					fmt.Fprintf(os.Stdout, " ")
-					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.B, "B"))
-					fmt.Fprintf(os.Stdout, printCPUFlags(p.CPU.E, "E"))
-					fmt.Fprintf(os.Stdout, " DBR %02x", p.CPU.RDBR)
+					fmt.Printf(printCPUFlags(p.CPU.N, "n"))
+					fmt.Printf(printCPUFlags(p.CPU.V, "v"))
+					fmt.Printf(printCPUFlags(p.CPU.M, "m"))
+					fmt.Printf(printCPUFlags(p.CPU.X, "x"))
+					fmt.Printf(printCPUFlags(p.CPU.D, "d"))
+					fmt.Printf(printCPUFlags(p.CPU.I, "i"))
+					fmt.Printf(printCPUFlags(p.CPU.Z, "z"))
+					fmt.Printf(printCPUFlags(p.CPU.C, "c"))
+					fmt.Printf(" ")
+					fmt.Printf(printCPUFlags(p.CPU.B, "B"))
+					fmt.Printf(printCPUFlags(p.CPU.E, "E"))
+					fmt.Printf(" DBR %02x", p.CPU.RDBR)
 					if p.CPU.M == 0 {
 						fmt.Printf("│A  %04x (%7d)",          p.CPU.RA, p.CPU.RA)
 					} else {
@@ -411,23 +421,51 @@ func main() {
 						fmt.Printf("│X    %02x (    %3d)",  p.CPU.RXl, p.CPU.RXl)
 						fmt.Printf("│Y    %02x (    %3d)│", p.CPU.RYl, p.CPU.RYl)
 					}
-					fmt.Printf("IP %02x%02x│", p.CPU.Bus.EaRead(0xf1), p.CPU.Bus.EaRead(0xf0))
-					fmt.Printf("SP %02x%02x│", p.CPU.Bus.EaRead(0xf3), p.CPU.Bus.EaRead(0xf2))
-					fmt.Printf("RP %02x%02x│", p.CPU.Bus.EaRead(0xf5), p.CPU.Bus.EaRead(0xf4))
+
+					/*
+					// it is going a little too far, but I want to know... (nga debug)
+					tos  = (uint32(p.CPU.Bus.EaRead(0xd7)) << 8) + uint32(p.CPU.Bus.EaRead(0xd6)) + 0x10004
+					nos  = tos-4
+					tval = (uint32(p.CPU.Bus.EaRead(tos+3)) << 24) +
+					       (uint32(p.CPU.Bus.EaRead(tos+2)) << 16) +
+					       (uint32(p.CPU.Bus.EaRead(tos+1)) << 8)  +
+					        uint32(p.CPU.Bus.EaRead(tos))
+					nval = (uint32(p.CPU.Bus.EaRead(nos+3)) << 24) +
+					       (uint32(p.CPU.Bus.EaRead(nos+2)) << 16) +
+					       (uint32(p.CPU.Bus.EaRead(nos+1)) << 8)  +
+					        uint32(p.CPU.Bus.EaRead(nos))
+					ipptr = (uint32(p.CPU.Bus.EaRead(0xd5)) << 24) +
+					        (uint32(p.CPU.Bus.EaRead(0xd4)) << 16) +
+					        (uint32(p.CPU.Bus.EaRead(0xd3)) << 8)  +
+					        uint32(p.CPU.Bus.EaRead(0xd2))
+					fmt.Printf("IP %02x%02x│", p.CPU.Bus.EaRead(0xd1), p.CPU.Bus.EaRead(0xd0))
+					fmt.Printf("SP %02x%02x│", p.CPU.Bus.EaRead(0xd7), p.CPU.Bus.EaRead(0xd6))
+					fmt.Printf("RP %02x%02x│", p.CPU.Bus.EaRead(0xd9), p.CPU.Bus.EaRead(0xd8))
+					fmt.Printf("NOS %08x│", nval)
+					fmt.Printf("TOS %08x│", tval)
+					fmt.Printf("PTR %08x│", ipptr)
+					*/
 					fmt.Printf("%s", p.CPU.DisassembleCurrentPC())
-					//break
+					break
 				}
 			}
 		}
 
 		// performance info --------------------------------------------------
 		if (ticks_now - prev_ticks) >= 1000 {
-			cyc, unit := showCPUSpeed(p.CPU.AllCycles - prevCycles)
-			prevCycles = p.CPU.AllCycles
+			cyc, unit  := showCPUSpeed(p.CPU.AllCycles - prevCycles)
+			prevCycles  = p.CPU.AllCycles
+
+			deltaCounter := p.CPU.Counter - prevCounter
+			if deltaCounter > maxCounter {
+				maxCounter = deltaCounter
+			}
+			prevCounter = p.CPU.Counter
 			if ! disasm {
-				fmt.Fprintf(os.Stdout, "frames: %4d ticks %d cpu cycles %10d speed %2d %s cpu.K:PC %02x:%04x\n", 
+				fmt.Fprintf(os.Stdout, "frames: %4d ticks %d cpu cycles %10d speed %2d %s cpu counter %10d max %10d cpu.K:PC %02x:%04x\n", 
 				                        frames, (ticks_now - prev_ticks), 
 							p.CPU.AllCycles, cyc, unit, 
+							deltaCounter, maxCounter,
 							p.CPU.RK, p.CPU.PC)
 			}
 			prev_ticks = ticks_now
@@ -506,6 +544,6 @@ func main() {
 		window.SetFullscreen(0)
 	}
 
-	//memoryDump(p, 0)
+	//memoryDump(p, 0x0)
 
 }
