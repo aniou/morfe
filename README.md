@@ -14,6 +14,23 @@
 
 ## Important changes
 
+* 2021-02-23: debug support for WDM opcode
+  Enable this feature by setting `wdm_mode = debug` in `cpu` section of
+  `*.ini` file. See `retro.ini` for example.
+
+  Behaviour of WDM command depends from argument:
+
+|Value Dec|Value Hex  |Effect
+----------|-----------|----------------------------------------
+0         |$00        |reset additional CPU counter (see below)
+1-9       |$01-$0a    |increase CPU counter by value
+16        |$10        |enable debugging (like `F9` key)
+17        |$11        |disable debugging (like `F9` key again)
+32		  |$20	      |stop emulator (like `F12`)
+
+  "Additional CPU counter" is a `uint64` variable in `CPU.Counter` that
+  can be used to measure different aspects of code.
+
 * 2020-12-14: GABE Math Coop (copied from FoenixIDE) added!
   Now text scrolling and embedded BASIC works!
 
