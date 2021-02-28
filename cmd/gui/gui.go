@@ -282,7 +282,7 @@ func main() {
 	var stepCycles, prevCycles uint64 = 0, 0  // CPU speed calculation
 	var prevCounter, maxCounter uint64 = 0, 0 // measuring speed of custom CPU counter
 	var cursor_counter int32                  // how many ticks remains to blink cursor 
-	
+	var cyclesCheckpoint uint64 = 0		  // CPU cycles between checkpoints [nga]
 
 	// current draw model ----------------------------------------------------------
 	//
@@ -373,7 +373,10 @@ func main() {
 				// debugging interface, created around WDM opcode
 				if debug.cpu && stopped {
 					switch p.CPU.WDM {
-					case 0:			// do nothing
+					case 0x0b:		// count cycles
+						fmt.Printf("%%checkpoint: %d cycles from previous\n", 
+									p.CPU.AllCycles - cyclesCheckpoint)
+						cyclesCheckpoint = p.CPU.AllCycles
 					case 0x10:		// enable disasm
 						if disasm == false {
 							disasm = true
