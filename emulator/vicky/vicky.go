@@ -362,6 +362,19 @@ func (v *Vicky) Read(address uint32) byte {
 	case address == 0xAF_070C:
 		return byte(0)
 
+        case address >= 0xAF_1F40 && address<=0xAF_1F7F:                                                                             
+                a := address-0xAF_1F40
+                byte_in_lut := byte(a & 0x03)
+                num := byte(a >> 2)
+                return f_color_lut[num][byte_in_lut]
+
+
+        case address >= 0xAF_1F80 && address<=0xAF_1FFF:
+                a := address-0xAF_1F80
+                byte_in_lut := byte(a & 0x03)
+                num := byte(a >> 2)
+                return b_color_lut[num][byte_in_lut]
+
 	case address >= 0xAF_2000 && address <= 0xAF_3CFF:	// GRPH_LUT0_PTR to GRPH_LUT7_PTR
 		return mem[a]
 
