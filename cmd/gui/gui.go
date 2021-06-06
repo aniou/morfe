@@ -2,7 +2,7 @@
 package main
 
 
-// #cgo CFLAGS: -I/home/aniou/c256/Musashi/
+// #cgo CFLAGS: -I../../../Musashi
 // #cgo LDFLAGS: m68kcpu.o  m68kops.o  softfloat.o
 // #include <m68k.h>
 import "C"

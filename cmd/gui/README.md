@@ -7,7 +7,6 @@ git clone https://github.com/kstenerud/Musashi/
 cd  Musashi
 make
 cp *.o     ../go65c816/cmd/gui
-cp m68k.h  ../go65c816/cmd/gui
 cd ../go65c816/cmd/gui
 go build -o gui *go
 ./gui m68k.ini
