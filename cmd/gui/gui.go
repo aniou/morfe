@@ -1,6 +1,12 @@
 
 package main
 
+
+// #cgo CFLAGS: -I/home/aniou/c256/Musashi/
+// #cgo LDFLAGS: m68kcpu.o  m68kops.o  softfloat.o
+// #include <m68k.h>
+import "C"
+
 import (
 	_ "encoding/binary"
 	"fmt"
@@ -20,6 +26,13 @@ const INT_PENDING_REG1	= 0x00_0141
 const CPU_CLOCK		= 14318000 // 14.381Mhz
 const CURSOR_BLINK_RATE = 500
 
+// preliminary support for different CPUs
+const (
+	CPU_65c816 = 0
+	CPU_m68k   = 1
+)
+var CPU_TYPE = CPU_65c816
+
 type GUI struct {
 	p	   *platform.Platform
 	fullscreen bool
@@ -30,6 +43,77 @@ type DEBUG struct {
 	cpu	bool
 }
 var debug = DEBUG{true, false}
+
+var p = platform.New()		// must be global now
+
+//export m68k_read_memory_8
+func m68k_read_memory_8(addr C.uint) C.uint {
+	fmt.Printf("m68k read8  %8x", addr)
+
+	a   := uint32(addr)
+	val := p.CPU.Bus.EaRead(a)
+
+	fmt.Printf(" val  %8x %d\n", val, val)
+	return C.uint(val)
+}
+
+//export m68k_read_memory_16
+func m68k_read_memory_16(addr C.uint) C.uint {
+	fmt.Printf("m68k read16  %8x", addr)
+
+	a   := uint32(addr)
+	val := ( uint32(p.CPU.Bus.EaRead(a))   << 8 ) |
+                 uint32(p.CPU.Bus.EaRead(a+1))
+
+	fmt.Printf(" val  %8x %d\n", val, val)
+	return C.uint(val)
+}
+
+
+//export m68k_read_memory_32
+func m68k_read_memory_32(addr C.uint) C.uint {
+	fmt.Printf("m68k read32  %8x", addr)
+
+	a   := uint32(addr)
+	val := ( uint32(p.CPU.Bus.EaRead(a))   <<  24 ) |
+               ( uint32(p.CPU.Bus.EaRead(a+1)) <<  16 ) |
+               ( uint32(p.CPU.Bus.EaRead(a+2)) <<   8 ) |
+                 uint32(p.CPU.Bus.EaRead(a+3))
+
+	fmt.Printf(" val  %8x %d\n", val, val)
+	return C.uint(val)
+}
+
+//export m68k_write_memory_8
+func m68k_write_memory_8(addr, val C.uint) {
+	fmt.Printf("m68k write8  %8x val  %8x %d\n", addr, val, val)
+
+	a   := uint32(addr)
+	p.CPU.Bus.EaWrite(a, byte(val))
+	return
+}
+
+//export m68k_write_memory_16
+func m68k_write_memory_16(addr, val C.uint) {
+	fmt.Printf("m68k write16 %8x val  %8x %d\n", addr, val, val)
+
+	a   := uint32(addr)
+	p.CPU.Bus.EaWrite(a,   byte((val >> 8) & 0xff))
+	p.CPU.Bus.EaWrite(a+1, byte( val       & 0xff))
+	return
+}
+
+//export m68k_write_memory_32
+func m68k_write_memory_32(addr, val C.uint) {
+	fmt.Printf("m68k write32 %8x val  %8x %d\n", addr, val, val)
+
+	a   := uint32(addr)
+	p.CPU.Bus.EaWrite(a,   byte((val >> 24) & 0xff))
+	p.CPU.Bus.EaWrite(a+1, byte((val >> 16) & 0xff))
+	p.CPU.Bus.EaWrite(a+2, byte((val >>  8) & 0xff))
+	p.CPU.Bus.EaWrite(a+3, byte( val        & 0xff))
+	return
+}
 
 
 // some support routines
@@ -190,7 +274,7 @@ func main() {
 
 
 	// platform init ---------------------------------------------------------------
-	p := platform.New()
+	//p := platform.New()		// must be global now
 	gui := new(GUI)
 	gui.fullscreen = false
 	gui.p = p			// xxx - fix that mess
@@ -371,7 +455,7 @@ func main() {
 				_, stopped := p.CPU.Step()
 				
 				// debugging interface, created around WDM opcode
-				if debug.cpu && stopped {
+				if debug.cpu && stopped && (CPU_TYPE == CPU_65c816) {
 					switch p.CPU.WDM {
 					case 0x0b:		// count cycles
 						fmt.Printf("%%checkpoint: %d cycles from previous\n", 
@@ -399,63 +483,41 @@ func main() {
 				}
 				
 				if disasm {
-					// XXX - move it do subroutine
-					fmt.Printf(printCPUFlags(p.CPU.N, "n"))
-					fmt.Printf(printCPUFlags(p.CPU.V, "v"))
-					fmt.Printf(printCPUFlags(p.CPU.M, "m"))
-					fmt.Printf(printCPUFlags(p.CPU.X, "x"))
-					fmt.Printf(printCPUFlags(p.CPU.D, "d"))
-					fmt.Printf(printCPUFlags(p.CPU.I, "i"))
-					fmt.Printf(printCPUFlags(p.CPU.Z, "z"))
-					fmt.Printf(printCPUFlags(p.CPU.C, "c"))
-					fmt.Printf(" ")
-					fmt.Printf(printCPUFlags(p.CPU.B, "B"))
-					fmt.Printf(printCPUFlags(p.CPU.E, "E"))
-					fmt.Printf(" DBR %02x", p.CPU.RDBR)
-					if p.CPU.M == 0 {
-						fmt.Printf("│A  %04x (%7d)",          p.CPU.RA, p.CPU.RA)
-					} else {
-						fmt.Printf("│A %02x %02x (%3d %3d)", p.CPU.RAh, p.CPU.RAl, p.CPU.RAh, p.CPU.RAl)
+					if CPU_TYPE == CPU_65c816 {
+						// XXX - move it do subroutine
+						fmt.Printf(printCPUFlags(p.CPU.N, "n"))
+						fmt.Printf(printCPUFlags(p.CPU.V, "v"))
+						fmt.Printf(printCPUFlags(p.CPU.M, "m"))
+						fmt.Printf(printCPUFlags(p.CPU.X, "x"))
+						fmt.Printf(printCPUFlags(p.CPU.D, "d"))
+						fmt.Printf(printCPUFlags(p.CPU.I, "i"))
+						fmt.Printf(printCPUFlags(p.CPU.Z, "z"))
+						fmt.Printf(printCPUFlags(p.CPU.C, "c"))
+						fmt.Printf(" ")
+						fmt.Printf(printCPUFlags(p.CPU.B, "B"))
+						fmt.Printf(printCPUFlags(p.CPU.E, "E"))
+						fmt.Printf(" DBR %02x", p.CPU.RDBR)
+						if p.CPU.M == 0 {
+							fmt.Printf("│A  %04x (%7d)",          p.CPU.RA, p.CPU.RA)
+						} else {
+							fmt.Printf("│A %02x %02x (%3d %3d)", p.CPU.RAh, p.CPU.RAl, p.CPU.RAh, p.CPU.RAl)
+						}
+						if p.CPU.X == 0 {
+							fmt.Printf("│X  %04x (%7d)",          p.CPU.RX, p.CPU.RX)
+							fmt.Printf("│Y  %04x (%7d)│",         p.CPU.RY, p.CPU.RY)
+						} else {
+							fmt.Printf("│X    %02x (    %3d)",  p.CPU.RXl, p.CPU.RXl)
+							fmt.Printf("│Y    %02x (    %3d)│", p.CPU.RYl, p.CPU.RYl)
+						}
+						fmt.Printf("%s", p.CPU.DisassembleCurrentPC())
 					}
-					if p.CPU.X == 0 {
-						fmt.Printf("│X  %04x (%7d)",          p.CPU.RX, p.CPU.RX)
-						fmt.Printf("│Y  %04x (%7d)│",         p.CPU.RY, p.CPU.RY)
-					} else {
-						fmt.Printf("│X    %02x (    %3d)",  p.CPU.RXl, p.CPU.RXl)
-						fmt.Printf("│Y    %02x (    %3d)│", p.CPU.RYl, p.CPU.RYl)
-					}
-
-					/*
-					// it is going a little too far, but I want to know... (nga debug)
-					tos  = (uint32(p.CPU.Bus.EaRead(0xd7)) << 8) + uint32(p.CPU.Bus.EaRead(0xd6)) + 0x10004
-					nos  = tos-4
-					tval = (uint32(p.CPU.Bus.EaRead(tos+3)) << 24) +
-					       (uint32(p.CPU.Bus.EaRead(tos+2)) << 16) +
-					       (uint32(p.CPU.Bus.EaRead(tos+1)) << 8)  +
-					        uint32(p.CPU.Bus.EaRead(tos))
-					nval = (uint32(p.CPU.Bus.EaRead(nos+3)) << 24) +
-					       (uint32(p.CPU.Bus.EaRead(nos+2)) << 16) +
-					       (uint32(p.CPU.Bus.EaRead(nos+1)) << 8)  +
-					        uint32(p.CPU.Bus.EaRead(nos))
-					ipptr = (uint32(p.CPU.Bus.EaRead(0xd5)) << 24) +
-					        (uint32(p.CPU.Bus.EaRead(0xd4)) << 16) +
-					        (uint32(p.CPU.Bus.EaRead(0xd3)) << 8)  +
-					        uint32(p.CPU.Bus.EaRead(0xd2))
-					fmt.Printf("IP %02x%02x│", p.CPU.Bus.EaRead(0xd1), p.CPU.Bus.EaRead(0xd0))
-					fmt.Printf("SP %02x%02x│", p.CPU.Bus.EaRead(0xd7), p.CPU.Bus.EaRead(0xd6))
-					fmt.Printf("RP %02x%02x│", p.CPU.Bus.EaRead(0xd9), p.CPU.Bus.EaRead(0xd8))
-					fmt.Printf("NOS %08x│", nval)
-					fmt.Printf("TOS %08x│", tval)
-					fmt.Printf("PTR %08x│", ipptr)
-					*/
-					fmt.Printf("%s", p.CPU.DisassembleCurrentPC())
 					break
 				}
 			}
 		}
 
 		// performance info --------------------------------------------------
-		if (ticks_now - prev_ticks) >= 1000 {
+		if (CPU_TYPE == CPU_65c816) && (ticks_now - prev_ticks) >= 1000 {
 			cyc, unit  := showCPUSpeed(p.CPU.AllCycles - prevCycles)
 			prevCycles  = p.CPU.AllCycles
 
@@ -513,7 +575,28 @@ func main() {
 							orig_mode = setFullscreen(window)
 						}
 					case sdl.K_F10:
-						//loadFont(p, &font_c256_8x8)
+						// do it only once
+						if CPU_TYPE == CPU_m68k {
+							continue
+						}
+
+						// XXX - test
+						m68k_write_memory_32(0,           0x10_0000)    // stack
+						m68k_write_memory_32(4,           0x20_0000)    // instruction pointer
+						m68k_write_memory_16(0x20_0000,      0x7041)    // moveq  #41, D0
+						m68k_write_memory_16(0x20_0002,      0x13C0)    // move.b D0, $AFA000
+						m68k_write_memory_32(0x20_0004, 0x00AF_A000)    // ...
+
+						C.m68k_init();
+						C.m68k_set_cpu_type(C.M68K_CPU_TYPE_68EC030)
+						//C.m68k_set_cpu_type(C.M68K_CPU_TYPE_68020)
+						C.m68k_pulse_reset()
+
+					        c := C.m68k_execute(40)
+						fmt.Fprintf(os.Stdout, "m68k executed %d cycles\n", c)
+
+						CPU_TYPE = CPU_m68k
+
 					case sdl.K_F9:
 						if disasm {
 							disasm = false 
