@@ -17,18 +17,19 @@ type Platform struct {
 	CPU    *cpu65c816.CPU
 	GPU    *vicky.Vicky
 	GABE   *gabe.Gabe
+	Bus    *bus.Bus
 	Console *netconsole.Console
 }
 
 func New() (*Platform) {
-	p            := Platform{nil, nil, nil, nil}
+	p            := Platform{nil, nil, nil, nil, nil}
 	return &p
 }
 
 // platform with Vicky I
 func (platform *Platform) InitGUI() {
-	bus, _		 := bus.New()
-	platform.CPU, _   = cpu65c816.New(bus)
+	platform.Bus, _	  = bus.New()
+	platform.CPU, _   = cpu65c816.New(platform.Bus)			           // to be removed
 	ram, _	         := memory.New(0x400000, 0x000000)
 	platform.GPU, _	  = vicky.New()
 	//vram, _		 := memory.New(0x400000, 0xb00000)		   // XXX - placeholder
@@ -48,6 +49,9 @@ func (platform *Platform) InitGUI() {
 
 	mylog.Logger.Log("platform: initialized")
 }
+
+/*
+it does not wor at this moment
 
 // simple platform with Text User Interface only
 func (platform *Platform) InitTUI() {
@@ -73,4 +77,4 @@ func (platform *Platform) InitTUI() {
 
 	mylog.Logger.Log("platform: initialized")
 }
-
+*/
