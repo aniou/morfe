@@ -36,16 +36,16 @@ func (platform *Platform) InitGUI() {
 	platform.GABE, _  = gabe.New()
 	
 
-	platform.CPU.Bus.Attach(ram,           "ram",       0x00_0000, 0x3F_FFFF)  // xxx - 1: ram.offset, ram.size 2: get rid that?
-	platform.CPU.Bus.Attach(platform.GPU,  "vicky",     0xAF_0000, 0xEF_FFFF)
-	platform.CPU.Bus.Attach(platform.GABE, "gabe",      0xAF_1000, 0xAF_13FF)  // probably should be splitted
-	platform.CPU.Bus.Attach(platform.GABE, "gabe-math", 0x00_0100, 0x00_012F)  // XXX error GABE coop is 0x2c bytes but we need mult of 16
+	platform.Bus.Attach(ram,           "ram",       0x00_0000, 0x3F_FFFF)  // xxx - 1: ram.offset, ram.size 2: get rid that?
+	platform.Bus.Attach(platform.GPU,  "vicky",     0xAF_0000, 0xEF_FFFF)
+	platform.Bus.Attach(platform.GABE, "gabe",      0xAF_1000, 0xAF_13FF)  // probably should be splitted
+	platform.Bus.Attach(platform.GABE, "gabe-math", 0x00_0100, 0x00_012F)  // XXX error GABE coop is 0x2c bytes but we need mult of 16
 
-	platform.CPU.Bus.EaWrite(0xAF070B, 0x01)			   // fake platform version, my HW ha 43 here IDE has 00
+	platform.Bus.EaWrite(0xAF070B, 0x01)			   // fake platform version, my HW ha 43 here IDE has 00
 
-        platform.CPU.Bus.EaWrite(0xFFFC, 0x00)				   // boot vector
-        platform.CPU.Bus.EaWrite(0xFFFD, 0x10)
-	platform.CPU.Reset()
+        platform.Bus.EaWrite(0xFFFC, 0x00)				   // boot vector
+        platform.Bus.EaWrite(0xFFFD, 0x10)
+	platform.CPU.Reset()				           // XXX - move it to main binary?
 
 	mylog.Logger.Log("platform: initialized")
 }
