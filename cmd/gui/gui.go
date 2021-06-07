@@ -23,8 +23,8 @@ const INT_MASK_REG1	= 0x00_014D
 const INT_PENDING_REG1	= 0x00_0141
 
 // some general consts
-const CPU_CLOCK		= 14318000 // 14.381Mhz
-const CURSOR_BLINK_RATE = 500
+const CPU_CLOCK		= 14318000 // 14.381Mhz (not used)
+const CURSOR_BLINK_RATE = 500      // in ms (milliseconds)
 
 // preliminary support for different CPUs
 const (
@@ -270,7 +270,7 @@ func main() {
 	var disasm	bool
 	var winWidth    int32 = 640
 	var winHeight   int32 = 480
-	var CPU_STEP	uint64 = 14318
+	var CPU_STEP	uint64 = 14318 // 14.318 MHz in milliseconds, apply for 65c816
 
 
 	// platform init ---------------------------------------------------------------
@@ -360,8 +360,8 @@ func main() {
 
 
 	// variables for performance calculation ---------------------------------------
-	var prev_ticks uint32 = sdl.GetTicks()    // FPS calculation
-	var mult       uint32 = prev_ticks	  // CPU speed calculation
+	var prev_ticks uint32 = sdl.GetTicks()    // FPS calculation (1/1000 of second)
+	var ms_elapsed uint32 = prev_ticks	  // how many ms elapsed from last check?
 	var ticks_now, frames uint32              // CPU step and FPS calculation
 	var stepCycles, prevCycles uint64 = 0, 0  // CPU speed calculation
 	var prevCounter, maxCounter uint64 = 0, 0 // measuring speed of custom CPU counter
@@ -435,12 +435,12 @@ func main() {
 		// cpu speed calculation --------------------------------------------
 		frames++
 		if sdl.GetTicks() > ticks_now {
-			mult = sdl.GetTicks() - ticks_now
+			ms_elapsed = sdl.GetTicks() - ticks_now
 			ticks_now = sdl.GetTicks()
 			stepCycles = p.CPU.AllCycles
 
 			// cursor calculation - flip every CURSOR_BLINK_RATE ticks ----------
-			cursor_counter = cursor_counter - int32(mult)
+			cursor_counter = cursor_counter - int32(ms_elapsed)
 			if cursor_counter <= 0 {
 				cursor_counter = CURSOR_BLINK_RATE
 				p.GPU.Cursor_visible = ! p.GPU.Cursor_visible
@@ -449,7 +449,7 @@ func main() {
 			// cpu step ---------------------------------------------------------
 			cpu_loop:
 			for {
-				if (p.CPU.AllCycles - stepCycles) > CPU_STEP * uint64(mult) {
+				if (p.CPU.AllCycles - stepCycles) > CPU_STEP * uint64(ms_elapsed) {
 					break
 				}
 				_, stopped := p.CPU.Step()
@@ -517,7 +517,7 @@ func main() {
 		}
 
 		// performance info --------------------------------------------------
-		if (CPU_TYPE == CPU_65c816) && (ticks_now - prev_ticks) >= 1000 {
+		if (CPU_TYPE == CPU_65c816) && (ticks_now - prev_ticks) >= 1000 {	// once per second
 			cyc, unit  := showCPUSpeed(p.CPU.AllCycles - prevCycles)
 			prevCycles  = p.CPU.AllCycles
 
