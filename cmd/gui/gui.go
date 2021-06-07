@@ -14,6 +14,7 @@ import (
 	"log"
 	"os"
 	//"time"
+	"github.com/aniou/go65c816/emulator/cpu"
 	"github.com/aniou/go65c816/emulator/platform"
 	_ "github.com/aniou/go65c816/lib/mylog"
 )
@@ -26,12 +27,7 @@ const INT_PENDING_REG1	= 0x00_0141
 const CPU_CLOCK		= 14318000 // 14.381Mhz (not used)
 const CURSOR_BLINK_RATE = 500      // in ms (milliseconds)
 
-// preliminary support for different CPUs
-const (
-	CPU_65c816 = 0
-	CPU_m68k   = 1
-)
-var CPU_TYPE = CPU_65c816
+var CPU_TYPE = cpu.CPU_65c816
 
 type GUI struct {
 	p	   *platform.Platform
@@ -455,7 +451,7 @@ func main() {
 				_, stopped := p.CPU.Step()
 				
 				// debugging interface, created around WDM opcode
-				if debug.cpu && stopped && (CPU_TYPE == CPU_65c816) {
+				if debug.cpu && stopped && (CPU_TYPE == cpu.CPU_65c816) {
 					switch p.CPU.WDM {
 					case 0x0b:		// count cycles
 						fmt.Printf("%%checkpoint: %d cycles from previous\n", 
@@ -483,7 +479,7 @@ func main() {
 				}
 				
 				if disasm {
-					if CPU_TYPE == CPU_65c816 {
+					if CPU_TYPE == cpu.CPU_65c816 {
 						// XXX - move it do subroutine
 						fmt.Printf(printCPUFlags(p.CPU.N, "n"))
 						fmt.Printf(printCPUFlags(p.CPU.V, "v"))
@@ -517,7 +513,7 @@ func main() {
 		}
 
 		// performance info --------------------------------------------------
-		if (CPU_TYPE == CPU_65c816) && (ticks_now - prev_ticks) >= 1000 {	// once per second
+		if (CPU_TYPE == cpu.CPU_65c816) && (ticks_now - prev_ticks) >= 1000 {	// once per second
 			cyc, unit  := showCPUSpeed(p.CPU.AllCycles - prevCycles)
 			prevCycles  = p.CPU.AllCycles
 
@@ -576,7 +572,7 @@ func main() {
 						}
 					case sdl.K_F10:
 						// do it only once
-						if CPU_TYPE == CPU_m68k {
+						if CPU_TYPE == cpu.CPU_68030 {
 							continue
 						}
 
@@ -595,7 +591,7 @@ func main() {
 					        c := C.m68k_execute(40)
 						fmt.Fprintf(os.Stdout, "m68k executed %d cycles\n", c)
 
-						CPU_TYPE = CPU_m68k
+						CPU_TYPE = cpu.CPU_68030
 
 					case sdl.K_F9:
 						if disasm {

@@ -6,6 +6,7 @@ package platform
 import (
 	"github.com/aniou/go65c816/lib/mylog"
 	"github.com/aniou/go65c816/emulator/bus"
+	"github.com/aniou/go65c816/emulator/cpu"
 	"github.com/aniou/go65c816/emulator/cpu65c816"
 	"github.com/aniou/go65c816/emulator/memory"
 	"github.com/aniou/go65c816/emulator/netconsole"
@@ -14,15 +15,17 @@ import (
 )
 
 type Platform struct {
-	CPU    *cpu65c816.CPU
-	GPU    *vicky.Vicky
-	GABE   *gabe.Gabe
-	Bus    *bus.Bus
+	CPU     *cpu65c816.CPU		// legacy, to be converted
+	CPU0    *cpu.Processor		// on-board one (65c816 by default)
+	CPU1    *cpu.Processor		// add-on
+	GPU     *vicky.Vicky
+	GABE    *gabe.Gabe
+	Bus     *bus.Bus
 	Console *netconsole.Console
 }
 
 func New() (*Platform) {
-	p            := Platform{nil, nil, nil, nil, nil}
+	p            := Platform{nil, nil, nil, nil, nil, nil, nil}
 	return &p
 }
 
@@ -32,7 +35,6 @@ func (platform *Platform) InitGUI() {
 	platform.CPU, _   = cpu65c816.New(platform.Bus)			           // to be removed
 	ram, _	         := memory.New(0x400000, 0x000000)
 	platform.GPU, _	  = vicky.New()
-	//vram, _		 := memory.New(0x400000, 0xb00000)		   // XXX - placeholder
 	platform.GABE, _  = gabe.New()
 	
 
@@ -42,9 +44,8 @@ func (platform *Platform) InitGUI() {
 	platform.Bus.Attach(platform.GABE, "gabe-math", 0x00_0100, 0x00_012F)  // XXX error GABE coop is 0x2c bytes but we need mult of 16
 
 	platform.Bus.EaWrite(0xAF070B, 0x01)			   // fake platform version, my HW ha 43 here IDE has 00
-
-        platform.Bus.EaWrite(0xFFFC, 0x00)				   // boot vector
-        platform.Bus.EaWrite(0xFFFD, 0x10)
+        platform.Bus.EaWrite(  0xFFFC, 0x00)			   // boot vector for 65c816
+        platform.Bus.EaWrite(  0xFFFD, 0x10)
 	platform.CPU.Reset()				           // XXX - move it to main binary?
 
 	mylog.Logger.Log("platform: initialized")
