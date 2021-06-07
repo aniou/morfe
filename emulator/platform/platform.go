@@ -25,7 +25,7 @@ type Platform struct {
 }
 
 func New() (*Platform) {
-	p            := Platform{nil, nil, nil, nil, nil, nil, nil}
+	p            := Platform{}
 	return &p
 }
 
