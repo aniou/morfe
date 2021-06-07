@@ -32,7 +32,7 @@ func New() (*Platform) {
 // platform with Vicky I
 func (platform *Platform) InitGUI() {
 	platform.Bus, _	  = bus.New()
-	platform.CPU, _   = cpu65c816.New(platform.Bus)			           // to be removed
+	platform.CPU, _   = cpu65c816.New(platform.Bus.EaRead, platform.Bus.EaWrite)	// to be removed
 	ram, _	         := memory.New(0x400000, 0x000000)
 	platform.GPU, _	  = vicky.New()
 	platform.GABE, _  = gabe.New()

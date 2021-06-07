@@ -11,7 +11,6 @@ import (
 	_ "bytes"
 	"fmt"
 
-	"github.com/aniou/go65c816/emulator/bus"
 	"github.com/aniou/go65c816/lib/mylog"
 )
 
@@ -23,6 +22,9 @@ type instructionType struct {
 	cycles  byte
 	proc	func(*stepInfo)
 }
+
+type mem_read   func(uint32) byte
+type mem_write  func(uint32, byte)
 
 var (
 	instructions [256]instructionType
@@ -341,7 +343,8 @@ func (c *CPU) createTable() {
 }
 
 type CPU struct {
-	Bus	*bus.Bus
+	EaRead  mem_read  // function used to read from memory (callback)
+	EaWrite mem_write // write to memory (callback)
 
 	// additional emulator variables
 	AllCycles uint64 // total number of cycles of CPU instance
@@ -391,12 +394,10 @@ type CPU struct {
 
 
 
-func New(bus *bus.Bus) (*CPU, error) {
-	cpu    := CPU{Bus: bus}
+func New(read_mem8 mem_read, write_mem8 mem_write) (*CPU, error) {
+	cpu    := CPU{EaRead: read_mem8, EaWrite: write_mem8}
 	cpu.WDM = 0
-	//cpu.LogBuf = bytes.Buffer{}
 	cpu.createTable()
-	//cpu.Reset()
 	mylog.Logger.Log("cpu: 65c816 initialized")
 	return &cpu, nil
 }
@@ -456,7 +457,7 @@ func (cpu *CPU) compare16(a, b uint16) {
 // ----------------------------------------------------------------
 
 func (cpu *CPU) nWrite(bank byte, addr uint16, value byte) {
-	cpu.Bus.EaWrite(uint32(bank) << 16 | uint32(addr), value)
+	cpu.EaWrite(uint32(bank) << 16 | uint32(addr), value)
 }
 
 // probably not needed...
@@ -464,41 +465,41 @@ func (cpu *CPU) nWrite16_wrap(bank byte, addr uint16, value uint16) {
 	bank32 := uint32(bank) << 16
 	ll     := byte(value)
 	hh     := byte(value >> 8)
-	cpu.Bus.EaWrite(bank32 | uint32(addr)  , ll)
-	cpu.Bus.EaWrite(bank32 | uint32(addr+1), hh)
+	cpu.EaWrite(bank32 | uint32(addr)  , ll)
+	cpu.EaWrite(bank32 | uint32(addr+1), hh)
 }
 
 func (cpu *CPU) nWrite16_cross(bank byte, addr uint16, value uint16) {
 	ea     := uint32(bank) << 16 | uint32(addr)
 	ll     := byte(value)
 	hh     := byte(value >> 8)
-	cpu.Bus.EaWrite(ea,   ll)
-	cpu.Bus.EaWrite(ea+1, hh)
+	cpu.EaWrite(ea,   ll)
+	cpu.EaWrite(ea+1, hh)
 }
 
 func (cpu *CPU) nRead(bank byte, addr uint16) byte {
-	return cpu.Bus.EaRead(uint32(bank) << 16 | uint32(addr))
+	return cpu.EaRead(uint32(bank) << 16 | uint32(addr))
 }
 
 func (cpu *CPU) nRead16_wrap(bank byte, addr uint16) uint16 {
 	bank32 := uint32(bank) << 16
-	ll     := cpu.Bus.EaRead(bank32 | uint32(addr))
-	hh     := cpu.Bus.EaRead(bank32 | uint32(addr+1))
+	ll     := cpu.EaRead(bank32 | uint32(addr))
+	hh     := cpu.EaRead(bank32 | uint32(addr+1))
 	return uint16(hh) << 8 | uint16(ll)
 }
 
 func (cpu *CPU) nRead24_wrap(bank byte, addr uint16) uint32 {
 	bank32 := uint32(bank) << 16
-	ll     := cpu.Bus.EaRead(bank32 | uint32(addr))
-	mm     := cpu.Bus.EaRead(bank32 | uint32(addr+1))
-	hh     := cpu.Bus.EaRead(bank32 | uint32(addr+2))
+	ll     := cpu.EaRead(bank32 | uint32(addr))
+	mm     := cpu.EaRead(bank32 | uint32(addr+1))
+	hh     := cpu.EaRead(bank32 | uint32(addr+2))
 	return uint32(hh) << 16 | uint32(mm) << 8 | uint32(ll)
 }
 
 func (cpu *CPU) nRead16_cross(bank byte, addr uint16) uint16 {
 	ea     := uint32(bank) << 16 | uint32(addr)
-	ll     := cpu.Bus.EaRead(ea)
-	hh     := cpu.Bus.EaRead((ea+1) & 0x00ffffff)        // wrap on 24bits
+	ll     := cpu.EaRead(ea)
+	hh     := cpu.EaRead((ea+1) & 0x00ffffff)        // wrap on 24bits
 	return uint16(hh) << 8 | uint16(ll)
 }
 
@@ -516,7 +517,7 @@ func (cpu *CPU) cmdRead(info *stepInfo) byte {
 		return cpu.nRead(cpu.RK, info.addr)
 
 	case m_DP, m_DP_X, m_DP_Y, m_Stack_Relative:
-		return cpu.Bus.EaRead(uint32(info.addr))  // info.addr is uint16
+		return cpu.EaRead(uint32(info.addr))  // info.addr is uint16
 
         case m_DP_Indirect_Long,
              m_DP_Indirect_Long_Y,
@@ -525,7 +526,7 @@ func (cpu *CPU) cmdRead(info *stepInfo) byte {
              m_Absolute_X,
              m_Absolute_Y,
              m_Stack_Relative_Indirect_Y:
-                return cpu.Bus.EaRead(info.ea)
+                return cpu.EaRead(info.ea)
 
         case m_Absolute,
              m_DP_X_Indirect,
@@ -563,8 +564,8 @@ func (cpu *CPU) cmdRead16(info *stepInfo) uint16 {
              m_Absolute_Y,
              m_Absolute_X_Indirect,
              m_Stack_Relative_Indirect_Y:
-                ll := cpu.Bus.EaRead(info.ea)                  // todo - zastapic to jakos?
-		hh := cpu.Bus.EaRead(info.ea+1)
+                ll := cpu.EaRead(info.ea)                  // todo - zastapic to jakos?
+		hh := cpu.EaRead(info.ea+1)
 		return uint16(hh) << 8 | uint16(ll)
 
 	case m_Absolute,
@@ -586,7 +587,7 @@ func (cpu *CPU) cmdWrite(info *stepInfo, value byte) {
 	switch info.mode {
 
 	case m_DP, m_DP_X, m_DP_Y, m_Stack_Relative:
-		cpu.Bus.EaWrite(uint32(info.addr), value)  // info.addr is uint16
+		cpu.EaWrite(uint32(info.addr), value)  // info.addr is uint16
 
         case m_DP_Indirect_Long,
              m_DP_Indirect_Long_Y,
@@ -595,7 +596,7 @@ func (cpu *CPU) cmdWrite(info *stepInfo, value byte) {
              m_Absolute_X,
              m_Absolute_Y,
              m_Stack_Relative_Indirect_Y:
-                cpu.Bus.EaWrite(info.ea, value)
+                cpu.EaWrite(info.ea, value)
 
         case m_Absolute,
              m_DP_X_Indirect,
@@ -627,8 +628,8 @@ func (cpu *CPU) cmdWrite16(info *stepInfo, value uint16) {
              m_Stack_Relative_Indirect_Y:
 		ll     := byte(value)
 		hh     := byte(value >> 8)
-		cpu.Bus.EaWrite(info.ea,   ll)
-		cpu.Bus.EaWrite(info.ea+1, hh)
+		cpu.EaWrite(info.ea,   ll)
+		cpu.EaWrite(info.ea+1, hh)
 
 	case m_Absolute,
              m_DP_X_Indirect,
@@ -2251,7 +2252,7 @@ func (cpu *CPU) op_plb(info *stepInfo) {
 
 // REset Processor status bits
 func (cpu *CPU) op_rep(info *stepInfo) {
-	neg_flags := ^cpu.Bus.EaRead(info.ea)
+	neg_flags := ^cpu.EaRead(info.ea)
 	tmp_flags := cpu.Flags() & neg_flags
 	//fmt.Fprintf(&cpu.LogBuf, "op_rep %08b %08b %08b %08b\n", cpu.Bus.EaRead(info.ea), neg_flags, cpu.Flags(), tmp_flags)
 	cpu.SetFlags(tmp_flags)
@@ -2259,7 +2260,7 @@ func (cpu *CPU) op_rep(info *stepInfo) {
 
 // SEt Processor status bits
 func (cpu *CPU) op_sep(info *stepInfo) {
-	tmp_flags := cpu.Flags() | cpu.Bus.EaRead(info.ea)
+	tmp_flags := cpu.Flags() | cpu.EaRead(info.ea)
 	cpu.SetFlags(tmp_flags)
 }
 

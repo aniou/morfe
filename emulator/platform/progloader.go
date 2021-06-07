@@ -30,7 +30,7 @@ func (p *Platform) LoadHex(filename string) {
 		mylog.Logger.Log(fmt.Sprintf("%d addr %06x length %6x (%d)",
 					idx, segment.Address, len(segment.Data), len(segment.Data)))
                 for i := range segment.Data {
-                        p.CPU.Bus.EaWrite(segment.Address + uint32(i), segment.Data[i])
+                        p.Bus.EaWrite(segment.Address + uint32(i), segment.Data[i])
                 }
 	}
 	mylog.Logger.Log(fmt.Sprintf("LoadHex done"))

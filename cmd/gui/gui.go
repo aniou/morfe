@@ -47,7 +47,7 @@ func m68k_read_memory_8(addr C.uint) C.uint {
 	fmt.Printf("m68k read8  %8x", addr)
 
 	a   := uint32(addr)
-	val := p.CPU.Bus.EaRead(a)
+	val := p.Bus.EaRead(a)
 
 	fmt.Printf(" val  %8x %d\n", val, val)
 	return C.uint(val)
@@ -58,8 +58,8 @@ func m68k_read_memory_16(addr C.uint) C.uint {
 	fmt.Printf("m68k read16  %8x", addr)
 
 	a   := uint32(addr)
-	val := ( uint32(p.CPU.Bus.EaRead(a))   << 8 ) |
-                 uint32(p.CPU.Bus.EaRead(a+1))
+	val := ( uint32(p.Bus.EaRead(a))   << 8 ) |
+                 uint32(p.Bus.EaRead(a+1))
 
 	fmt.Printf(" val  %8x %d\n", val, val)
 	return C.uint(val)
@@ -71,10 +71,10 @@ func m68k_read_memory_32(addr C.uint) C.uint {
 	fmt.Printf("m68k read32  %8x", addr)
 
 	a   := uint32(addr)
-	val := ( uint32(p.CPU.Bus.EaRead(a))   <<  24 ) |
-               ( uint32(p.CPU.Bus.EaRead(a+1)) <<  16 ) |
-               ( uint32(p.CPU.Bus.EaRead(a+2)) <<   8 ) |
-                 uint32(p.CPU.Bus.EaRead(a+3))
+	val := ( uint32(p.Bus.EaRead(a))   <<  24 ) |
+               ( uint32(p.Bus.EaRead(a+1)) <<  16 ) |
+               ( uint32(p.Bus.EaRead(a+2)) <<   8 ) |
+                 uint32(p.Bus.EaRead(a+3))
 
 	fmt.Printf(" val  %8x %d\n", val, val)
 	return C.uint(val)
@@ -85,7 +85,7 @@ func m68k_write_memory_8(addr, val C.uint) {
 	fmt.Printf("m68k write8  %8x val  %8x %d\n", addr, val, val)
 
 	a   := uint32(addr)
-	p.CPU.Bus.EaWrite(a, byte(val))
+	p.Bus.EaWrite(a, byte(val))
 	return
 }
 
@@ -94,8 +94,8 @@ func m68k_write_memory_16(addr, val C.uint) {
 	fmt.Printf("m68k write16 %8x val  %8x %d\n", addr, val, val)
 
 	a   := uint32(addr)
-	p.CPU.Bus.EaWrite(a,   byte((val >> 8) & 0xff))
-	p.CPU.Bus.EaWrite(a+1, byte( val       & 0xff))
+	p.Bus.EaWrite(a,   byte((val >> 8) & 0xff))
+	p.Bus.EaWrite(a+1, byte( val       & 0xff))
 	return
 }
 
@@ -104,13 +104,12 @@ func m68k_write_memory_32(addr, val C.uint) {
 	fmt.Printf("m68k write32 %8x val  %8x %d\n", addr, val, val)
 
 	a   := uint32(addr)
-	p.CPU.Bus.EaWrite(a,   byte((val >> 24) & 0xff))
-	p.CPU.Bus.EaWrite(a+1, byte((val >> 16) & 0xff))
-	p.CPU.Bus.EaWrite(a+2, byte((val >>  8) & 0xff))
-	p.CPU.Bus.EaWrite(a+3, byte( val        & 0xff))
+	p.Bus.EaWrite(a,   byte((val >> 24) & 0xff))
+	p.Bus.EaWrite(a+1, byte((val >> 16) & 0xff))
+	p.Bus.EaWrite(a+2, byte((val >>  8) & 0xff))
+	p.Bus.EaWrite(a+3, byte( val        & 0xff))
 	return
 }
-
 
 // some support routines
 // xxx - move it
@@ -138,7 +137,7 @@ func memoryDump(p *platform.Platform, address uint32) {
 	var a uint16
 
 	for a = 0; a < 0x100; a = a + 16 {
-		start, data := p.CPU.Bus.EaDump(address + uint32(a))
+		start, data := p.Bus.EaDump(address + uint32(a))
 		bank := byte(start >> 16)
 		addr := uint16(start)
 		fmt.Printf("\n%02x:%04x│", bank, addr)
@@ -287,22 +286,22 @@ func main() {
 
 	// some additional tweaks ------------------------------------------------------
 	// XXX - move it somewhere
-	p.CPU.Bus.EaWrite(0xAF_0005, 0x20) // border B 
-	p.CPU.Bus.EaWrite(0xAF_0006, 0x00) // border G
-	p.CPU.Bus.EaWrite(0xAF_0007, 0x20) // border R
+	p.Bus.EaWrite(0xAF_0005, 0x20) // border B 
+	p.Bus.EaWrite(0xAF_0006, 0x00) // border G
+	p.Bus.EaWrite(0xAF_0007, 0x20) // border R
 
-	p.CPU.Bus.EaWrite(0xAF_0008, 0x20) // border X
-	p.CPU.Bus.EaWrite(0xAF_0009, 0x20) // border Y
+	p.Bus.EaWrite(0xAF_0008, 0x20) // border X
+	p.Bus.EaWrite(0xAF_0009, 0x20) // border Y
 
-	p.CPU.Bus.EaWrite(0xAF_0010, 0x03) // VKY_TXT_CURSOR_CTRL_REG
-	p.CPU.Bus.EaWrite(0xAF_0012, 0xB1) // VKY_TXT_CURSOR_CHAR_REG
-	p.CPU.Bus.EaWrite(0xAF_0013, 0xED) // VKY_TXT_CURSOR_COLR_REG
+	p.Bus.EaWrite(0xAF_0010, 0x03) // VKY_TXT_CURSOR_CTRL_REG
+	p.Bus.EaWrite(0xAF_0012, 0xB1) // VKY_TXT_CURSOR_CHAR_REG
+	p.Bus.EaWrite(0xAF_0013, 0xED) // VKY_TXT_CURSOR_COLR_REG
 
 	// act as gavin/gabe - copy "flash" area from 38:1000 to 00:1000 (0x200) bytes
 	// jump tables
 	for j := 0x1000; j < 0x1200; j = j + 1 {
-		val := p.CPU.Bus.EaRead(uint32(0x38_0000 + j))
-		p.CPU.Bus.EaWrite(uint32(j), val)
+		val := p.Bus.EaRead(uint32(0x38_0000 + j))
+		p.Bus.EaWrite(uint32(j), val)
 
 	}
 
