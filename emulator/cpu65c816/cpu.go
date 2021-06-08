@@ -8,10 +8,8 @@ package cpu65c816
 
 import (
 	"log"
-	_ "bytes"
-	"fmt"
+	_ "fmt"
 
-	"github.com/aniou/go65c816/lib/mylog"
 )
 
 type instructionType struct {
@@ -29,8 +27,6 @@ type mem_write  func(uint32, byte)
 var (
 	instructions [256]instructionType
 )
-
-const CPUFrequency = 14000000 // 14MHz. XXX - fix it and move to platform?
 
 // interrupt types
 const (
@@ -302,7 +298,7 @@ func (c *CPU) createTable() {
 		{0xd8, "cld", m_Implied,                   1, 2, c.op_cld},	// CLD
 		{0xd9, "cmp", m_Absolute_Y,                3, 6, c.op_cmp},	// CMP $9876,Y
 		{0xda, "phx", m_Implied,                   1, 4, c.op_phx},	// PHX
-		{0xdb, "stp", m_Implied,                   1, 3, c.stp},	// STP
+		{0xdb, "stp", m_Implied,                   1, 3, c.stp},	// STP         - not implemented
 		{0xdc, "jmp", m_Absolute_Indirect_Long,    3, 6, c.op_jmp},	// JMP [$1234]
 		{0xdd, "cmp", m_Absolute_X,                3, 6, c.op_cmp},	// CMP $9876,X
 		{0xde, "dec", m_Absolute_X,                3, 9, c.op_dec},	// DEC $9876,X
@@ -398,7 +394,6 @@ func New(read_mem8 mem_read, write_mem8 mem_write) (*CPU, error) {
 	cpu    := CPU{EaRead: read_mem8, EaWrite: write_mem8}
 	cpu.WDM = 0
 	cpu.createTable()
-	mylog.Logger.Log("cpu: 65c816 initialized")
 	return &cpu, nil
 }
 
@@ -537,7 +532,7 @@ func (cpu *CPU) cmdRead(info *stepInfo) byte {
 
 	default:
 		//fmt.Fprintf(&cpu.LogBuf, "cmdRead8: unknown mode %v\n", info.mode)
-		mylog.Logger.Log(fmt.Sprintf("cmdRead8: unknown mode %v", info.mode))
+		log.Fatalf("cmdRead8: unknown mode %v", info.mode)
 
 		return 0
 	}
@@ -576,7 +571,7 @@ func (cpu *CPU) cmdRead16(info *stepInfo) uint16 {
 
 	default:
 		//fmt.Fprintf(&cpu.LogBuf, "cmdRead16: unknown mode %v\n", info.mode)
-		mylog.Logger.Log(fmt.Sprintf("cmdRead16: unknown mode %v", info.mode))
+		log.Fatalf("cmdRead16: unknown mode %v", info.mode)
 		return 0
 	}
 
@@ -606,7 +601,7 @@ func (cpu *CPU) cmdWrite(info *stepInfo, value byte) {
 
 
 	default:
-		mylog.Logger.Log(fmt.Sprintf("cmdWrite: unknown mode %v", info.mode))
+		log.Fatalf("cmdWrite: unknown mode %v", info.mode)
 	}
 
 }
@@ -638,7 +633,7 @@ func (cpu *CPU) cmdWrite16(info *stepInfo, value uint16) {
                 cpu.nWrite16_cross(cpu.RDBR, info.addr, value)
 
 	default:
-		mylog.Logger.Log(fmt.Sprintf("cmdWrite16: unknown mode %v", info.mode))
+		log.Fatalf("cmdWrite16: unknown mode %v", info.mode)
 	}
 }
 
@@ -1088,7 +1083,7 @@ func (cpu *CPU) Step() (int, bool) {
 
 	default:
 		cpu.stepPC = 0
-		mylog.Logger.Log(fmt.Sprintf("unknown addressing mode PC $%02x:%04x", cpu.RK, cpu.PC))
+		log.Fatalf("unknown addressing mode PC $%02x:%04x", cpu.RK, cpu.PC)
 	}
 
 
