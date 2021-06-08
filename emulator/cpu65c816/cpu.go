@@ -390,11 +390,11 @@ type CPU struct {
 
 
 
-func New(read_mem8 mem_read, write_mem8 mem_write) (*CPU, error) {
+func New(read_mem8 mem_read, write_mem8 mem_write) *CPU {
 	cpu    := CPU{EaRead: read_mem8, EaWrite: write_mem8}
 	cpu.WDM = 0
 	cpu.createTable()
-	return &cpu, nil
+	return &cpu
 }
 
 // Reset resets the CPU to its initial powerup state

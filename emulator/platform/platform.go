@@ -8,6 +8,7 @@ import (
 	"github.com/aniou/go65c816/emulator/bus"
 	"github.com/aniou/go65c816/emulator/cpu"
 	"github.com/aniou/go65c816/emulator/cpu65c816"
+	"github.com/aniou/go65c816/emulator/cpu68xxx"
 	"github.com/aniou/go65c816/emulator/memory"
 	"github.com/aniou/go65c816/emulator/netconsole"
 	"github.com/aniou/go65c816/emulator/vicky"
@@ -16,8 +17,8 @@ import (
 
 type Platform struct {
 	CPU     *cpu65c816.CPU		// legacy, to be converted
-	CPU0    *cpu.Processor		// on-board one (65c816 by default)
-	CPU1    *cpu.Processor		// add-on
+	CPU0    cpu.Processor		// on-board one (65c816 by default)
+	CPU1    cpu.Processor		// add-on
 	GPU     *vicky.Vicky
 	GABE    *gabe.Gabe
 	Bus     *bus.Bus
@@ -32,7 +33,8 @@ func New() (*Platform) {
 // platform with Vicky I
 func (platform *Platform) InitGUI() {
 	platform.Bus, _	  = bus.New()
-	platform.CPU, _   = cpu65c816.New(platform.Bus.EaRead, platform.Bus.EaWrite)	// to be removed
+	platform.CPU      = cpu65c816.New(platform.Bus.EaRead, platform.Bus.EaWrite)
+	platform.CPU1     = cpu68xxx.New()
 	ram, _	         := memory.New(0x400000, 0x000000)
 	platform.GPU, _	  = vicky.New()
 	platform.GABE, _  = gabe.New()
