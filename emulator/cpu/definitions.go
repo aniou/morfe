@@ -1,7 +1,6 @@
 package cpu
 
 type Processor interface {
-        Init()
         Reset()
         Step(uint32)
 
