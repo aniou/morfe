@@ -7,7 +7,7 @@ import "C"
 
 import (
         _ "encoding/binary"
-        "fmt"
+        _ "fmt"
 )
 
 type mem_read   func(uint32) byte
@@ -28,30 +28,30 @@ type CPU struct {
 
 //export m68k_read_memory_8
 func m68k_read_memory_8(addr C.uint) C.uint {
-        fmt.Printf("m68k read8  %8x", addr)
+        //fmt.Printf("m68k read8  %8x", addr)
 
         a   := uint32(addr)
         val := EaRead(a)
 
-        fmt.Printf(" val  %8x %d\n", val, val)
+        //fmt.Printf(" val  %8x %d\n", val, val)
         return C.uint(val)
 }
 
 //export m68k_read_memory_16
 func m68k_read_memory_16(addr C.uint) C.uint {
-        fmt.Printf("m68k read16  %8x", addr)
+        //fmt.Printf("m68k read16  %8x", addr)
 
         a   := uint32(addr)
         val := ( uint32(EaRead(a))   << 8 ) |
                  uint32(EaRead(a+1))
 
-        fmt.Printf(" val  %8x %d\n", val, val)
+        //fmt.Printf(" val  %8x %d\n", val, val)
         return C.uint(val)
 }
 
 //export m68k_read_memory_32
 func m68k_read_memory_32(addr C.uint) C.uint {
-        fmt.Printf("m68k read32  %8x", addr)
+        //fmt.Printf("m68k read32  %8x", addr)
 
         a   := uint32(addr)
         val := ( uint32(EaRead(a))   <<  24 ) |
@@ -59,13 +59,13 @@ func m68k_read_memory_32(addr C.uint) C.uint {
                ( uint32(EaRead(a+2)) <<   8 ) |
                  uint32(EaRead(a+3))
 
-        fmt.Printf(" val  %8x %d\n", val, val)
+        //fmt.Printf(" val  %8x %d\n", val, val)
         return C.uint(val)
 }
 
 //export m68k_write_memory_8
 func m68k_write_memory_8(addr, val C.uint) {
-        fmt.Printf("m68k write8  %8x val  %8x %d\n", addr, val, val)
+        //fmt.Printf("m68k write8  %8x val  %8x %d\n", addr, val, val)
 
         a   := uint32(addr)
         EaWrite(a, byte(val))
@@ -74,7 +74,7 @@ func m68k_write_memory_8(addr, val C.uint) {
 
 //export m68k_write_memory_16
 func m68k_write_memory_16(addr, val C.uint) {
-        fmt.Printf("m68k write16 %8x val  %8x %d\n", addr, val, val)
+        //fmt.Printf("m68k write16 %8x val  %8x %d\n", addr, val, val)
 
         a   := uint32(addr)
         EaWrite(a,   byte((val >> 8) & 0xff))
@@ -84,7 +84,7 @@ func m68k_write_memory_16(addr, val C.uint) {
 
 //export m68k_write_memory_32
 func m68k_write_memory_32(addr, val C.uint) {
-        fmt.Printf("m68k write32 %8x val  %8x %d\n", addr, val, val)
+        //fmt.Printf("m68k write32 %8x val  %8x %d\n", addr, val, val)
 
         a   := uint32(addr)
         EaWrite(a,   byte((val >> 24) & 0xff))
@@ -122,6 +122,7 @@ func (c *CPU) Reset() {
         m68k_write_memory_16(0x20_0000,      0x7041)    // moveq  #41, D0
         m68k_write_memory_16(0x20_0002,      0x13C0)    // move.b D0, $AFA000
         m68k_write_memory_32(0x20_0004, 0x00AF_A000)    // ...
+        m68k_write_memory_32(0x20_0008, 0x60F6_4E71)    // bra to 20_0000
 
 	// normal
 	C.m68k_pulse_reset()
@@ -135,8 +136,8 @@ func (c *CPU) Reset() {
 // difference with calculations
 
 func (c *CPU) Step() uint32 {
-	cycles := C.m68k_execute(40)		// dummy value
-	c.AllCycles+=uint64(cycles)
+	cycles := C.m68k_execute(1000)		// dummy value
+	c.AllCycles=c.AllCycles+uint64(cycles)
 	return uint32(cycles)
 }
 

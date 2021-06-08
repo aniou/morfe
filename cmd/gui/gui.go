@@ -7,7 +7,7 @@ import (
         "github.com/veandco/go-sdl2/sdl"
         "log"
         "os"
-        //"time"
+        _ "time"
         "github.com/aniou/go65c816/emulator/cpu"
         "github.com/aniou/go65c816/emulator/platform"
         _ "github.com/aniou/go65c816/lib/mylog"
@@ -190,7 +190,8 @@ func main() {
         var disasm      bool
         var winWidth    int32 = 640
         var winHeight   int32 = 480
-        var CPU_STEP    uint64 = 14318 // 14.318 MHz in milliseconds, apply for 65c816
+        var CPU0_STEP    uint64 = 14318 // 14.318 MHz in milliseconds, apply for 65c816
+        var CPU1_STEP    uint64 =  2100 // my system are not able to achieve more 
 
 
         // platform init ---------------------------------------------------------------
@@ -280,11 +281,11 @@ func main() {
 
 
         // variables for performance calculation ---------------------------------------
-        var prev_ticks uint32 = sdl.GetTicks()    // FPS calculation (1/1000 of second)
-        var ms_elapsed uint32 = prev_ticks        // how many ms elapsed from last check?
-        var ticks_now, frames uint32              // CPU step and FPS calculation
-        var stepCycles uint64 = 0		  // CPU speed calculation
-        var cursor_counter int32                  // how many ticks remains to blink cursor 
+        var prev_ticks uint32 = sdl.GetTicks()      // FPS calculation (1/1000 of second)
+        var ms_elapsed uint64 = uint64(prev_ticks)  // how many ms elapsed from last check?
+        var ticks_now, frames uint32                // CPU step and FPS calculation
+        var prevCycles0, prevCycles1 uint64 = 0, 0  // CPU speed calculation
+        var cursor_counter int32                    // how many ticks remains to blink cursor 
 
         // current draw model ----------------------------------------------------------
         //
@@ -300,13 +301,9 @@ func main() {
         // main loop -------------------------------------------------------------------
         running = true
         disasm  = false
-        /* nga debug only - XXX - move to plugin
-        var ipptr uint32 = 0
-        var tval uint32 = 0
-        var nval uint32 = 0
-        var tos uint32 = 0
-        var nos uint32 = 0
-        */
+
+	desired_cycles0 := uint64(CPU0_STEP)
+	desired_cycles1 := uint64(CPU1_STEP)
         for running {
                 // step 1
                 renderer.SetDrawColor(p.GPU.Background[0], p.GPU.Background[1], p.GPU.Background[2], 255)
@@ -353,9 +350,8 @@ func main() {
                 // cpu speed calculation --------------------------------------------
                 frames++
                 if sdl.GetTicks() > ticks_now {
-                        ms_elapsed = sdl.GetTicks() - ticks_now
+                        ms_elapsed = uint64(sdl.GetTicks() - ticks_now)
                         ticks_now = sdl.GetTicks()
-                        stepCycles = p.CPU0.GetCycles()
 
                         // cursor calculation - flip every CURSOR_BLINK_RATE ticks ----------
                         cursor_counter = cursor_counter - int32(ms_elapsed)
@@ -364,14 +360,18 @@ func main() {
                                 p.GPU.Cursor_visible = ! p.GPU.Cursor_visible
                         }
 
-                        // cpu step ---------------------------------------------------------
-                        //cpu_loop:
-                        for {
-                                if (p.CPU0.GetCycles() - stepCycles) > CPU_STEP * uint64(ms_elapsed) {
-                                        break
-                                }
-                                p.CPU0.Step()
-                                
+			// WARNING - it has tendency to going in tight loop if
+			//           system is too slow to do desired number of
+			//           cycles per ms when *ms is used
+			for p.CPU0.GetCycles() < desired_cycles0 {
+				p.CPU0.Step()
+			}
+			desired_cycles0 = desired_cycles0 + CPU0_STEP*ms_elapsed
+
+			for p.CPU1.GetCycles() < desired_cycles1 {
+				p.CPU1.Step()
+			}
+			desired_cycles1 = desired_cycles1 + CPU1_STEP*ms_elapsed
 				/*
                                 // debugging interface, created around WDM opcode
                                 if debug.cpu && stopped && (CPU_TYPE == cpu.CPU_65c816) {
@@ -434,20 +434,16 @@ func main() {
                                         break
                                 }
 				*/
-                        }
+                        //}
                 }
 
                 // performance info --------------------------------------------------
                 if (ticks_now - prev_ticks) >= 1000 {   // once per second
-
-                        //deltaCounter := p.CPU.Counter - prevCounter
-                        //if deltaCounter > maxCounter {
-                        //      maxCounter = deltaCounter
-                        //}
-                        //prevCounter = p.CPU.Counter
                         if ! disasm {
-                                spd0, unit0  := showCPUSpeed(p.CPU0.GetCycles())
-                                spd1, unit1  := showCPUSpeed(p.CPU1.GetCycles())
+                                spd0, unit0  := showCPUSpeed(p.CPU0.GetCycles() - prevCycles0)
+                                spd1, unit1  := showCPUSpeed(p.CPU1.GetCycles() - prevCycles1)
+				prevCycles0  = p.CPU0.GetCycles()
+				prevCycles1  = p.CPU1.GetCycles()
                                 fmt.Fprintf(os.Stdout, 
                                             "frames: %4d ticks %d cpu0 cycles %10d speed %2d %s cpu1 cycles %10d speed %d %s\n", 
                                                     frames, (ticks_now - prev_ticks), 
@@ -456,8 +452,6 @@ func main() {
                         }
                         prev_ticks = ticks_now
                         frames = 0
-                        p.CPU0.ResetCycles()
-                        p.CPU1.ResetCycles()
                 }
 
                 // keyboard ----------------------------------------------------------
