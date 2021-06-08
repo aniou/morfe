@@ -62,8 +62,8 @@ func (g *GUI) loadConfig(filename string) {
 
 	// hex load -------------------------------------------------------------
 	// CPU setting XXX - change to cpu0
-	if cfg.Section("cpu").HasKey("start") {
-		hex_addr := cfg.Section("cpu").Key("start").String()
+	if cfg.Section("cpu0").HasKey("start") {
+		hex_addr := cfg.Section("cpu0").Key("start").String()
 		addr, _  := hex2uint24(hex_addr)
 		fmt.Printf("start addr set: %06X\n", addr)
 		//g.p.CPU.PC = uint16(addr & 0x0000FFFF)
@@ -71,8 +71,8 @@ func (g *GUI) loadConfig(filename string) {
 		g.p.CPU0.SetPC(uint32(addr))
 	}
 
-	if cfg.Section("cpu").HasKey("wdm_mode") {
-		wdm_mode := cfg.Section("cpu").Key("wdm_mode").String()
+	if cfg.Section("cpu0").HasKey("wdm_mode") {
+		wdm_mode := cfg.Section("cpu0").Key("wdm_mode").String()
 		switch wdm_mode {
 		case "debug":
 			debug.cpu = true	// XXX - bad behaviour, globals!
