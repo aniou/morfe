@@ -1,12 +1,6 @@
 
 package main
 
-
-// #cgo CFLAGS: -I../../../Musashi
-// #cgo LDFLAGS: m68kcpu.o  m68kops.o  softfloat.o
-// #include <m68k.h>
-import "C"
-
 import (
 	_ "encoding/binary"
 	"fmt"
@@ -41,75 +35,6 @@ type DEBUG struct {
 var debug = DEBUG{true, false}
 
 var p = platform.New()		// must be global now
-
-//export m68k_read_memory_8
-func m68k_read_memory_8(addr C.uint) C.uint {
-	fmt.Printf("m68k read8  %8x", addr)
-
-	a   := uint32(addr)
-	val := p.Bus.EaRead(a)
-
-	fmt.Printf(" val  %8x %d\n", val, val)
-	return C.uint(val)
-}
-
-//export m68k_read_memory_16
-func m68k_read_memory_16(addr C.uint) C.uint {
-	fmt.Printf("m68k read16  %8x", addr)
-
-	a   := uint32(addr)
-	val := ( uint32(p.Bus.EaRead(a))   << 8 ) |
-                 uint32(p.Bus.EaRead(a+1))
-
-	fmt.Printf(" val  %8x %d\n", val, val)
-	return C.uint(val)
-}
-
-
-//export m68k_read_memory_32
-func m68k_read_memory_32(addr C.uint) C.uint {
-	fmt.Printf("m68k read32  %8x", addr)
-
-	a   := uint32(addr)
-	val := ( uint32(p.Bus.EaRead(a))   <<  24 ) |
-               ( uint32(p.Bus.EaRead(a+1)) <<  16 ) |
-               ( uint32(p.Bus.EaRead(a+2)) <<   8 ) |
-                 uint32(p.Bus.EaRead(a+3))
-
-	fmt.Printf(" val  %8x %d\n", val, val)
-	return C.uint(val)
-}
-
-//export m68k_write_memory_8
-func m68k_write_memory_8(addr, val C.uint) {
-	fmt.Printf("m68k write8  %8x val  %8x %d\n", addr, val, val)
-
-	a   := uint32(addr)
-	p.Bus.EaWrite(a, byte(val))
-	return
-}
-
-//export m68k_write_memory_16
-func m68k_write_memory_16(addr, val C.uint) {
-	fmt.Printf("m68k write16 %8x val  %8x %d\n", addr, val, val)
-
-	a   := uint32(addr)
-	p.Bus.EaWrite(a,   byte((val >> 8) & 0xff))
-	p.Bus.EaWrite(a+1, byte( val       & 0xff))
-	return
-}
-
-//export m68k_write_memory_32
-func m68k_write_memory_32(addr, val C.uint) {
-	fmt.Printf("m68k write32 %8x val  %8x %d\n", addr, val, val)
-
-	a   := uint32(addr)
-	p.Bus.EaWrite(a,   byte((val >> 24) & 0xff))
-	p.Bus.EaWrite(a+1, byte((val >> 16) & 0xff))
-	p.Bus.EaWrite(a+2, byte((val >>  8) & 0xff))
-	p.Bus.EaWrite(a+3, byte( val        & 0xff))
-	return
-}
 
 // some support routines
 // xxx - move it
@@ -570,11 +495,9 @@ func main() {
 							orig_mode = setFullscreen(window)
 						}
 					case sdl.K_F10:
-						// do it only once
-						if CPU_TYPE == cpu.CPU_68030 {
-							continue
-						}
 
+						p.CPU1.Step()
+						/*
 						// XXX - test
 						m68k_write_memory_32(0,           0x10_0000)    // stack
 						m68k_write_memory_32(4,           0x20_0000)    // instruction pointer
@@ -589,8 +512,7 @@ func main() {
 
 					        c := C.m68k_execute(40)
 						fmt.Fprintf(os.Stdout, "m68k executed %d cycles\n", c)
-
-						CPU_TYPE = cpu.CPU_68030
+						*/
 
 					case sdl.K_F9:
 						if disasm {

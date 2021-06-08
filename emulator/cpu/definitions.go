@@ -2,7 +2,7 @@ package cpu
 
 type Processor interface {
         Reset()
-        Step(uint32)
+        Step() uint32
 
         // at leas two attributes should be available
         // Cycles
