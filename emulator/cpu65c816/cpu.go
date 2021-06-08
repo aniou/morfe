@@ -343,10 +343,10 @@ type CPU struct {
 	EaWrite mem_write // write to memory (callback)
 
 	// additional emulator variables
-	AllCycles uint64 // total number of cycles of CPU instance
+	AllCycles uint64 // cumulative number of cycles of CPU instance
 	Cycles    byte   // number of cycles for this step
 	stepPC    uint16 // how many bytes should PC be increased in this step?
-	abort     bool   // temporary flag to determine that cpu should stop
+	Abort     bool   // temporary flag to determine that cpu should stop
 
 	// previous register's value exists for debugging purposes
 	PRK	  byte   // previous value of program banK register
@@ -397,6 +397,24 @@ func New(read_mem8 mem_read, write_mem8 mem_write) *CPU {
 	return &cpu
 }
 
+// to fulfill interface, that doesn't allow direct acces to fields
+func (cpu *CPU) GetCycles() uint64 {
+	return cpu.AllCycles
+}
+
+// to fulfill interface, that doesn't allow direct acces to fields
+func (cpu *CPU) ResetCycles() {
+	cpu.AllCycles=0
+}
+
+// to fulfill interface, that doesn't allow direct acces to fields
+func (cpu *CPU) SetPC(addr uint32) {
+	cpu.PC = uint16(addr & 0xFFFF)
+	cpu.RK = uint8(addr >> 16)
+	return
+}
+
+
 // Reset resets the CPU to its initial powerup state
 func (cpu *CPU) Reset() {
 	//cpu.E    = 1     - should be
@@ -407,7 +425,7 @@ func (cpu *CPU) Reset() {
 	//cpu.PC   = cpu.Read16(0xFFFC)
 	cpu.PC   = cpu.nRead16_cross(0x00, 0xFFFC)
 	cpu.SetFlags(0x34)
-    cpu.abort = false
+        cpu.Abort = false
 }
 
 /* ====================================================================
@@ -828,7 +846,7 @@ type stepInfo struct {
 
 
 // Step executes a single CPU instruction
-func (cpu *CPU) Step() (int, bool) {
+func (cpu *CPU) Step() (uint32) {
 
 	//if cpu.stall > 0 {
 	//	cpu.stall--
@@ -1115,12 +1133,7 @@ func (cpu *CPU) Step() (int, bool) {
 	// counter and PC update
 	cpu.AllCycles += uint64(cpu.Cycles)
 	cpu.PC += cpu.stepPC
-    if cpu.abort {
-        cpu.abort = false
-        return int(cpu.Cycles), true
-    } else {
-	    return int(cpu.Cycles), false
-    }
+	return uint32(cpu.Cycles)
 }
 
 // NMI - Non-Maskable Interrupt
@@ -2384,7 +2397,7 @@ func (cpu *CPU) op_wdm(info *stepInfo) {
 	case cpu.WDM > 0 && cpu.WDM < 10:
 		cpu.Counter+=uint64(cpu.WDM)
 	default:
-		cpu.abort = true
+		cpu.Abort = true
 	}
 }
 

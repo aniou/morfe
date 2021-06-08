@@ -61,13 +61,14 @@ func (g *GUI) loadConfig(filename string) {
 	}
 
 	// hex load -------------------------------------------------------------
-	// CPU setting
+	// CPU setting XXX - change to cpu0
 	if cfg.Section("cpu").HasKey("start") {
 		hex_addr := cfg.Section("cpu").Key("start").String()
 		addr, _  := hex2uint24(hex_addr)
 		fmt.Printf("start addr set: %06X\n", addr)
-		g.p.CPU.PC = uint16(addr & 0x0000FFFF)
-		g.p.CPU.RK = uint8(addr >> 16)
+		//g.p.CPU.PC = uint16(addr & 0x0000FFFF)
+		//g.p.CPU.RK = uint8(addr >> 16)
+		g.p.CPU0.SetPC(uint32(addr))
 	}
 
 	if cfg.Section("cpu").HasKey("wdm_mode") {

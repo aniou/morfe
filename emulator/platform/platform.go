@@ -16,7 +16,6 @@ import (
 )
 
 type Platform struct {
-        CPU     *cpu65c816.CPU          // legacy, to be converted
         CPU0    cpu.Processor           // on-board one (65c816 by default)
         CPU1    cpu.Processor           // add-on
         GPU     *vicky.Vicky
@@ -30,11 +29,11 @@ func New() (*Platform) {
         return &p
 }
 
-// platform with Vicky I
+// something like GenX
 func (p *Platform) InitGUI() {
         p.Bus, _   = bus.New()
-        p.CPU      = cpu65c816.New(p.Bus.EaRead, p.Bus.EaWrite)
-        p.CPU1     = cpu68xxx.New(20000, p.Bus.EaRead, p.Bus.EaWrite)
+        p.CPU0     = cpu65c816.New(p.Bus.EaRead, p.Bus.EaWrite)
+        p.CPU1     = cpu68xxx.New(20000, p.Bus.EaRead, p.Bus.EaWrite)   // 20Mhz
         ram, _    := memory.New(0x400000, 0x000000)
         p.GPU, _   = vicky.New()
         p.GABE, _  = gabe.New()
@@ -44,13 +43,12 @@ func (p *Platform) InitGUI() {
         p.Bus.Attach(p.GABE, "gabe",      0xAF_1000, 0xAF_13FF)  // probably should be splitted
         p.Bus.Attach(p.GABE, "gabe-math", 0x00_0100, 0x00_012F)  // XXX error GABE coop is 0x2c bytes but we need mult of 16
 
-        p.Bus.EaWrite(0xAF070B, 0x01)                      // fake p version, my HW ha 43 here IDE has 00
         p.Bus.EaWrite(  0xFFFC, 0x00)                      // boot vector for 65c816
         p.Bus.EaWrite(  0xFFFD, 0x10)
-        p.CPU.Reset()                                      // XXX - move it to main binary?
+        p.CPU0.Reset()                                      // XXX - move it to main binary?
         p.CPU1.Reset()
 
-        mylog.Logger.Log("p: initialized")
+        mylog.Logger.Log("platform initialized")
 }
 
 /*

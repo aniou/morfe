@@ -235,7 +235,7 @@ func (g *GUI) sendKey(code sdl.Scancode, state byte) {
 			g.p.Bus.EaWrite(0xAF_1064, 0)
 			irq1 := g.p.Bus.EaRead(INT_PENDING_REG1) | r1_FNX1_INT00_KBD
 			g.p.Bus.EaWrite(INT_PENDING_REG1, irq1)
-			g.p.CPU.TriggerIRQ()
+			g.p.CPU0.TriggerIRQ()
 		}
 	}
 }

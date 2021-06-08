@@ -3,6 +3,10 @@ package cpu
 type Processor interface {
         Reset()
         Step() uint32
+	GetCycles() uint64
+	ResetCycles()
+	TriggerIRQ()
+	SetPC(uint32)
 
         // at leas two attributes should be available
         // Cycles

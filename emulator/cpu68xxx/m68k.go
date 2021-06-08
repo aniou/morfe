@@ -17,10 +17,11 @@ var EaRead  	mem_read
 var EaWrite	mem_write
 
 type CPU struct {
-	Speed   uint32	// in milliseconds
+	Speed   uint32		// in milliseconds
 	Enabled bool
 	Type	byte
 
+	AllCycles uint64	// cumulative number of cycles of CPU instance
 }
 
 // XXX - change EaRead/Write to BigEndian ones!
@@ -104,6 +105,16 @@ func New(speed uint32, r mem_read, w mem_write) *CPU {
 	return &cpu
 }
 
+// to fulfill interface, that doesn't allow direct acces to fields
+func (cpu *CPU) GetCycles() uint64 {
+        return cpu.AllCycles
+}
+
+// to fulfill interface, that doesn't allow direct acces to fields
+func (cpu *CPU) ResetCycles() {
+        cpu.AllCycles=0
+}
+
 func (c *CPU) Reset() {
 	// just for test
 	m68k_write_memory_32(0,           0x10_0000)    // stack
@@ -125,6 +136,14 @@ func (c *CPU) Reset() {
 
 func (c *CPU) Step() uint32 {
 	cycles := C.m68k_execute(40)		// dummy value
+	c.AllCycles+=uint64(cycles)
 	return uint32(cycles)
 }
 
+func (c *CPU) TriggerIRQ() {
+	return
+}
+
+func (c *CPU) SetPC(addr uint32) {
+	return
+}
