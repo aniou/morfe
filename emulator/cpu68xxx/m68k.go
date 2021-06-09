@@ -1,7 +1,7 @@
 package cpu68xxx
 
-// #cgo CFLAGS: -I../../../Musashi
-// #cgo LDFLAGS: m68kcpu.o  m68kops.o  softfloat.o
+// #cgo CFLAGS: -I../../../Musashi 
+// #cgo LDFLAGS: ../../../Musashi/m68kcpu.o  ../../../Musashi/m68kops.o  ../../../Musashi/softfloat/softfloat.o
 // #include <m68k.h>
 import "C"
 

@@ -1,5 +1,67 @@
-# go65c816
-65c816 / [C256 Foenix](https://c256foenix.com/) emulator written in Go
+# go65c816 with m68k support
+
+This branch was created for experiments with additional CPU cards,
+announced for [C256 Foenix Gen X](https://c256foenix.com/). 
+
+It means, that - contrary to name - emulator has preliminary support
+for running Motorla 68000 as secondary CPU.
+
+At this moment You should consider following factors:
+
+* **MOST IMPORTANT:** it is unofficial work and features/lack 
+  of featuers or desing  does not correspond to features or design 
+  of Gen X machine!
+
+* Adding secondary CPU causes some refactoring in code, thus
+  some debug features, described below, are not available now.
+
+* Secondary CPU support in emu is very incomplete.
+
+* Affordable speed for second CPU isn't impressive (at this moment
+  it is manually capped at 2Mhz, max available does not exceeded
+  12Mhz) - of course it depends from machine, but difference from
+  go65c816 (40Mhz) is significant. 
+
+  There is a possibility, that this version of emulator never will
+  be in pair with real m68k hardware.
+
+
+## Build instructions for this branch
+
+As m68k I use Musashi core, built-in into emulator with some black
+magic around ``cgo``. At first we need a object files '*.o' built
+from Musashi.
+
+Following instructions was tested with go1.13.8.
+
+```
+$ git clone https://github.com/kstenerud/Musashi/
+$ cd  Musashi
+$ make
+$ ls *o softfloat/*o
+m68kcpu.o  m68kdasm.o  m68kops.o  softfloat/softfloat.o
+$ cd ..
+```
+
+If we can see four object files, as described above, then we can
+try to build emulator:
+
+```
+$ git clone https://github.com/aniou/go65c816
+$ cd go65c816
+$ git checkout m68k
+$ cd cmd/gui
+$ export CGO_LDFLAGS_ALLOW=".+/Musashi/.+\.o"
+$ go build -o gui *go
+$ ./gui m68k.ini
+```
+
+After that we should see a normal Foenix kernel, running by 65c816
+and small, red letter 'A', visible in top-left corner of screen -
+this is only effect of m68k, working in tight loop on predefined
+memory.
+
+# Original README
 
 ## Preface
 
