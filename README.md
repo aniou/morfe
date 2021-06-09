@@ -9,8 +9,10 @@ for running Motorla 68000 as secondary CPU.
 At this moment You should consider following factors:
 
 * **MOST IMPORTANT:** it is unofficial work and features/lack 
-  of featuers or desing  does not correspond to features or design 
-  of Gen X machine!
+  of featuers or emulator design does not correspond to features 
+  or design of real Gen X machine! 
+
+  Do not make any unauthorized assumptions about real hardware!
 
 * Adding secondary CPU causes some refactoring in code, thus
   some debug features, described below, are not available now.
