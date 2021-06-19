@@ -7,6 +7,7 @@ import (
         "github.com/veandco/go-sdl2/sdl"
         "log"
         "os"
+	"runtime/pprof"
         _ "time"
         "github.com/aniou/go65c816/emulator/cpu"
         "github.com/aniou/go65c816/emulator/platform"
@@ -192,7 +193,17 @@ func main() {
         var winHeight   int32 = 480
         var CPU0_STEP    uint64 = 14318 // 14.318 MHz in milliseconds, apply for 65c816
         var CPU1_STEP    uint64 =  2100 // my system are not able to achieve more 
+        //var CPU1_STEP    uint64 = 22000 // my system are not able to achieve more 
 
+
+	/*
+        f, err := os.Create("go65c816.profile")
+        if err != nil {
+            log.Fatal(err)
+        }
+        pprof.StartCPUProfile(f)
+        defer pprof.StopCPUProfile()
+	*/
 
         // platform init ---------------------------------------------------------------
         //p := platform.New()           // must be global now
@@ -305,6 +316,9 @@ func main() {
 
 	desired_cycles0 := uint64(CPU0_STEP)
 	desired_cycles1 := uint64(CPU1_STEP)
+
+
+
 
 	/* 
 	 * first version - adjust loop per 1 second
@@ -472,6 +486,7 @@ func main() {
 			// WARNING - it has tendency to going in tight loop if
 			//           system is too slow to do desired number of
 			//           cycles per ms when *ms is used
+
 			for p.CPU0.GetCycles() < desired_cycles0 {
 				p.CPU0.Step()
 			}
@@ -481,6 +496,7 @@ func main() {
 				p.CPU1.Step()
 			}
 			desired_cycles1 = desired_cycles1 + CPU1_STEP*ms_elapsed
+			
 				/*
                                 // debugging interface, created around WDM opcode
                                 if debug.cpu && stopped && (CPU_TYPE == cpu.CPU_65c816) {
