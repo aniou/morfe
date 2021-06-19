@@ -33,7 +33,7 @@ func New() (*Platform) {
 func (p *Platform) InitGUI() {
         p.Bus, _   = bus.New()
         p.CPU0     = cpu65c816.New(p.Bus.EaRead, p.Bus.EaWrite)
-        p.CPU1     = cpu68xxx.New(20000, p.Bus.EaRead, p.Bus.EaWrite)   // 20Mhz
+        p.CPU1     = cpu68xxx.New(20000, p.Bus.EaRead, p.Bus.EaWrite)   // 20Mhz - not used yet
         ram, _    := memory.New(0x400000, 0x000000)
         p.GPU, _   = vicky.New()
         p.GABE, _  = gabe.New()

@@ -52,9 +52,11 @@ try to build emulator:
 $ git clone https://github.com/aniou/go65c816
 $ cd go65c816
 $ git checkout m68k
-$ cd cmd/gui
-$ export CGO_LDFLAGS_ALLOW=".+/Musashi/.+\.o"
-$ go build -o gui *go
+$ cd lib/musashi-c-wrapper
+$ gcc -std=c99 -I ../../../Musashi -Wall -c shim.c
+$ cd ../../cmd/gui
+$ export CGO_LDFLAGS_ALLOW=".+/(Musashi|musashi-c-wrapper)/.+\.o"
+$ go build -a -o gui *go
 $ ./gui m68k.ini
 ```
 

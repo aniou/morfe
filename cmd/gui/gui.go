@@ -7,6 +7,7 @@ import (
         "github.com/veandco/go-sdl2/sdl"
         "log"
         "os"
+	"runtime"
 	_ "runtime/pprof"
         _ "time"
         "github.com/aniou/go65c816/emulator/cpu"
@@ -192,9 +193,9 @@ func main() {
         var winWidth    int32 = 640
         var winHeight   int32 = 480
         var CPU0_STEP    uint64 = 14318 // 14.318 MHz in milliseconds, apply for 65c816
-        var CPU1_STEP    uint64 =  2100 // my system are not able to achieve more 
-        //var CPU1_STEP    uint64 = 22000 // my system are not able to achieve more 
+        var CPU1_STEP    uint64 = 20000 // I'm able to achieve 25Mhz too
 
+	runtime.LockOSThread()
 
 	/*
         f, err := os.Create("go65c816.profile")
@@ -448,7 +449,9 @@ func main() {
                 // step 3, 4
                 if p.GPU.Master_L & 0x01 == 0x01 {                                      // todo ?
                         p.GPU.RenderBitmapText()
+			p.GPU.Mu_tfb.Lock()
                         texture_txt.UpdateRGBA(nil, p.GPU.TFB, 640)
+			p.GPU.Mu_tfb.Unlock()
                         renderer.Copy(texture_txt, nil, nil)
                 }       
 
