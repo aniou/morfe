@@ -449,9 +449,9 @@ func main() {
                 // step 3, 4
                 if p.GPU.Master_L & 0x01 == 0x01 {                                      // todo ?
                         p.GPU.RenderBitmapText()
-			p.GPU.Mu_tfb.Lock()
+			//p.GPU.Mu_tfb.Lock()
                         texture_txt.UpdateRGBA(nil, p.GPU.TFB, 640)
-			p.GPU.Mu_tfb.Unlock()
+			//p.GPU.Mu_tfb.Unlock()
                         renderer.Copy(texture_txt, nil, nil)
                 }       
 

@@ -3,7 +3,7 @@ package vicky
 import (
 	"fmt"
 	"encoding/binary"
-	"sync"
+	_ "sync"
 	"github.com/aniou/go65c816/lib/mylog"
 )
 
@@ -52,7 +52,7 @@ type Vicky struct {
 	y_res		uint32
 	pixel_size	uint32		// 1 for normal, 2 for double
 
-	Mu_tfb		sync.Mutex
+	//Mu_tfb		sync.Mutex
 }
 
 func init() {
@@ -209,13 +209,13 @@ func (v *Vicky) RenderBitmapText() {
 			for text_x = 0; text_x < v.text_cols; text_x += 1 { // for each line iterate over columns of text
 				font_pos = fnttmp[text_x] + font_row_pos
 				for i = 0; i < 8; i += 1 { // for every font iterate over 8 pixels of font
-					v.Mu_tfb.Lock()
+					//v.Mu_tfb.Lock()
 					if font[font_pos+i] == 0 {
 						tfb[fb_row_pos+dsttmp[text_x]+i] = bgctmp[text_x]
 					} else {
 						tfb[fb_row_pos+dsttmp[text_x]+i] = fgctmp[text_x]
 					}
-					v.Mu_tfb.Unlock()
+					//v.Mu_tfb.Unlock()
 				}
 			}
 			fb_row_pos += v.x_res

@@ -92,8 +92,10 @@ unsigned int m68k_read_memory_32(unsigned int address)
 void m68k_write_memory_8(unsigned int address, unsigned int value)
 {
     //printf("write8  at %x\n", address);
-	if(address > MAX_RAM)
+	if(address > MAX_RAM) {
         go_m68k_write_memory_8(address, value);
+        return;
+    }
 
 	WRITE_BYTE(g_ram, address, value);
 }
@@ -101,8 +103,10 @@ void m68k_write_memory_8(unsigned int address, unsigned int value)
 void m68k_write_memory_16(unsigned int address, unsigned int value)
 {
     //printf("write16  at %x\n", address);
-	if(address > MAX_RAM)
+	if(address > MAX_RAM) {
         go_m68k_write_memory_16(address, value);
+        return;
+    }
 
 	WRITE_WORD(g_ram, address, value);
 }
@@ -110,8 +114,10 @@ void m68k_write_memory_16(unsigned int address, unsigned int value)
 void m68k_write_memory_32(unsigned int address, unsigned int value)
 {
     //printf("write32  at %x\n", address);
-	if(address > MAX_RAM)
+	if(address > MAX_RAM) {
         go_m68k_write_memory_32(address, value);
+        return;
+    }
 
 	WRITE_LONG(g_ram, address, value);
 }
