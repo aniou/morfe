@@ -7,7 +7,7 @@ import (
         "github.com/veandco/go-sdl2/sdl"
         "log"
         "os"
-	"runtime/pprof"
+	_ "runtime/pprof"
         _ "time"
         "github.com/aniou/go65c816/emulator/cpu"
         "github.com/aniou/go65c816/emulator/platform"
