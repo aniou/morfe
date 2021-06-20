@@ -9,13 +9,10 @@ import "C"
 import (
         _ "encoding/binary"
         _ "fmt"
+	"github.com/aniou/go65c816/emulator"
 )
 
-type mem_read   func(uint32) byte
-type mem_write  func(uint32, byte)
-
-var EaRead  	mem_read
-var EaWrite	mem_write
+var bus	emu.Bus
 
 type CPU struct {
 	Speed   uint32		// in milliseconds
@@ -30,7 +27,7 @@ func go_m68k_read_memory_8(addr C.uint) C.uint {
         //fmt.Printf("m68k read8  %8x", addr)
 
         a   := uint32(addr)
-        val := EaRead(a)
+        val := bus.Read_8(a)
 
         //fmt.Printf(" val  %8x %d\n", val, val)
         return C.uint(val)
@@ -41,8 +38,8 @@ func go_m68k_read_memory_16(addr C.uint) C.uint {
         //fmt.Printf("m68k read16  %8x", addr)
 
         a   := uint32(addr)
-        val := ( uint32(EaRead(a))   << 8 ) |
-                 uint32(EaRead(a+1))
+        val := ( uint32(bus.Read_8(a))   << 8 ) |
+                 uint32(bus.Read_8(a+1))
 
         //fmt.Printf(" val  %8x %d\n", val, val)
         return C.uint(val)
@@ -53,10 +50,10 @@ func go_m68k_read_memory_32(addr C.uint) C.uint {
         //fmt.Printf("m68k read32  %8x", addr)
 
         a   := uint32(addr)
-        val := ( uint32(EaRead(a))   <<  24 ) |
-               ( uint32(EaRead(a+1)) <<  16 ) |
-               ( uint32(EaRead(a+2)) <<   8 ) |
-                 uint32(EaRead(a+3))
+        val := ( uint32(bus.Read_8(a))   <<  24 ) |
+               ( uint32(bus.Read_8(a+1)) <<  16 ) |
+               ( uint32(bus.Read_8(a+2)) <<   8 ) |
+                 uint32(bus.Read_8(a+3))
 
         //fmt.Printf(" val  %8x %d\n", val, val)
         return C.uint(val)
@@ -67,7 +64,7 @@ func go_m68k_write_memory_8(addr, val C.uint) {
         //fmt.Printf("m68k write8  %8x val  %8x %d\n", addr, val, val)
 
         a   := uint32(addr)
-        EaWrite(a, byte(val))
+        bus.Write_8(a, byte(val))
         return
 }
 
@@ -76,8 +73,8 @@ func go_m68k_write_memory_16(addr, val C.uint) {
         //fmt.Printf("m68k write16 %8x val  %8x %d\n", addr, val, val)
 
         a   := uint32(addr)
-        EaWrite(a,   byte((val >> 8) & 0xff))
-        EaWrite(a+1, byte( val       & 0xff))
+        bus.Write_8(a,   byte((val >> 8) & 0xff))
+        bus.Write_8(a+1, byte( val       & 0xff))
         return
 }
 
@@ -86,18 +83,17 @@ func go_m68k_write_memory_32(addr, val C.uint) {
         //fmt.Printf("m68k write32 %8x val  %8x %d\n", addr, val, val)
 
         a   := uint32(addr)
-        EaWrite(a,   byte((val >> 24) & 0xff))
-        EaWrite(a+1, byte((val >> 16) & 0xff))
-        EaWrite(a+2, byte((val >>  8) & 0xff))
-        EaWrite(a+3, byte( val        & 0xff))
+        bus.Write_8(a,   byte((val >> 24) & 0xff))
+        bus.Write_8(a+1, byte((val >> 16) & 0xff))
+        bus.Write_8(a+2, byte((val >>  8) & 0xff))
+        bus.Write_8(a+3, byte( val        & 0xff))
         return
 }
 
 
-func New(speed uint32, r mem_read, w mem_write) *CPU {
-	cpu := CPU{Speed: speed}
-        EaRead  = r
-        EaWrite = w
+func New(b emu.Bus) *CPU {
+	cpu := CPU{}
+	bus     = b
 	C.m68k_init_ram();
 	C.m68k_init();
         C.m68k_set_cpu_type(C.M68K_CPU_TYPE_68EC030)
@@ -114,6 +110,13 @@ func (cpu *CPU) ResetCycles() {
         cpu.AllCycles=0
 }
 
+func (c *CPU) Write_8(addr uint32, val byte) {
+	C.m68k_write_memory_8(C.uint(addr), C.uint(val))
+}
+
+func (c *CPU) Read_8(addr uint32) byte {
+	return byte(C.m68k_read_memory_8(C.uint(addr)))
+}
 func (c *CPU) Reset() {
 	// just for test
 	

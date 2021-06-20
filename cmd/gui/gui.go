@@ -62,11 +62,13 @@ func printCPUFlags(flag byte, name string) string {
 }
 
 func memoryDump(p *platform.Platform, address uint32) {
+	/*
         var x uint16
         var a uint16
 
+	TODO - implement CPU0.Dump? Or rewrite to Read_8
         for a = 0; a < 0x100; a = a + 16 {
-                start, data := p.Bus.EaDump(address + uint32(a))
+                start, data := p.CPU0.Bus.EaDump(address + uint32(a))
                 bank := byte(start >> 16)
                 addr := uint16(start)
                 fmt.Printf("\n%02x:%04x│", bank, addr)
@@ -87,6 +89,7 @@ func memoryDump(p *platform.Platform, address uint32) {
                 }
         }
         fmt.Printf("\n")
+	*/
 }
 
 func waitForEnter() {
@@ -220,28 +223,29 @@ func main() {
         if len(os.Args) < 2 {
                 log.Fatalf("Usage: %s filename.ini\n", os.Args[0])
         } else {
-                gui.loadConfig(os.Args[1])
+		// TODO - move to platform
+                gui.p.LoadConfig(os.Args[1])
         }
  
 
         // some additional tweaks ------------------------------------------------------
         // XXX - move it somewhere
-        p.Bus.EaWrite(0xAF_0005, 0x20) // border B 
-        p.Bus.EaWrite(0xAF_0006, 0x00) // border G
-        p.Bus.EaWrite(0xAF_0007, 0x20) // border R
+        p.CPU0.Write_8(0xAF_0005, 0x20) // border B 
+        p.CPU0.Write_8(0xAF_0006, 0x00) // border G
+        p.CPU0.Write_8(0xAF_0007, 0x20) // border R
 
-        p.Bus.EaWrite(0xAF_0008, 0x20) // border X
-        p.Bus.EaWrite(0xAF_0009, 0x20) // border Y
+        p.CPU0.Write_8(0xAF_0008, 0x20) // border X
+        p.CPU0.Write_8(0xAF_0009, 0x20) // border Y
 
-        p.Bus.EaWrite(0xAF_0010, 0x03) // VKY_TXT_CURSOR_CTRL_REG
-        p.Bus.EaWrite(0xAF_0012, 0xB1) // VKY_TXT_CURSOR_CHAR_REG
-        p.Bus.EaWrite(0xAF_0013, 0xED) // VKY_TXT_CURSOR_COLR_REG
+        p.CPU0.Write_8(0xAF_0010, 0x03) // VKY_TXT_CURSOR_CTRL_REG
+        p.CPU0.Write_8(0xAF_0012, 0xB1) // VKY_TXT_CURSOR_CHAR_REG
+        p.CPU0.Write_8(0xAF_0013, 0xED) // VKY_TXT_CURSOR_COLR_REG
 
         // act as gavin/gabe - copy "flash" area from 38:1000 to 00:1000 (0x200) bytes
         // jump tables
         for j := 0x1000; j < 0x1200; j = j + 1 {
-                val := p.Bus.EaRead(uint32(0x38_0000 + j))
-                p.Bus.EaWrite(uint32(j), val)
+                val := p.CPU0.Read_8(uint32(0x38_0000 + j))
+                p.CPU0.Write_8(uint32(j), val)
 
         }
 

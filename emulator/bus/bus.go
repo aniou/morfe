@@ -119,7 +119,7 @@ func (b *Bus) Shutdown() {
 // Read returns the byte from memory mapped to the given address.
 // e.g. if ROM is mapped to 0xC000, then Read(0xC0FF) returns the byte at
 // 0x00FF in that RAM device.
-func (b *Bus) EaRead(a uint32) byte {
+func (b *Bus) Read_8(a uint32) byte {
 	mem, err := b.backendFor(a)
 	if err != nil {
 		panic(err)		// XXX should log instead and abort of execution, but unwind tooks too many levels now :-/
@@ -131,7 +131,7 @@ func (b *Bus) EaRead(a uint32) byte {
 }
 
 // Write the byte to the device mapped to the given address.
-func (b *Bus) EaWrite(a uint32, value byte) {
+func (b *Bus) Write_8(a uint32, value byte) {
 	mem, err := b.backendFor(a)
 	if err != nil {
 		panic(err)

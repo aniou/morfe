@@ -219,7 +219,7 @@ func PS2ScanCode(code sdl.Scancode) byte {
 }
 
 func (g *GUI) sendKey(code sdl.Scancode, state byte) {
-	mask := g.p.Bus.EaRead(INT_MASK_REG1)
+	mask := g.p.CPU0.Read_8(INT_MASK_REG1)
 	if (^mask & byte(r1_FNX1_INT00_KBD)) == byte(r1_FNX1_INT00_KBD) {
 		code := PS2ScanCode(code)
 		//fmt.Printf("\nKEY pressed?:%v, mask %2X %2X %2X\n", state, mask, ^mask, byte(r1_FNX1_INT00_KBD))
@@ -232,9 +232,9 @@ func (g *GUI) sendKey(code sdl.Scancode, state byte) {
 			} else {
 				g.p.GABE.Data = code
 			}
-			g.p.Bus.EaWrite(0xAF_1064, 0)
-			irq1 := g.p.Bus.EaRead(INT_PENDING_REG1) | r1_FNX1_INT00_KBD
-			g.p.Bus.EaWrite(INT_PENDING_REG1, irq1)
+			g.p.CPU0.Write_8(0xAF_1064, 0)
+			irq1 := g.p.CPU0.Read_8(INT_PENDING_REG1) | r1_FNX1_INT00_KBD
+			g.p.CPU0.Write_8(INT_PENDING_REG1, irq1)
 			g.p.CPU0.TriggerIRQ()
 		}
 	}

@@ -8,6 +8,9 @@ type Processor interface {
 	TriggerIRQ()
 	SetPC(uint32)
 
+	Write_8(uint32, byte)
+	Read_8(uint32) byte
+
         // at leas two attributes should be available
         // Cycles
         // Enabled
@@ -15,8 +18,8 @@ type Processor interface {
 }
 
 type Bus interface {
-	EaWrite(uint32, uint8)
-	EaRead(uint32) uint8
+	Write_8(uint32, uint8)
+	Read_8(uint32) uint8
 }
 
 const (
