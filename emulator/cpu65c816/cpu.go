@@ -8,6 +8,7 @@ package cpu65c816
 
 import (
 	"log"
+	"github.com/aniou/go65c816/emulator"
 	_ "fmt"
 
 )
@@ -341,6 +342,7 @@ func (c *CPU) createTable() {
 type CPU struct {
 	EaRead  mem_read  // function used to read from memory (callback)
 	EaWrite mem_write // write to memory (callback)
+	bus	emu.Bus
 
 	// additional emulator variables
 	AllCycles uint64 // cumulative number of cycles of CPU instance

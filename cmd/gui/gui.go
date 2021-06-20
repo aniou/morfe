@@ -10,7 +10,9 @@ import (
 	"runtime"
 	_ "runtime/pprof"
         _ "time"
-        "github.com/aniou/go65c816/emulator/cpu"
+        // "github.com/aniou/go65c816/emulator/cpu"
+        "github.com/aniou/go65c816/emulator"
+
         "github.com/aniou/go65c816/emulator/platform"
         _ "github.com/aniou/go65c816/lib/mylog"
 )
@@ -23,7 +25,7 @@ const INT_PENDING_REG1  = 0x00_0141
 const CPU_CLOCK         = 14318000 // 14.381Mhz (not used)
 const CURSOR_BLINK_RATE = 500      // in ms (milliseconds)
 
-var CPU_TYPE = cpu.CPU_65c816
+var CPU_TYPE = emu.CPU_65c816
 
 type GUI struct {
         p          *platform.Platform

@@ -6,7 +6,7 @@ package platform
 import (
         "github.com/aniou/go65c816/lib/mylog"
         "github.com/aniou/go65c816/emulator/bus"
-        "github.com/aniou/go65c816/emulator/cpu"
+        "github.com/aniou/go65c816/emulator"
         "github.com/aniou/go65c816/emulator/cpu65c816"
         "github.com/aniou/go65c816/emulator/cpu68xxx"
         "github.com/aniou/go65c816/emulator/memory"
@@ -16,8 +16,8 @@ import (
 )
 
 type Platform struct {
-        CPU0    cpu.Processor           // on-board one (65c816 by default)
-        CPU1    cpu.Processor           // add-on
+        CPU0    emu.Processor           // on-board one (65c816 by default)
+        CPU1    emu.Processor           // add-on
         GPU     *vicky.Vicky
         GABE    *gabe.Gabe
         Bus     *bus.Bus

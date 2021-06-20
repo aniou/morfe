@@ -1,4 +1,4 @@
-package cpu
+package emu
 
 type Processor interface {
         Reset()
@@ -12,6 +12,11 @@ type Processor interface {
         // Cycles
         // Enabled
         // Type
+}
+
+type Bus interface {
+	EaWrite(uint32, uint8)
+	EaRead(uint32) uint8
 }
 
 const (
