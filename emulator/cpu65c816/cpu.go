@@ -338,6 +338,7 @@ func (c *CPU) createTable() {
 
 type CPU struct {
 	Bus	emu.Bus
+	name	string
 
 	// additional emulator variables
 	AllCycles uint64 // cumulative number of cycles of CPU instance
@@ -387,11 +388,15 @@ type CPU struct {
 
 
 
-func New(bus emu.Bus) *CPU {
-	cpu    := CPU{Bus: bus}
+func New(bus emu.Bus, name string) *CPU {
+	cpu    := CPU{Bus: bus, name: name}
 	cpu.WDM = 0
 	cpu.createTable()
 	return &cpu
+}
+
+func (cpu *CPU) GetName() string {
+        return cpu.name
 }
 
 // at this moment simple write to bus, no direct RAM access

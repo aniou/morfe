@@ -15,11 +15,12 @@ import (
 var bus	emu.Bus
 
 type CPU struct {
-	Speed   uint32		// in milliseconds
-	Enabled bool
-	Type	byte
-
+	Speed     uint32		// in milliseconds
+	Enabled   bool
+	Type	  byte
 	AllCycles uint64	// cumulative number of cycles of CPU instance
+
+	name    string
 }
 
 //export go_m68k_read_memory_8
@@ -91,13 +92,17 @@ func go_m68k_write_memory_32(addr, val C.uint) {
 }
 
 
-func New(b emu.Bus) *CPU {
-	cpu := CPU{}
+func New(b emu.Bus, name string) *CPU {
+	cpu := CPU{name: name}
 	bus     = b
 	C.m68k_init_ram();
 	C.m68k_init();
         C.m68k_set_cpu_type(C.M68K_CPU_TYPE_68EC030)
 	return &cpu
+}
+
+func (cpu *CPU) GetName() string {
+	return cpu.name
 }
 
 // to fulfill interface, that doesn't allow direct acces to fields

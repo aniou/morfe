@@ -11,6 +11,8 @@ type Processor interface {
 	Write_8(uint32, byte)
 	Read_8(uint32) byte
 
+	GetName() string
+
         // at leas two attributes should be available
         // Cycles
         // Enabled
