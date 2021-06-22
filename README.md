@@ -65,6 +65,27 @@ and small, red letter 'A', visible in top-left corner of screen -
 this is only effect of m68k, working in tight loop on predefined
 memory.
 
+## Creating HEX files for M68k CPU
+
+You need an [VASM assembler](http://sun.hasenbraten.de/vasm/) and
+``srec_cat`` command (on Ubuntu it comes in package ``srecord``).
+
+When You ocmpile VASM for selected target (i.e. Motorola):
+
+```
+$ cat test.asm
+
+        org    $00100000
+
+init:
+        moveq  #$43,d0
+        move.b d0,$00AFA000
+        bra    init
+
+$ ./vasmm68k_mot -Fbin -o test.bin  test.asm
+$ srec_cat test.bin -binary -offset 0x100000 -o test.hex -intel
+```
+
 ## Important changes
 
 * 2021-06-22: there is an important change in ``*.ini`` files format,
@@ -84,40 +105,9 @@ memory.
 
 # Original README
 
-## Preface
-
-* That project was created for my personal needs and lacks many features.
-  If You are interested in official, full-blown C256 Foenix emulator, You
-  should take a look at [Foenix IDE](https://github.com/Trinity-11/FoenixIDE)
-
-  FoenixIDE is a .NET application but can run on Linux thanks to Wine.
-
-* At this moment text-based interface doesn't work. If You need it, there
-  is a [separate branch](https://github.com/aniou/go65c816/tree/tui)
-
-## Important changes
-
-* 2021-02-23: debug support for WDM opcode
-  Enable this feature by setting `wdm_mode = debug` in `cpu` section of
-  `*.ini` file. See `retro.ini` for example.
-
-  Behaviour of WDM command depends from argument:
-
-|Value Dec|Value Hex  |Effect
-----------|-----------|----------------------------------------
-0         |$00        |reset additional CPU counter (see below)
-1-9       |$01-$0a    |increase CPU counter by value
-16        |$10        |enable debugging (like `F9` key)
-17        |$11        |disable debugging (like `F9` key again)
-32		  |$20	      |stop emulator (like `F12`)
-
-  "Additional CPU counter" is a `uint64` variable in `CPU.Counter` that
-  can be used to measure different aspects of code.
-
-* 2020-12-14: GABE Math Coop (copied from FoenixIDE) added!
-  Now text scrolling and embedded BASIC works!
-
-  [More about GABE Coop](https://wiki.c256foenix.com/index.php?title=GABE#GABE_Integer_Math_Coprocessor_.28.2400:0100_.E2.80.93_.2400:012B.29)
+**Warning:** original README comes from main branch, emulator created
+only for single, 65c816-based computer. Following instructions may not
+fit for current branch!
 
 ## Some screenshots
 
@@ -186,42 +176,6 @@ See [here](https://wiki.c256foenix.com/index.php?title=GABE) for GABE spec
 - [x] IRQ (partial: only 65c816 mode)
 - [ ] NMI
 - [ ] reset button
-
-## Installing
-
-```bash
-git clone https://github.com/aniou/go65c816
-cd go65c816/cmd/gui
-go build -o gui *go
-```
-
-## Running
-
-```bash
-cd go65c816/cmd/gui
-./gui of816.ini 
-./gui bm0.ini
-```
-
-## ini files
-
-`*.ini` files specifies code (only Intel hex format at this moment) and 
-initial state of PC (to be strict K and PC registers of 65c816). There
-may be multiple files loaded, specified by `file1` to `file999` keys.
-
-Memory isn't cleared between before load, so there is a possibility to
-patch or combine programs, like in following example.
-
-At this moment only `file` and `start` keys are supported.
-
-```ini
-[load]
-file1=../../data/kernel.hex
-file2=../../data/graph5bm0.hex
-
-[cpu]
-start = $03:0000
-```
 
 ## Keybindings
 
