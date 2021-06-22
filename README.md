@@ -65,6 +65,23 @@ and small, red letter 'A', visible in top-left corner of screen -
 this is only effect of m68k, working in tight loop on predefined
 memory.
 
+## Important changes
+
+* 2021-06-22: there is an important change in ``*.ini`` files format,
+  from now there are two sections available - ``cpu0`` and ``cpu1``
+  with only two keywords, so far: ``file`` (and ``file1 - file99``)
+  that loads Intel Hex files into RAM, tied to specific CPU  and 
+  ``start`` keyword, that set PC (and only PC).
+
+  ```ini
+  [cpu0]
+  file1=../../data/kernel.hex
+
+  [cpu1]
+  file=../../../vasm/test.hex
+  start=0x10:0000
+  ```
+
 # Original README
 
 ## Preface
