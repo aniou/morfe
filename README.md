@@ -19,14 +19,11 @@ At this moment You should consider following factors:
 
 * Secondary CPU support in emu is very incomplete.
 
-* Affordable speed for second CPU isn't impressive (at this moment
-  it is manually capped at 2Mhz, max available does not exceeded
-  12Mhz) - of course it depends from machine, but difference from
-  go65c816 (40Mhz) is significant. 
-
-  There is a possibility, that this version of emulator never will
-  be in pair with real m68k hardware.
-
+* In this branch m68k is easily able to achieve 25Mhz, although now
+  it is capped at 20Mhz. I have a plan for making all setting easily
+  configurable, but first things (like debug facilities for both cpus)
+  first...
+  
 
 ## Build instructions for this branch
 
