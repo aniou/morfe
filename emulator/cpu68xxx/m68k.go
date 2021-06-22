@@ -127,7 +127,7 @@ func (c *CPU) Reset() {
 	
 	C.m68k_write_memory_32(0,           0x10_0000)    // stack
         C.m68k_write_memory_32(4,           0x20_0000)    // instruction pointer
-        C.m68k_write_memory_16(0x20_0000,      0x7041)    // moveq  #41, D0
+        C.m68k_write_memory_16(0x20_0000,      0x7042)    // moveq  #41, D0
         C.m68k_write_memory_16(0x20_0002,      0x13C0)    // move.b D0, $AFA000
         C.m68k_write_memory_32(0x20_0004, 0x00AF_A000)    // ...
         //C.m68k_write_memory_32(0x20_0004, 0x00A0_A000)    // ...
@@ -155,5 +155,5 @@ func (c *CPU) TriggerIRQ() {
 }
 
 func (c *CPU) SetPC(addr uint32) {
-	return
+	C.m68k_set_reg(C.M68K_REG_PC, C.uint(addr))
 }

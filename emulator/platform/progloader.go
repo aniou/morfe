@@ -55,6 +55,18 @@ func (p *Platform) loadFiles(cfg *ini.File, c emu.Processor) {
 	}
 }
 
+// now, only PC, by keyword 'start' is supported - registers in future
+func (p *Platform) setRegisters(cfg *ini.File, c emu.Processor) {
+	cpu_section := c.GetName()
+
+	if cfg.Section(cpu_section).HasKey("start") {
+		hex_addr := cfg.Section(cpu_section).Key("start").String()
+		addr, _  := hex2uint24(hex_addr)
+		fmt.Printf("start addr set for cpu %s: %06X\n", cpu_section, addr)
+		c.SetPC(uint32(addr))
+	}
+}
+
 func (p *Platform) LoadConfig(filename string) {
 	cfg, err := ini.LoadSources(ini.LoadOptions{
 		SkipUnrecognizableLines: false,
@@ -64,30 +76,11 @@ func (p *Platform) LoadConfig(filename string) {
         }
 
 	p.loadFiles(cfg, p.CPU0)
+	p.setRegisters(cfg, p.CPU0)
+
 	p.loadFiles(cfg, p.CPU1)
+	p.setRegisters(cfg, p.CPU1)
 
-	// hex load -------------------------------------------------------------
-	// CPU setting XXX - change to cpu0
-	if cfg.Section("cpu0").HasKey("start") {
-		hex_addr := cfg.Section("cpu0").Key("start").String()
-		addr, _  := hex2uint24(hex_addr)
-		fmt.Printf("start addr set: %06X\n", addr)
-		//g.p.CPU.PC = uint16(addr & 0x0000FFFF)
-		//g.p.CPU.RK = uint8(addr >> 16)
-		p.CPU0.SetPC(uint32(addr))
-	}
-
-	/*
-	if cfg.Section("cpu0").HasKey("wdm_mode") {
-		wdm_mode := cfg.Section("cpu0").Key("wdm_mode").String()
-		switch wdm_mode {
-		case "debug":
-			debug.cpu = true	// XXX - bad behaviour, globals!
-		default:
-			debug.cpu = false
-		}
-	}
-	*/
 }
 
 func (p *Platform) LoadHex(cpu emu.Processor, filename string) {
@@ -105,7 +98,7 @@ func (p *Platform) LoadHex(cpu emu.Processor, filename string) {
 		panic(err)
 	}
 
-	mylog.Logger.Log(fmt.Sprintf("LoadHex for cpu %s - loading file %s", cpu.GetName, path))
+	mylog.Logger.Log(fmt.Sprintf("LoadHex for cpu %s - loading file %s", cpu.GetName(), path))
 	for idx, segment := range mem.GetDataSegments() {
 		mylog.Logger.Log(fmt.Sprintf("%d addr %06x length %6x (%d)",
 					idx, segment.Address, len(segment.Data), len(segment.Data)))
