@@ -194,11 +194,13 @@ func main() {
         var event       sdl.Event
         var err         error
         var running     bool
-        var disasm      bool
+        var disasm      bool		// indicator for debug/disasm mode
         var winWidth    int32 = 640
         var winHeight   int32 = 480
-        var CPU0_STEP    uint64 = 14318 // 14.318 MHz in milliseconds, apply for 65c816
-        var CPU1_STEP    uint64 = 20000 // I'm able to achieve 25Mhz too
+        var CPU0_STEP   uint64 = 14318 // 14.318 MHz in milliseconds, apply for 65c816
+        var CPU1_STEP   uint64 = 20000 // I'm able to achieve 25Mhz too
+	var ch		chan string
+	var msg	        string
 
 	runtime.LockOSThread()
 
@@ -340,7 +342,7 @@ func main() {
 		for {
 			cycles = 0
 			for cycles < 14318 {
-				cycles+=p.CPU0.Step()
+				cycles+=p.CPU0.Execute()
 			}
 			cycles_per_sec+=cycles
 
@@ -364,7 +366,7 @@ func main() {
 
 
 	/*
-	// second version of adaptive speed loop - CPU.Step is called every 1/5 of second
+	// second version of adaptive speed loop - CPU.Execute is called every 1/5 of second
 	// with two threshold counters - ie sleep timer is changed for every two times,
 	// when cpu is too low or too fast
 	//
@@ -389,7 +391,7 @@ func main() {
 		for {
 			cycles = 0
 			for cycles < 14318 {
-				cycles+=p.CPU0.Step()
+				cycles+=p.CPU0.Execute()
 			}
 			all_cycles+=cycles
 
@@ -429,7 +431,7 @@ func main() {
 	/*
 	go func() {
 		for {
-			p.CPU1.Step()
+			p.CPU1.Execute()
 		}
 	}()
 	*/
@@ -479,114 +481,66 @@ func main() {
                 renderer.Present()
 
 
-                // cpu speed calculation --------------------------------------------
-                frames++
-                if sdl.GetTicks() > ticks_now {
-                        ms_elapsed = uint64(sdl.GetTicks() - ticks_now)
-                        ticks_now = sdl.GetTicks()
+                // cpu running routines ---------------------------------------------
+		if ! disasm {
+			frames++
+			if sdl.GetTicks() > ticks_now {
+				ms_elapsed = uint64(sdl.GetTicks() - ticks_now)
+				ticks_now = sdl.GetTicks()
 
-                        // cursor calculation - flip every CURSOR_BLINK_RATE ticks ----------
-                        cursor_counter = cursor_counter - int32(ms_elapsed)
-                        if cursor_counter <= 0 {
-                                cursor_counter = CURSOR_BLINK_RATE
-                                p.GPU.Cursor_visible = ! p.GPU.Cursor_visible
-                        }
+				// cursor calculation - flip every CURSOR_BLINK_RATE ticks ----------
+				cursor_counter = cursor_counter - int32(ms_elapsed)
+				if cursor_counter <= 0 {
+					cursor_counter = CURSOR_BLINK_RATE
+					p.GPU.Cursor_visible = ! p.GPU.Cursor_visible
+				}
 
-			// WARNING - it has tendency to going in tight loop if
-			//           system is too slow to do desired number of
-			//           cycles per ms when *ms is used
+				// WARNING - it has tendency to going in tight loop if
+				//           system is too slow to do desired number of
+				//           cycles per ms when *ms is used
 
-			for p.CPU0.GetCycles() < desired_cycles0 {
-				p.CPU0.Step()
+				for p.CPU0.GetCycles() < desired_cycles0 {
+					p.CPU0.Execute()
+				}
+				desired_cycles0 = desired_cycles0 + CPU0_STEP*ms_elapsed
+
+				for p.CPU1.GetCycles() < desired_cycles1 {
+					p.CPU1.Execute()
+				}
+				desired_cycles1 = desired_cycles1 + CPU1_STEP*ms_elapsed
 			}
-			desired_cycles0 = desired_cycles0 + CPU0_STEP*ms_elapsed
 
-			for p.CPU1.GetCycles() < desired_cycles1 {
-				p.CPU1.Step()
+			// performance info --------------------------------------------------
+			if (ticks_now - prev_ticks) >= 1000 {   // once per second
+				if ! disasm {  // TODO - redundant, but remove after shaping a main routing
+					spd0, unit0  := showCPUSpeed(p.CPU0.GetCycles() - prevCycles0)
+					spd1, unit1  := showCPUSpeed(p.CPU1.GetCycles() - prevCycles1)
+					prevCycles0  = p.CPU0.GetCycles()
+					prevCycles1  = p.CPU1.GetCycles()
+					fmt.Fprintf(os.Stdout, 
+						    "frames: %4d ticks %d cpu0 cycles %10d speed %2d %s cpu1 cycles %10d speed %d %s\n", 
+							    frames, (ticks_now - prev_ticks), 
+							    p.CPU0.GetCycles(), spd0, unit0, 
+							    p.CPU1.GetCycles(), spd1, unit1)
+				}
+				prev_ticks = ticks_now
+				frames = 0
 			}
-			desired_cycles1 = desired_cycles1 + CPU1_STEP*ms_elapsed
 			
-				/*
-                                // debugging interface, created around WDM opcode
-                                if debug.cpu && stopped && (CPU_TYPE == cpu.CPU_65c816) {
-                                        switch p.CPU.WDM {
-                                        case 0x0b:              // count cycles
-                                                fmt.Printf("%%checkpoint: %d cycles from previous\n", 
-                                                                        p.CPU.AllCycles - cyclesCheckpoint)
-                                                cyclesCheckpoint = p.CPU.AllCycles
-                                        case 0x10:              // enable disasm
-                                                if disasm == false {
-                                                        disasm = true
-                                                        fmt.Printf("%s", p.CPU.DisassemblePreviousPC())
-                                                }
-                                        case 0x11:              // disable disasm
-                                                if disasm {
-                                                        disasm = false
-                                                        fmt.Printf("... disassembling stopped\n")
-                                                }
-                                        case 0x20:              // stop emulator
-                                                running = false
-                                                fmt.Printf("...emulator stopped by WDM #$20 at cpu.K:PC %02x:%04x\n", p.CPU.PRK, p.CPU.PPC)
-                                                break cpu_loop
-                                        default:
-                                                fmt.Printf("%WARN: unknown WDM opcode %d\n", p.CPU.WDM)
-                                        }
-                                        p.CPU.WDM = 0
-                                        stopped = false
-                                }
-                                */
-				/*
-                                if disasm {
-                                        if CPU_TYPE == cpu.CPU_65c816 {
-                                                // XXX - move it do subroutine
-                                                fmt.Printf(printCPUFlags(p.CPU.N, "n"))
-                                                fmt.Printf(printCPUFlags(p.CPU.V, "v"))
-                                                fmt.Printf(printCPUFlags(p.CPU.M, "m"))
-                                                fmt.Printf(printCPUFlags(p.CPU.X, "x"))
-                                                fmt.Printf(printCPUFlags(p.CPU.D, "d"))
-                                                fmt.Printf(printCPUFlags(p.CPU.I, "i"))
-                                                fmt.Printf(printCPUFlags(p.CPU.Z, "z"))
-                                                fmt.Printf(printCPUFlags(p.CPU.C, "c"))
-                                                fmt.Printf(" ")
-                                                fmt.Printf(printCPUFlags(p.CPU.B, "B"))
-                                                fmt.Printf(printCPUFlags(p.CPU.E, "E"))
-                                                fmt.Printf(" DBR %02x", p.CPU.RDBR)
-                                                if p.CPU.M == 0 {
-                                                        fmt.Printf("│A  %04x (%7d)",          p.CPU.RA, p.CPU.RA)
-                                                } else {
-                                                        fmt.Printf("│A %02x %02x (%3d %3d)", p.CPU.RAh, p.CPU.RAl, p.CPU.RAh, p.CPU.RAl)
-                                                }
-                                                if p.CPU.X == 0 {
-                                                        fmt.Printf("│X  %04x (%7d)",          p.CPU.RX, p.CPU.RX)
-                                                        fmt.Printf("│Y  %04x (%7d)│",         p.CPU.RY, p.CPU.RY)
-                                                } else {
-                                                        fmt.Printf("│X    %02x (    %3d)",  p.CPU.RXl, p.CPU.RXl)
-                                                        fmt.Printf("│Y    %02x (    %3d)│", p.CPU.RYl, p.CPU.RYl)
-                                                }
-                                                fmt.Printf("%s", p.CPU.DisassembleCurrentPC())
-                                        }
-                                        break
-                                }
-				*/
-                        //}
-                }
-
-                // performance info --------------------------------------------------
-                if (ticks_now - prev_ticks) >= 1000 {   // once per second
-                        if ! disasm {
-                                spd0, unit0  := showCPUSpeed(p.CPU0.GetCycles() - prevCycles0)
-                                spd1, unit1  := showCPUSpeed(p.CPU1.GetCycles() - prevCycles1)
-				prevCycles0  = p.CPU0.GetCycles()
-				prevCycles1  = p.CPU1.GetCycles()
-                                fmt.Fprintf(os.Stdout, 
-                                            "frames: %4d ticks %d cpu0 cycles %10d speed %2d %s cpu1 cycles %10d speed %d %s\n", 
-                                                    frames, (ticks_now - prev_ticks), 
-                                                    p.CPU0.GetCycles(), spd0, unit0, 
-                                                    p.CPU1.GetCycles(), spd1, unit1)
-                        }
-                        prev_ticks = ticks_now
-                        frames = 0
-                }
+		} else {
+			msg = <-ch
+			switch msg {
+			case "step":
+				p.CPU1.Step()
+				continue
+			case "run":
+				ticks_now = sdl.GetTicks()
+				disasm = false
+				close(ch)
+			default:
+				log.Panicln("channel from tui: received unknown message %s", msg)
+			}
+		}
 
                 // keyboard ----------------------------------------------------------
                 // https://github.com/veandco/go-sdl2-examples/blob/master/examples/keyboard-input/keyboard-input.go
@@ -626,34 +580,15 @@ func main() {
                                                         orig_mode = setFullscreen(window)
                                                 }
                                         case sdl.K_F10:
-
-                                                p.CPU1.Step()
-                                                /*
-                                                // XXX - test
-                                                m68k_write_memory_32(0,           0x10_0000)    // stack
-                                                m68k_write_memory_32(4,           0x20_0000)    // instruction pointer
-                                                m68k_write_memory_16(0x20_0000,      0x7041)    // moveq  #41, D0
-                                                m68k_write_memory_16(0x20_0002,      0x13C0)    // move.b D0, $AFA000
-                                                m68k_write_memory_32(0x20_0004, 0x00AF_A000)    // ...
-
-                                                C.m68k_init();
-                                                C.m68k_set_cpu_type(C.M68K_CPU_TYPE_68EC030)
-                                                //C.m68k_set_cpu_type(C.M68K_CPU_TYPE_68020)
-                                                C.m68k_pulse_reset()
-
-                                                c := C.m68k_execute(40)
-                                                fmt.Fprintf(os.Stdout, "m68k executed %d cycles\n", c)
-                                                */
-
+						//
                                         case sdl.K_F9:
-						/*
-                                                if disasm {
-                                                        disasm = false 
-                                                        fmt.Printf("... disasm stopped\n")
-                                                } else {
+                                                if ! disasm {
                                                         disasm = true
+							ch = make(chan string, 1)
+							go func() {
+								mainTUI(ch)
+							}()
                                                 }
-						*/
                                         default:
                                                 gui.sendKey(t.Keysym.Scancode, t.State)
                                         }

@@ -2,6 +2,7 @@ package emu
 
 type Processor interface {
         Reset()
+        Execute() uint32
         Step() uint32
 	GetCycles() uint64
 	ResetCycles()

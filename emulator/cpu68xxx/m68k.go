@@ -2,8 +2,8 @@ package cpu68xxx
 
 // #cgo CFLAGS: -I../../../Musashi  -I../../lib/musashi-c-wrapper
 // #cgo LDFLAGS: ../../lib/musashi-c-wrapper/shim.o ../../../Musashi/m68kcpu.o ../../../Musashi/m68kdasm.o ../../../Musashi/m68kops.o  ../../../Musashi/softfloat/softfloat.o
-// #include <m68k.h>
-// #include <shim.h>
+// #include "shim.h"
+// #include "m68k.h"
 import "C"
 
 import (
@@ -144,11 +144,18 @@ func (c *CPU) Reset() {
 // returns number of spent cycles, so there are
 // difference with calculations
 
-func (c *CPU) Step() uint32 {
+func (c *CPU) Execute() uint32 {
 	cycles := C.m68k_execute(1000)		// dummy value
 	c.AllCycles=c.AllCycles+uint64(cycles)
 	return uint32(cycles)
 }
+
+func (c *CPU) Step() uint32 {
+	cycles := C.m68k_execute_step()		// dummy value
+	c.AllCycles=c.AllCycles+uint64(cycles)
+	return uint32(cycles)
+}
+
 
 func (c *CPU) TriggerIRQ() {
 	return

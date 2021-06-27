@@ -856,9 +856,12 @@ type stepInfo struct {
 	mode    byte
 }
 
+func (cpu *CPU) Step() (uint32) {
+	return cpu.Execute()
+}
 
 // Step executes a single CPU instruction
-func (cpu *CPU) Step() (uint32) {
+func (cpu *CPU) Execute() (uint32) {
 
 	//if cpu.stall > 0 {
 	//	cpu.stall--
