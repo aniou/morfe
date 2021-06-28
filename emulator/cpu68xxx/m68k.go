@@ -12,6 +12,7 @@ import (
 	"github.com/aniou/go65c816/emulator"
 )
 
+
 var bus	emu.Bus
 
 type CPU struct {
@@ -123,8 +124,8 @@ func (c *CPU) Read_8(addr uint32) byte {
 	return byte(C.m68k_read_memory_8(C.uint(addr)))
 }
 func (c *CPU) Reset() {
+
 	// just for test
-	
 	C.m68k_write_memory_32(0,           0x10_0000)    // stack
         C.m68k_write_memory_32(4,           0x20_0000)    // instruction pointer
         C.m68k_write_memory_16(0x20_0000,      0x7042)    // moveq  #41, D0
@@ -151,7 +152,7 @@ func (c *CPU) Execute() uint32 {
 }
 
 func (c *CPU) Step() uint32 {
-	cycles := C.m68k_execute_step()		// dummy value
+	cycles := C.m68k_execute_step()		// provided by wrapper
 	c.AllCycles=c.AllCycles+uint64(cycles)
 	return uint32(cycles)
 }
@@ -163,4 +164,45 @@ func (c *CPU) TriggerIRQ() {
 
 func (c *CPU) SetPC(addr uint32) {
 	C.m68k_set_reg(C.M68K_REG_PC, C.uint(addr))
+}
+
+func (c *CPU) GetRegisters() map[string]uint32 {
+	var regMapping = map[string]C.m68k_register_t{
+		"D0"   : C.M68K_REG_D0,            /* Data registers */
+		"D1"   : C.M68K_REG_D1,
+		"D2"   : C.M68K_REG_D2,
+		"D3"   : C.M68K_REG_D3,
+		"D4"   : C.M68K_REG_D4,
+		"D5"   : C.M68K_REG_D5,
+		"D6"   : C.M68K_REG_D6,
+		"D7"   : C.M68K_REG_D7,
+		"A0"   : C.M68K_REG_A0,            /* Address registers */
+		"A1"   : C.M68K_REG_A1,
+		"A2"   : C.M68K_REG_A2,
+		"A3"   : C.M68K_REG_A3,
+		"A4"   : C.M68K_REG_A4,
+		"A5"   : C.M68K_REG_A5,
+		"A6"   : C.M68K_REG_A6,
+		"A7"   : C.M68K_REG_A7,
+		"PC"   : C.M68K_REG_PC,            /* Program Counter */
+		"SR"   : C.M68K_REG_SR,            /* Status Register */
+		"SP"   : C.M68K_REG_SP,            /* The current Stack Pointer (located in A7) */
+		"USP"  : C.M68K_REG_USP,           /* User Stack Pointer */
+		"ISP"  : C.M68K_REG_ISP,           /* Interrupt Stack Pointer */
+		"MSP"  : C.M68K_REG_MSP,           /* Master Stack Pointer */
+		"SFC"  : C.M68K_REG_SFC,           /* Source Function Code */
+		"DFC"  : C.M68K_REG_DFC,           /* Destination Function Code */
+		"VBR"  : C.M68K_REG_VBR,           /* Vector Base Register */
+		"CACR" : C.M68K_REG_CACR,          /* Cache Control Register */
+		"CAAR" : C.M68K_REG_CAAR,          /* Cache Address Register */
+		"PPC"  : C.M68K_REG_PPC,           /* Previous value in the program counter */
+	}
+
+	var register = map[string]uint32{}
+
+	for name, id := range regMapping {
+		register[name] = uint32(C.m68k_get_reg(nil, id))
+	}
+
+	return register
 }

@@ -2,8 +2,9 @@ package emu
 
 type Processor interface {
         Reset()
-        Execute() uint32	// execute one or more steps and returns used cycles
-        Step() uint32		// execute single step and returns used cycles
+        Execute() uint32	           // execute one or more steps and returns used cycles
+        Step() uint32		           // execute single step and returns used cycles
+	GetRegisters() map[string]uint32   // returns all registers of CPU
 	GetCycles() uint64
 	ResetCycles()
 	TriggerIRQ()

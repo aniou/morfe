@@ -532,7 +532,7 @@ func main() {
 			switch msg {
 			case "step":
 				p.CPU1.Step()
-				continue
+				ch<-"done"
 			case "run":
 				ticks_now = sdl.GetTicks()
 				disasm = false
@@ -586,7 +586,7 @@ func main() {
                                                         disasm = true
 							ch = make(chan string, 1)
 							go func() {
-								mainTUI(ch)
+								mainTUI(ch, p.CPU1)		// XXX - parametrize that!
 							}()
                                                 }
                                         default:

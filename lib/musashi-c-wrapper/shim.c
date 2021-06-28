@@ -182,9 +182,6 @@ int m68k_execute_step() {
 
 		/* Trace m68k_exception, if necessary */
 		m68ki_exception_if_trace(); /* auto-disable (see m68kcpu.h) */
-
-        /* set previous PC to current PC for the next entry into the loop */
-        REG_PPC = REG_PC;
     }
     else
         SET_CYCLES(0);
