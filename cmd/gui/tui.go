@@ -306,7 +306,6 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
 		//ui.updateStatusView(g)
 	}
 
-	// quick mem view window
 	if v, err := g.SetView("stack", v_stack_x1, v_stack_y1, v_stack_x2, v_stack_y2, 0); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
@@ -321,7 +320,6 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
 		//ui.updateStatusView(g)
 	}
 
-	// quick mem view window
 	if v, err := g.SetView("code", v_code_x1, v_code_y1, v_code_x2, v_code_y2, 0); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
@@ -336,7 +334,6 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
 		//ui.updateStatusView(g)
 	}
 
-	// quick mem view window
 	if v, err := g.SetView("dump", v_dump_x1, v_dump_y1, v_dump_x2, v_dump_y2, 0); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
@@ -351,7 +348,6 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
 		//ui.updateStatusView(g)
 	}
 
-	// quick mem view window
 	if v, err := g.SetView("log", v_log_x1, v_log_y1, v_log_x2, v_log_y2, 0); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
@@ -366,7 +362,6 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
 		ui.updateLogView(g)
 	}
 
-	// quick mem view window
 	if v, err := g.SetView("cmd", v_cmd_x1, v_cmd_y1, v_cmd_x2, v_cmd_y2, 0); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
