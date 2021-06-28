@@ -17,13 +17,8 @@ type Ui struct {
 
 	memPosition uint32 // displayed memory region
 
-	isPageMapVisible bool
-	isCPUrunning     bool   // XXX move it to CPU
 	lastView         string // last view.Name when cmd is called
 	cpuSpeed         uint64
-
-	stepControl chan byte
-	logQuit     chan bool // quit signal channel
 
 	logView *gocui.View        // shortcut for current UI
 
@@ -38,9 +33,7 @@ func NewTUI(ch chan string) *Ui {
 func (ui *Ui) Init(g *gocui.Gui) {
 	ui.viewArr = []string{"code", "cmd"}
 	ui.active = 1 // "cmd"
-	ui.stepControl = make(chan byte)
 	//ui.logger = logger
-	ui.logQuit = make(chan bool)
 
 	g.Cursor = true
 	g.SelFgColor = gocui.ColorGreen
