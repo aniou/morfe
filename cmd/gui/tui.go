@@ -117,6 +117,7 @@ func (ui *Ui) test_step(g *gocui.Gui, v *gocui.View) error {
 	ui.ch<-"step"
 	_ = <-ui.ch	// wait for ack from goroutine
 	ui.updateStatusView(g)
+	ui.updateCodeView(g)
 	return nil
 }
 
@@ -124,12 +125,26 @@ func (ui *Ui) test_step(g *gocui.Gui, v *gocui.View) error {
 //                    positions in View
 
 func makeHex32(val uint32, separator string) string {
-	hex := fmt.Sprintf("%4x%s%04x",
-                           	val >> 16, 
+	var high string
+	var low  string
+
+        if (val >> 16) == 0 {
+		high = "    "
+		low  = fmt.Sprintf("%4x", val & 0x0000_FFFF)
+	} else {
+		high = fmt.Sprintf("%4x",  val >> 16)
+		low  = fmt.Sprintf("%04x", val & 0x0000_FFFF)
+	}
+
+	hex := fmt.Sprintf("%s%s%s",
+                           	high,
                            	separator,
-                           	val & 0x0000_FFFF)
+                           	low)
 	return hex
 }
+
+
+
 
 func (ui *Ui) updateStatusView(g *gocui.Gui) error {
         v, err := g.View("status")
@@ -148,13 +163,13 @@ func (ui *Ui) updateStatusView(g *gocui.Gui) error {
 				{"D3", "IR"},
 				{"D4", "SP"},
 				{"D5", "USP"},
-				{"D6", "MSP"},
-				{"D7", "SFC"},
-				{"",   "DFC"},
-				{"A0", "VBR"},
-				{"A1", "CACR"},
-				{"A2", "CAAR"},
-				{"A3", ""},
+				{"D6", "ISP"},
+				{"D7", "MSC"},
+				{"",   "SFC"},
+				{"A0", "DFC"},
+				{"A1", "VBR"},
+				{"A2", "CACR"},
+				{"A3", "CAAR"},
 				{"A4", ""},
 				{"A5", ""},
 				{"A6", ""},
@@ -172,7 +187,7 @@ func (ui *Ui) updateStatusView(g *gocui.Gui) error {
 		if val[1] == "" {
 			fmt.Fprintf(v, "\n")
 		} else {
-                        hex := makeHex32(reg[val[1]], ":")
+                        hex := makeHex32(reg[val[1]], " ")
 			fmt.Fprintf(v, "%4s %s\n", val[1], hex)
 		}
 
@@ -197,6 +212,18 @@ func (ui *Ui) updateLogView(g *gocui.Gui) error {
 	return nil
 }
 
+func (ui *Ui) updateCodeView(g *gocui.Gui) error {
+        v, err := g.View("code")
+        if err != nil {
+                return err
+        }
+        //v.Clear()
+
+	line := ui.cpu.Dissasm()
+	fmt.Fprintf(v, "%s\n", line)
+
+	return nil
+}
 
 func (ui *Ui) keybindings(g *gocui.Gui) error {
 
@@ -331,7 +358,7 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
 		v.Highlight = false
 		v.Autoscroll = true
 
-		//ui.updateStatusView(g)
+		ui.updateCodeView(g)
 	}
 
 	if v, err := g.SetView("dump", v_dump_x1, v_dump_y1, v_dump_x2, v_dump_y2, 0); err != nil {

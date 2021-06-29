@@ -856,6 +856,16 @@ type stepInfo struct {
 	mode    byte
 }
 
+func (cpu *CPU) Dissasm() string {
+	log.Panic("GetType in 65c816 is not implemented yet!")
+	return ""					// XXX - update that!
+}
+
+func (cpu *CPU) GetType() uint {
+	log.Panic("GetType in 65c816 is not implemented yet!")
+	return 0					// XXX - update that!
+}
+
 func (cpu *CPU) GetRegisters() map[string]uint32 {
 	var register = map[string]uint32{}		// XXX - update that!
 	log.Panic("GetRegisters in 65c816 is not implemented yet!")

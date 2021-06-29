@@ -1,3 +1,9 @@
+// code adapted from https://github.com/kstenerud/Musashi/blob/master/example/sim.c
+// provided in Musashi examples by Karl Stenerud 
+//
+// compile with 
+// gcc -std=c99 -I ../../../Musashi -Wall -c shim.c
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -188,6 +194,34 @@ int m68k_execute_step() {
 
     /* return how many clocks we used */
     return m68ki_initial_cycles - GET_CYCLES();
+}
+
+void make_hex(char* buff, unsigned int pc, unsigned int length)
+{
+	char* ptr = buff;
+
+	for(;length>0;length -= 2)
+	{
+		sprintf(ptr, "%04x", m68k_read_disassembler_16(pc));
+		pc += 2;
+		ptr += 4;
+		if(length > 2)
+			*ptr++ = ' ';
+	}
+}
+
+unsigned int m68k_disassemble_program(char *go_buff, unsigned int pc, unsigned int cpu_type)
+{
+	unsigned int instr_size;
+	char buff[100];
+	char buff2[100];
+	char* ptr = go_buff;
+
+	instr_size = m68k_disassemble(buff, pc, cpu_type);
+	make_hex(buff2, pc, instr_size);
+	sprintf(ptr, "%04x: %-20s: %s", pc, buff2, buff);
+	pc += instr_size;
+	return(pc);
 }
 
 

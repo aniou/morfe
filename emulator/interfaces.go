@@ -5,6 +5,8 @@ type Processor interface {
         Execute() uint32	           // execute one or more steps and returns used cycles
         Step() uint32		           // execute single step and returns used cycles
 	GetRegisters() map[string]uint32   // returns all registers of CPU
+	GetType() uint			   // returns CPU id (when many types are available)
+	Dissasm() string
 	GetCycles() uint64
 	ResetCycles()
 	TriggerIRQ()

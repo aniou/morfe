@@ -18,7 +18,7 @@ var bus	emu.Bus
 type CPU struct {
 	Speed     uint32		// in milliseconds
 	Enabled   bool
-	Type	  byte
+	Type	  uint
 	AllCycles uint64	// cumulative number of cycles of CPU instance
 
 	name    string
@@ -99,7 +99,12 @@ func New(b emu.Bus, name string) *CPU {
 	C.m68k_init_ram();
 	C.m68k_init();
         C.m68k_set_cpu_type(C.M68K_CPU_TYPE_68EC030)
+	cpu.Type = uint(C.M68K_CPU_TYPE_68EC030)		// XXX - parametrize it!
 	return &cpu
+}
+
+func (cpu *CPU) GetType() uint {
+	return cpu.Type
 }
 
 func (cpu *CPU) GetName() string {
@@ -206,3 +211,12 @@ func (c *CPU) GetRegisters() map[string]uint32 {
 
 	return register
 }
+
+func (c *CPU) Dissasm() string {
+	dpc := C.m68k_get_reg(nil, C.M68K_REG_PC)
+        b := make([]C.char, 512)
+
+        _ = C.m68k_disassemble_program(&b[0], dpc, C.uint(c.Type))
+        return C.GoString(&b[0])
+}
+
