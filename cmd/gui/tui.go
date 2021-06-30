@@ -23,9 +23,9 @@ type Ui struct {
 
 	logView *gocui.View        // shortcut for current UI
 
-	ch	chan string
-	cpu	emu.Processor      // for what CPU is that GUI?	
-	preg	map[string]uint32  // previous values of registers
+	ch		chan string
+	cpu		emu.Processor      // for what CPU is that GUI?	
+	preg		map[string]uint32  // previous values of registers
 }
 
 func NewTUI(ch chan string, cpu emu.Processor) *Ui {
@@ -219,8 +219,14 @@ func (ui *Ui) updateCodeView(g *gocui.Gui) error {
         }
         //v.Clear()
 
-	line := ui.cpu.Dissasm()
-	fmt.Fprintf(v, "%s\n", line)
+	line   := ui.cpu.Dissasm()
+	cycles := ui.cpu.GetCycles()
+	if cycles > 0 {
+		fmt.Fprintf(v, " : %d\n", ui.cpu.GetCycles())
+	} else {
+		fmt.Fprintf(v, "\n")
+	}
+	fmt.Fprintf(v, "%-52s", line)
 
 	return nil
 }

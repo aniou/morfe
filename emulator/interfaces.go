@@ -7,7 +7,8 @@ type Processor interface {
 	GetRegisters() map[string]uint32   // returns all registers of CPU
 	GetType() uint			   // returns CPU id (when many types are available)
 	Dissasm() string
-	GetCycles() uint64
+	GetCycles() uint32		   // number of cycles used by last step
+	GetAllCycles() uint64	           // cumulative number of cycles used
 	ResetCycles()
 	TriggerIRQ()
 	SetPC(uint32)

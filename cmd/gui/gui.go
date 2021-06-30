@@ -499,12 +499,12 @@ func main() {
 				//           system is too slow to do desired number of
 				//           cycles per ms when *ms is used
 
-				for p.CPU0.GetCycles() < desired_cycles0 {
+				for p.CPU0.GetAllCycles() < desired_cycles0 {
 					p.CPU0.Execute()
 				}
 				desired_cycles0 = desired_cycles0 + CPU0_STEP*ms_elapsed
 
-				for p.CPU1.GetCycles() < desired_cycles1 {
+				for p.CPU1.GetAllCycles() < desired_cycles1 {
 					p.CPU1.Execute()
 				}
 				desired_cycles1 = desired_cycles1 + CPU1_STEP*ms_elapsed
@@ -513,15 +513,15 @@ func main() {
 			// performance info --------------------------------------------------
 			if (ticks_now - prev_ticks) >= 1000 {   // once per second
 				if ! disasm {  // TODO - redundant, but remove after shaping a main routing
-					spd0, unit0  := showCPUSpeed(p.CPU0.GetCycles() - prevCycles0)
-					spd1, unit1  := showCPUSpeed(p.CPU1.GetCycles() - prevCycles1)
-					prevCycles0  = p.CPU0.GetCycles()
-					prevCycles1  = p.CPU1.GetCycles()
+					spd0, unit0  := showCPUSpeed(p.CPU0.GetAllCycles() - prevCycles0)
+					spd1, unit1  := showCPUSpeed(p.CPU1.GetAllCycles() - prevCycles1)
+					prevCycles0  = p.CPU0.GetAllCycles()
+					prevCycles1  = p.CPU1.GetAllCycles()
 					fmt.Fprintf(os.Stdout, 
 						    "frames: %4d ticks %d cpu0 cycles %10d speed %2d %s cpu1 cycles %10d speed %d %s\n", 
 							    frames, (ticks_now - prev_ticks), 
-							    p.CPU0.GetCycles(), spd0, unit0, 
-							    p.CPU1.GetCycles(), spd1, unit1)
+							    p.CPU0.GetAllCycles(), spd0, unit0, 
+							    p.CPU1.GetAllCycles(), spd1, unit1)
 				}
 				prev_ticks = ticks_now
 				frames = 0
@@ -585,6 +585,7 @@ func main() {
                                                 if ! disasm {
                                                         disasm = true
 							ch = make(chan string, 1)
+							p.CPU1.ResetCycles()
 							go func() {
 								mainTUI(ch, p.CPU1)		// XXX - parametrize that!
 							}()

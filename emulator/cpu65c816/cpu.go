@@ -410,7 +410,7 @@ func (cpu *CPU) Read_8(addr uint32) byte {
 }
 
 // to fulfill interface, that doesn't allow direct acces to fields
-func (cpu *CPU) GetCycles() uint64 {
+func (cpu *CPU) GetAllCycles() uint64 {
 	return cpu.AllCycles
 }
 
@@ -870,6 +870,10 @@ func (cpu *CPU) GetRegisters() map[string]uint32 {
 	var register = map[string]uint32{}		// XXX - update that!
 	log.Panic("GetRegisters in 65c816 is not implemented yet!")
 	return register
+}
+
+func (cpu *CPU) GetCycles() uint32 {
+        return uint32(cpu.Cycles)
 }
 
 func (cpu *CPU) Step() (uint32) {
