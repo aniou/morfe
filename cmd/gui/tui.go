@@ -257,14 +257,6 @@ func (ui *Ui) keybindings(g *gocui.Gui) error {
 
 func (ui *Ui) Layout(g *gocui.Gui) error {
 
-	const codeView_width = 41   // with frames - no resize
-	const stackView_width = 8   // with frames - no resize
-	const memoryView_width = 74 // with frames - no resize
-	const cmdView_height = 3    // with frames, resizeable
-
-	const logView_height = 10    // with frames
-	const memoryView_height = 18 // with frames
-
 	maxX, maxY := g.Size()
 
 	const v_stat_x1   = 0
