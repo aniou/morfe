@@ -876,6 +876,10 @@ func (cpu *CPU) GetCycles() uint32 {
         return uint32(cpu.Cycles)
 }
 
+func (cpu *CPU) StatusString() string {
+	return "????????"
+}
+
 func (cpu *CPU) Step() (uint32) {
 	return cpu.Execute()
 }

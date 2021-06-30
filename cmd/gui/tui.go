@@ -193,7 +193,7 @@ func (ui *Ui) updateStatusView(g *gocui.Gui) error {
 
 	}
 
-
+	fmt.Fprintf(v, "\n%s", ui.cpu.StatusString())
 
 	return nil
 }

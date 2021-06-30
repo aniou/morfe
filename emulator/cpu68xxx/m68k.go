@@ -8,7 +8,7 @@ import "C"
 
 import (
         _ "encoding/binary"
-        _ "fmt"
+        "fmt"
         "github.com/aniou/go65c816/emulator"
 )
 
@@ -228,3 +228,26 @@ func (c *CPU) Dissasm() string {
         return C.GoString(&b[0])
 }
 
+func cpuFlag(val uint16, flag string) string {
+        if val > 0 {
+                return flag
+        } else {
+                return "-"
+        }
+}
+
+func (c *CPU) StatusString() string {
+        // 0 MS 7 XNZVC
+        sr     := uint16(C.m68k_get_reg(nil, C.M68K_REG_SR))
+
+        status := fmt.Sprintf("%d ", (sr >> 14))
+        status += cpuFlag(sr & 0b0010_0000_0000_0000, "S")
+        status += cpuFlag(sr & 0b0001_0000_0000_0000, "M")
+        status += fmt.Sprintf(" %d ", (sr & 0b0000_0111_0000_0000) >> 8)
+        status += cpuFlag(sr & 0b0000_0000_0001_0000, "X")
+        status += cpuFlag(sr & 0b0000_0000_0000_1000, "N")
+        status += cpuFlag(sr & 0b0000_0000_0000_0100, "Z")
+        status += cpuFlag(sr & 0b0000_0000_0000_0010, "V")
+        status += cpuFlag(sr & 0b0000_0000_0000_0001, "C")
+        return status
+}

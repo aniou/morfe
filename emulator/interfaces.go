@@ -9,6 +9,7 @@ type Processor interface {
 	Dissasm() string
 	GetCycles() uint32		   // number of cycles used by last step
 	GetAllCycles() uint64	           // cumulative number of cycles used
+	StatusString() string		   // string that represents status flags
 	ResetCycles()
 	TriggerIRQ()
 	SetPC(uint32)
