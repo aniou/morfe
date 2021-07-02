@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"sort"
 	_ "strconv"
 	_ "strings"
 	_ "time"
@@ -24,8 +25,9 @@ type Ui struct {
 	logView *gocui.View        // shortcut for current UI
 
 	ch		chan string
-	cpu		emu.Processor      // for what CPU is that GUI?	
-	preg		map[string]uint32  // previous values of registers
+	cpu		emu.Processor         // for what CPU is that GUI?	
+	preg		map[string]uint32     // previous values of registers
+	watch           map[int][4]byte  // list of addresses and previous values
 }
 
 func NewTUI(ch chan string, cpu emu.Processor) *Ui {
@@ -38,6 +40,7 @@ func (ui *Ui) Init(g *gocui.Gui) {
 	ui.viewArr = []string{"code", "cmd"}
 	ui.active = 1 // "cmd"
 	//ui.logger = logger
+	ui.watch = make(map[int][4]byte)
 
 	g.Cursor = true
 	g.SelFgColor = gocui.ColorGreen
@@ -118,6 +121,7 @@ func (ui *Ui) test_step(g *gocui.Gui, v *gocui.View) error {
 	_ = <-ui.ch	// wait for ack from goroutine
 	ui.updateStatusView(g)
 	ui.updateCodeView(g)
+	ui.updateWatchView(g)
 	return nil
 }
 
@@ -231,6 +235,62 @@ func (ui *Ui) updateCodeView(g *gocui.Gui) error {
 	return nil
 }
 
+
+func printSafeAscii(v *gocui.View, oldval, newval byte) {
+	var tmp string
+
+	if newval >= 33 && newval < 127 {
+		tmp = string(newval)
+	} else {
+		tmp = "."
+	}
+
+	if newval != oldval {
+		fmt.Fprintf(v, "\x1b[0;31m%s\x1b[0m", tmp)
+	} else {
+		fmt.Fprintf(v, "%s", tmp)
+	}
+}
+
+func (ui *Ui) updateWatchView(g *gocui.Gui) error {
+        v, err := g.View("watch")
+        if err != nil {
+                return err
+        }
+        v.Clear()
+
+	keys := []int{}
+	for k := range ui.watch {
+	    keys = append(keys, int(k))
+	}
+	sort.Ints(keys)
+        
+	for _, key := range keys {
+		fmt.Fprintf(v, "%s:  ", makeHex32(uint32(key), " "))
+
+		tmparr := [4]byte{}
+		for i:=0; i < 4; i++ {
+			b := ui.cpu.Read_8(uint32(key+i))
+			if b != ui.watch[key][i] {
+				fmt.Fprintf(v, "\x1b[0;31m%02x\x1b[0m ", b)
+			} else {
+				fmt.Fprintf(v, "%02x ", b)
+			}
+			tmparr[i] = b
+		}
+
+		fmt.Fprintf(v, " ")
+		for i:=0; i < 4; i++ {
+			b := ui.cpu.Read_8(uint32(key+i))
+			printSafeAscii(v, ui.watch[key][i], b)
+		}
+		fmt.Fprintf(v, "\n")
+		ui.watch[key] = tmparr
+	}
+
+	return nil
+}
+
 func (ui *Ui) keybindings(g *gocui.Gui) error {
 
 	if err := g.SetKeybinding("", gocui.KeyF5, gocui.ModNone, ui.test_step); err != nil {
@@ -270,10 +330,10 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
 	const v_stat_x2   = 30
 	const v_stat_y2   = 21
 
-	const v_quick_x1  = 0
-	const v_quick_y1  = v_stat_y2 + 1
-	const v_quick_x2  = 30
-	      v_quick_y2 := maxY - 1
+	const v_watch_x1  = 0
+	const v_watch_y1  = v_stat_y2 + 1
+	const v_watch_x2  = 30
+	      v_watch_y2 := maxY - 1
 
 	const v_stack_x1  = v_stat_x2 + 1
 	const v_stack_y1  = 0
@@ -316,8 +376,8 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
 		ui.updateStatusView(g)
 	}
 
-	// quick mem view window
-	if v, err := g.SetView("quick", v_quick_x1, v_quick_y1, v_quick_x2, v_quick_y2, 0); err != nil {
+	// watch mem view window
+	if v, err := g.SetView("watch", v_watch_x1, v_watch_y1, v_watch_x2, v_watch_y2, 0); err != nil {
 		if err != gocui.ErrUnknownView {
 			return err
 		}
@@ -328,7 +388,7 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
 		v.Highlight = false
 		v.Autoscroll = true
 
-		//ui.updateStatusView(g)
+		ui.updateWatchView(g)
 	}
 
 	if v, err := g.SetView("stack", v_stack_x1, v_stack_y1, v_stack_x2, v_stack_y2, 0); err != nil {
@@ -419,6 +479,10 @@ func mainTUI(ch chan string, cpu emu.Processor) {
 
 	ui     := NewTUI(ch, cpu)
 	ui.Init(g)
+
+	ui.watch[0x10_0000] = [4]byte{0, 0, 0, 0}
+	ui.watch[0xaf_a000] = [4]byte{0, 0, 0, 0}
+
 	ui.Run(g)
 	g.Close()
 	fmt.Print("sending quitting...")
