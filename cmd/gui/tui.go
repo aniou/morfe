@@ -12,6 +12,9 @@ import (
 	"github.com/awesome-gocui/gocui"
 )
 
+const ansi_red   = "\x1b[0;31m"
+const ansi_reset = "\x1b[0m"
+
 // todo - gocui.GUI should be moved here
 type Ui struct {
 	viewArr []string // names of views to cycle
@@ -32,7 +35,6 @@ type Ui struct {
 
 func NewTUI(ch chan string, cpu emu.Processor) *Ui {
 	ui      := Ui{ch: ch, cpu: cpu}
-	ui.preg  = ui.cpu.GetRegisters()
 	return &ui
 }
 
@@ -41,6 +43,7 @@ func (ui *Ui) Init(g *gocui.Gui) {
 	ui.active = 1 // "cmd"
 	//ui.logger = logger
 	ui.watch = make(map[int][4]byte)
+	ui.preg  = ui.cpu.GetRegisters()
 
 	g.Cursor = true
 	g.SelFgColor = gocui.ColorGreen
@@ -147,6 +150,14 @@ func makeHex32(val uint32, separator string) string {
 	return hex
 }
 
+func makeSafeAscii(val byte) string {
+	if val >= 33 && val < 127 {
+		return string(val)
+	} else {
+		return "."
+	}
+}
+
 
 
 
@@ -184,21 +195,31 @@ func (ui *Ui) updateStatusView(g *gocui.Gui) error {
 		if val[0] == "" {
 			fmt.Fprintf(v, "               ")
 		} else {
-                        hex := makeHex32(reg[val[0]], " ")
-			fmt.Fprintf(v, "%2s %s   ", val[0], hex)
+                        hex       := makeHex32(reg[val[0]], " ")
+			different := ui.preg[val[0]] != reg[val[0]]
+
+			fmt.Fprintf(v, "%2s ", val[0])
+			printColored(v, different, hex)
+			fmt.Fprintf(v, "   ")
 		}
+
 
 		if val[1] == "" {
 			fmt.Fprintf(v, "\n")
 		} else {
-                        hex := makeHex32(reg[val[1]], " ")
-			fmt.Fprintf(v, "%4s %s\n", val[1], hex)
+                        hex       := makeHex32(reg[val[1]], " ")
+			different := ui.preg[val[1]] != reg[val[1]]
+				   
+			fmt.Fprintf(v, "%4s ", val[1])
+			printColored(v, different, hex)
+			fmt.Fprintf(v, "\n")
 		}
 
 	}
 
 	fmt.Fprintf(v, "\n%s", ui.cpu.StatusString())
 
+        ui.preg = reg
 	return nil
 }
 
@@ -235,20 +256,36 @@ func (ui *Ui) updateCodeView(g *gocui.Gui) error {
 	return nil
 }
 
-
-func printSafeAscii(v *gocui.View, oldval, newval byte) {
-	var tmp string
-
-	if newval >= 33 && newval < 127 {
-		tmp = string(newval)
+func printColored(v *gocui.View, highlighted bool, s string) {
+	if highlighted {
+		fmt.Fprintf(v, ansi_red)
+		fmt.Fprintf(v, s)
+		fmt.Fprintf(v, ansi_reset)
 	} else {
-		tmp = "."
+		fmt.Fprintf(v, s)
+	}
+}
+
+
+func (ui *Ui) addWatchAddr(addr int) {
+	// only distinct values
+	if _, exists := ui.watch[addr]; exists {
+		return
 	}
 
-	if newval != oldval {
-		fmt.Fprintf(v, "\x1b[0;31m%s\x1b[0m", tmp)
-	} else {
-		fmt.Fprintf(v, "%s", tmp)
+	// initialize values
+	vals := [4]byte{}
+        for i:=0; i<4; i++ {
+		b := ui.cpu.Read_8(uint32(addr + i))
+		vals[i] = b
+	}
+	ui.watch[addr] = vals
+}
+
+func (ui *Ui) delWatchAddr(addr int) {
+	// only distinct values
+	if _, exists := ui.watch[addr]; exists {
+		delete(ui.watch, addr)
 	}
 }
 
@@ -259,32 +296,38 @@ func (ui *Ui) updateWatchView(g *gocui.Gui) error {
         }
         v.Clear()
 
+	// create sorted list of addresses...
 	keys := []int{}
 	for k := range ui.watch {
 	    keys = append(keys, int(k))
 	}
 	sort.Ints(keys)
         
+	// ...and use them to iterate over ui.watch
 	for _, key := range keys {
 		fmt.Fprintf(v, "%s:  ", makeHex32(uint32(key), " "))
-
 		tmparr := [4]byte{}
+
+		// print HEX represenation of four consecutive bytes
 		for i:=0; i < 4; i++ {
 			b := ui.cpu.Read_8(uint32(key+i))
-			if b != ui.watch[key][i] {
-				fmt.Fprintf(v, "\x1b[0;31m%02x\x1b[0m ", b)
-			} else {
-				fmt.Fprintf(v, "%02x ", b)
-			}
+			printColored(v, 
+				     b!=ui.watch[key][i], 
+                                     fmt.Sprintf("%02x ", b))
 			tmparr[i] = b
 		}
 
+		// print ASCII represenation of byte
 		fmt.Fprintf(v, " ")
 		for i:=0; i < 4; i++ {
 			b := ui.cpu.Read_8(uint32(key+i))
-			printSafeAscii(v, ui.watch[key][i], b)
+			printColored(v,
+				     b!=ui.watch[key][i],
+                                     makeSafeAscii(b))
 		}
 		fmt.Fprintf(v, "\n")
+
+		// update old values
 		ui.watch[key] = tmparr
 	}
 
@@ -480,8 +523,8 @@ func mainTUI(ch chan string, cpu emu.Processor) {
 	ui     := NewTUI(ch, cpu)
 	ui.Init(g)
 
-	ui.watch[0x10_0000] = [4]byte{0, 0, 0, 0}
-	ui.watch[0xaf_a000] = [4]byte{0, 0, 0, 0}
+	ui.addWatchAddr(0x10_0000)
+	ui.addWatchAddr(0xaf_a000)
 
 	ui.Run(g)
 	g.Close()
