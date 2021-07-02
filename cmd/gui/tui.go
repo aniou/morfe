@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 	"sort"
-	_ "strconv"
-	_ "strings"
+	"strconv"
+	"strings"
 	_ "time"
         "github.com/aniou/go65c816/emulator"
 
@@ -23,14 +23,12 @@ type Ui struct {
 	memPosition uint32 // displayed memory region
 
 	lastView         string // last view.Name when cmd is called
-	cpuSpeed         uint64
 
-	logView *gocui.View        // shortcut for current UI
-
-	ch		chan string
-	cpu		emu.Processor         // for what CPU is that GUI?	
-	preg		map[string]uint32     // previous values of registers
-	watch           map[int][4]byte  // list of addresses and previous values
+	logView   *gocui.View        // shortcut for current UI
+	ch	  chan string
+	cpu	  emu.Processor      // for what CPU is that GUI?	
+	preg	  map[string]uint32  // previous values of registers
+	watch     map[int][4]byte    // list of addresses and previous values
 }
 
 func NewTUI(ch chan string, cpu emu.Processor) *Ui {
@@ -150,6 +148,18 @@ func makeHex32(val uint32, separator string) string {
 	return hex
 }
 
+func hex2uint32(hexStr string) (uint32, error) {
+        // remove 0x suffix, $ and : characters
+        cleaned := strings.Replace(hexStr,  "0x", "",  1)
+        cleaned  = strings.Replace(cleaned,  "$", "",  1)
+        cleaned  = strings.Replace(cleaned,  ":", "", -1)
+        cleaned  = strings.Replace(cleaned,  "_", "", -1)
+
+        result, err := strconv.ParseUint(cleaned, 16, 32)
+        return uint32(result), err
+}
+
+
 func makeSafeAscii(val byte) string {
 	if val >= 33 && val < 127 {
 		return string(val)
@@ -158,6 +168,55 @@ func makeSafeAscii(val byte) string {
 	}
 }
 
+
+func (ui *Ui) watchCmd(g *gocui.Gui, tokens []string) {
+        switch tokens[1] {
+        case "add":
+                if addr, err := hex2uint32(tokens[2]); err == nil {
+			ui.addWatch(int(addr))
+                        ui.updateWatchView(g)
+                } else {
+                        fmt.Fprintf(ui.logView, "watch add: error: %s\n", err)
+                }
+        case "del":
+                if addr, err := hex2uint32(tokens[2]); err == nil {
+			ui.delWatch(int(addr))
+                        ui.updateWatchView(g)
+                } else {
+                        fmt.Fprintf(ui.logView, "watch add: error: %s\n", err)
+                }
+        default:
+                fmt.Fprintf(ui.logView, "watch: unknown parameter '%s'\n", tokens[1:])
+        }
+}
+
+func (ui *Ui) executeCommand(g *gocui.Gui, v *gocui.View) error {
+        command := strings.TrimSpace(v.Buffer())
+        tokens := strings.Split(command, " ")
+        switch tokens[0] {
+	case "wa", "watch":
+		ui.watchCmd(g, tokens)
+	/*
+        case "se", "set":
+                ui.setParameter(g, tokens)
+        case "lo", "load":
+                ui.loadProgram(g, tokens)
+        case "run":
+                ui.runCPU(g, v)
+        case "peek", "peek8", "peek16", "peek24":
+                ui.peek(g, tokens)
+        case "quit":
+                ui.quit(g, v)
+                return gocui.ErrQuit
+	*/
+        default:
+                fmt.Fprintf(ui.logView, "unknown command: %s\n", command)
+        }
+
+        v.Clear()
+        v.SetCursor(0, 0)
+        return nil
+}
 
 
 
@@ -233,6 +292,9 @@ func (ui *Ui) updateLogView(g *gocui.Gui) error {
 	fmt.Fprintf(v, "Preliminary debug interface\npress keys:\n")
 	fmt.Fprintf(v, "F5     to execute single step\n")
 	fmt.Fprintf(v, "CTRL+Q to exit debugger\n")
+	fmt.Fprintf(v, "\n")
+	fmt.Fprintf(v, "Commands:\n")
+	fmt.Fprintf(v, "watch {add|del} addr - manage watch list vals\n")
 
 	return nil
 }
@@ -267,7 +329,7 @@ func printColored(v *gocui.View, highlighted bool, s string) {
 }
 
 
-func (ui *Ui) addWatchAddr(addr int) {
+func (ui *Ui) addWatch(addr int) {
 	// only distinct values
 	if _, exists := ui.watch[addr]; exists {
 		return
@@ -282,7 +344,7 @@ func (ui *Ui) addWatchAddr(addr int) {
 	ui.watch[addr] = vals
 }
 
-func (ui *Ui) delWatchAddr(addr int) {
+func (ui *Ui) delWatch(addr int) {
 	// only distinct values
 	if _, exists := ui.watch[addr]; exists {
 		delete(ui.watch, addr)
@@ -348,6 +410,9 @@ func (ui *Ui) keybindings(g *gocui.Gui) error {
 	if err := g.SetKeybinding("", gocui.KeyCtrlQ, gocui.ModNone, ui.quit); err != nil {
 		return err
 	}
+        if err := g.SetKeybinding("cmd", gocui.KeyEnter, gocui.ModNone, ui.executeCommand); err != nil {
+                return err
+        }
 	if err := g.SetKeybinding("log", gocui.KeyArrowDown, gocui.ModNone, ui.cursorDown); err != nil {
 		return err
 	}
@@ -430,6 +495,7 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
 		v.Frame = true
 		v.Highlight = false
 		v.Autoscroll = true
+		v.Title = "Watch"
 
 		ui.updateWatchView(g)
 	}
@@ -486,7 +552,9 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
 		v.Frame = true
 		v.Highlight = false
 		v.Autoscroll = true
+		v.Title = "Log"
 
+		ui.logView = v
 		ui.updateLogView(g)
 	}
 
@@ -500,13 +568,13 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
 		v.Frame = true
 		v.Highlight = false
 		v.Autoscroll = true
+		v.Title = "Cmd"
 
 		if _, err := g.SetCurrentView("cmd"); err != nil {
 			return err
 		}
 
         	v.Clear()
-		fmt.Fprintf(v, "> ")
 
 		//ui.updateStatusView(g)
 	}
@@ -523,8 +591,8 @@ func mainTUI(ch chan string, cpu emu.Processor) {
 	ui     := NewTUI(ch, cpu)
 	ui.Init(g)
 
-	ui.addWatchAddr(0x10_0000)
-	ui.addWatchAddr(0xaf_a000)
+	ui.addWatch(0x10_0000)
+	ui.addWatch(0xaf_a000)
 
 	ui.Run(g)
 	g.Close()
