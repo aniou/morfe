@@ -156,6 +156,9 @@ func hex2uint32(hexStr string) (uint32, error) {
         cleaned  = strings.Replace(cleaned,  "_", "", -1)
 
         result, err := strconv.ParseUint(cleaned, 16, 32)
+	if err != nil {
+		err = fmt.Errorf("hex2uint32: %w", err)
+	}
         return uint32(result), err
 }
 
@@ -169,7 +172,7 @@ func makeSafeAscii(val byte) string {
 }
 
 
-func (ui *Ui) watchCmd(g *gocui.Gui, tokens []string) {
+func (ui *Ui) cmd_watch(g *gocui.Gui, tokens []string) {
         switch tokens[1] {
         case "add":
                 if addr, err := hex2uint32(tokens[2]); err == nil {
@@ -190,15 +193,45 @@ func (ui *Ui) watchCmd(g *gocui.Gui, tokens []string) {
         }
 }
 
+func (ui *Ui) cmd_set(g *gocui.Gui, tokens []string) {
+        var err error
+
+        switch tokens[1] {
+		/*
+        case "mem":
+                if ui.memPosition, err = hex2uint24(tokens[2]); err == nil {
+                        ui.updateMemoryView(g)
+                } else {
+                        fmt.Fprintf(ui.logView, "set: error: %s\n", err)
+                }
+		*/
+        case "reg": // set reg name value
+		var val uint32
+                if val, err = hex2uint32(tokens[3]); err == nil {
+			err = ui.cpu.SetRegister(strings.ToUpper(tokens[2]), val)
+                        ui.updateStatusView(g)
+                }
+        default:
+                err = fmt.Errorf("unknown parameter %v", tokens[2])
+        }
+
+	if err != nil {
+		fmt.Fprintf(ui.logView, "ERROR cmd_set: %s\n", err)
+
+	}
+}
+
+
+
 func (ui *Ui) executeCommand(g *gocui.Gui, v *gocui.View) error {
         command := strings.TrimSpace(v.Buffer())
         tokens := strings.Split(command, " ")
         switch tokens[0] {
 	case "wa", "watch":
-		ui.watchCmd(g, tokens)
-	/*
+		ui.cmd_watch(g, tokens)
         case "se", "set":
-                ui.setParameter(g, tokens)
+                ui.cmd_set(g, tokens)
+	/*
         case "lo", "load":
                 ui.loadProgram(g, tokens)
         case "run":
@@ -210,7 +243,7 @@ func (ui *Ui) executeCommand(g *gocui.Gui, v *gocui.View) error {
                 return gocui.ErrQuit
 	*/
         default:
-                fmt.Fprintf(ui.logView, "unknown command: %s\n", command)
+		fmt.Fprintf(ui.logView, "executeCommand: unknown command: %s\n", command)
         }
 
         v.Clear()
@@ -294,7 +327,8 @@ func (ui *Ui) updateLogView(g *gocui.Gui) error {
 	fmt.Fprintf(v, "CTRL+Q to exit debugger\n")
 	fmt.Fprintf(v, "\n")
 	fmt.Fprintf(v, "Commands:\n")
-	fmt.Fprintf(v, "watch {add|del} addr - manage watch list vals\n")
+	fmt.Fprintf(v, "watch {add|del} <value>   - manage watch list vals\n")
+	fmt.Fprintf(v, "set reg <regname> <value> - set value of register\n")
 
 	return nil
 }

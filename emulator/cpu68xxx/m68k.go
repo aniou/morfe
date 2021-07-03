@@ -14,6 +14,40 @@ import (
 
 
 var bus emu.Bus
+var (
+        regMapping = map[string]C.m68k_register_t{
+                "D0"   : C.M68K_REG_D0,            /* Data registers */
+                "D1"   : C.M68K_REG_D1,
+                "D2"   : C.M68K_REG_D2,
+                "D3"   : C.M68K_REG_D3,
+                "D4"   : C.M68K_REG_D4,
+                "D5"   : C.M68K_REG_D5,
+                "D6"   : C.M68K_REG_D6,
+                "D7"   : C.M68K_REG_D7,
+                "A0"   : C.M68K_REG_A0,            /* Address registers */
+                "A1"   : C.M68K_REG_A1,
+                "A2"   : C.M68K_REG_A2,
+                "A3"   : C.M68K_REG_A3,
+                "A4"   : C.M68K_REG_A4,
+                "A5"   : C.M68K_REG_A5,
+                "A6"   : C.M68K_REG_A6,
+                "A7"   : C.M68K_REG_A7,
+                "PC"   : C.M68K_REG_PC,            /* Program Counter */
+                "SR"   : C.M68K_REG_SR,            /* Status Register */
+                "SP"   : C.M68K_REG_SP,            /* The current Stack Pointer (located in A7) */
+                "USP"  : C.M68K_REG_USP,           /* User Stack Pointer */
+                "ISP"  : C.M68K_REG_ISP,           /* Interrupt Stack Pointer */
+                "MSP"  : C.M68K_REG_MSP,           /* Master Stack Pointer */
+                "SFC"  : C.M68K_REG_SFC,           /* Source Function Code */
+                "DFC"  : C.M68K_REG_DFC,           /* Destination Function Code */
+                "VBR"  : C.M68K_REG_VBR,           /* Vector Base Register */
+                "CACR" : C.M68K_REG_CACR,          /* Cache Control Register */
+                "CAAR" : C.M68K_REG_CAAR,          /* Cache Address Register */
+                "PPC"  : C.M68K_REG_PPC,           /* Previous value in the program counter */
+        }
+
+)
+
 
 type CPU struct {
         Speed       uint32      // in milliseconds
@@ -175,42 +209,21 @@ func (c *CPU) TriggerIRQ() {
         return
 }
 
-func (c *CPU) SetPC(addr uint32) {
-        C.m68k_set_reg(C.M68K_REG_PC, C.uint(addr))
+func (c *CPU) SetPC(val uint32) {
+        C.m68k_set_reg(C.M68K_REG_PC, C.uint(val))
+}
+
+func (c *CPU) SetRegister(reg string, val uint32) error {
+	if c_reg_id, exists := regMapping[reg]; exists {
+		C.m68k_set_reg(c_reg_id, C.uint(val))
+                return nil
+        } else {
+		return fmt.Errorf("m68k: unknown register %v", reg)
+	}
+	
 }
 
 func (c *CPU) GetRegisters() map[string]uint32 {
-        var regMapping = map[string]C.m68k_register_t{
-                "D0"   : C.M68K_REG_D0,            /* Data registers */
-                "D1"   : C.M68K_REG_D1,
-                "D2"   : C.M68K_REG_D2,
-                "D3"   : C.M68K_REG_D3,
-                "D4"   : C.M68K_REG_D4,
-                "D5"   : C.M68K_REG_D5,
-                "D6"   : C.M68K_REG_D6,
-                "D7"   : C.M68K_REG_D7,
-                "A0"   : C.M68K_REG_A0,            /* Address registers */
-                "A1"   : C.M68K_REG_A1,
-                "A2"   : C.M68K_REG_A2,
-                "A3"   : C.M68K_REG_A3,
-                "A4"   : C.M68K_REG_A4,
-                "A5"   : C.M68K_REG_A5,
-                "A6"   : C.M68K_REG_A6,
-                "A7"   : C.M68K_REG_A7,
-                "PC"   : C.M68K_REG_PC,            /* Program Counter */
-                "SR"   : C.M68K_REG_SR,            /* Status Register */
-                "SP"   : C.M68K_REG_SP,            /* The current Stack Pointer (located in A7) */
-                "USP"  : C.M68K_REG_USP,           /* User Stack Pointer */
-                "ISP"  : C.M68K_REG_ISP,           /* Interrupt Stack Pointer */
-                "MSP"  : C.M68K_REG_MSP,           /* Master Stack Pointer */
-                "SFC"  : C.M68K_REG_SFC,           /* Source Function Code */
-                "DFC"  : C.M68K_REG_DFC,           /* Destination Function Code */
-                "VBR"  : C.M68K_REG_VBR,           /* Vector Base Register */
-                "CACR" : C.M68K_REG_CACR,          /* Cache Control Register */
-                "CAAR" : C.M68K_REG_CAAR,          /* Cache Address Register */
-                "PPC"  : C.M68K_REG_PPC,           /* Previous value in the program counter */
-        }
-
         var register = map[string]uint32{}
 
         for name, id := range regMapping {

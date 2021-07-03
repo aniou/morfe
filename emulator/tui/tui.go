@@ -1,5 +1,8 @@
 package tui
 
+// that code was created for debug interface in text-only version
+// it is not used now, 
+
 import (
 	"fmt"
 	"log"

@@ -9,8 +9,7 @@ package cpu65c816
 import (
 	"log"
 	"github.com/aniou/go65c816/emulator"
-	_ "fmt"
-
+	"fmt"
 )
 
 type instructionType struct {
@@ -864,6 +863,10 @@ func (cpu *CPU) Dissasm() string {
 func (cpu *CPU) GetType() uint {
 	log.Panic("GetType in 65c816 is not implemented yet!")
 	return 0					// XXX - update that!
+}
+
+func (c *CPU) SetRegister(reg string, val uint32) error {
+	return fmt.Errorf("SetRegister in 65c816 is not implemented yet")
 }
 
 func (cpu *CPU) GetRegisters() map[string]uint32 {

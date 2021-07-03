@@ -12,12 +12,13 @@ type Processor interface {
 	StatusString() string		   // string that represents status flags
 	ResetCycles()
 	TriggerIRQ()
-	SetPC(uint32)
+	SetRegister(string, uint32) error  // set selected register
+	SetPC(uint32)			   // redundant to SetRegister but convinient
 
-	Write_8(uint32, byte)
-	Read_8(uint32) byte
+	Write_8(uint32, byte)		   // write byte to   cpu memory
+	Read_8(uint32) byte                // read  byte from cpu memory
 
-	GetName() string	// get id as "cpu0" / "cpu1" of unit
+	GetName() string	           // get id as "cpu0" / "cpu1" of unit
 }
 
 type Bus interface {
