@@ -14,7 +14,7 @@ import (
         "github.com/aniou/go65c816/emulator"
 
         "github.com/aniou/go65c816/emulator/platform"
-        _ "github.com/aniou/go65c816/lib/mylog"
+        "github.com/aniou/go65c816/lib/mylog"
 )
 
 // keyboard memory registers
@@ -537,6 +537,7 @@ func main() {
 				ticks_now = sdl.GetTicks()
 				disasm = false
 				close(ch)
+				mylog.Logger.LogOutput = os.Stdout
 			default:
 				log.Panicln("channel from tui: received unknown message %s", msg)
 			}

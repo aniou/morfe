@@ -7,7 +7,9 @@ import (
 	"strconv"
 	"strings"
 	_ "time"
+        "github.com/aniou/go65c816/lib/mylog"
         "github.com/aniou/go65c816/emulator"
+	"github.com/aniou/go65c816/emulator/platform"
 
 	"github.com/awesome-gocui/gocui"
 )
@@ -227,6 +229,25 @@ func (ui *Ui) cmd_set(g *gocui.Gui, tokens []string) {
 	}
 }
 
+func (ui *Ui) cmd_load(g *gocui.Gui, tokens []string) {
+        var err error = nil
+
+        switch tokens[1] {
+        case "hex":
+                platform.LoadHex(ui.cpu, tokens[2])	// TODO - convert to error support
+                ui.updateStatusView(g)
+                ui.updateCodeView(g)
+                ui.updateWatchView(g)
+                //ui.updateMemoryView(g)
+                //ui.updateStackView(g)
+        default:
+                err = fmt.Errorf("unknown parameter %v", tokens[1])
+        }
+
+	if err != nil {
+		fmt.Fprintf(ui.logView, "ERROR cmd_load: %s\n", err)
+	}
+}
 
 
 func (ui *Ui) executeCommand(g *gocui.Gui, v *gocui.View) error {
@@ -249,9 +270,9 @@ func (ui *Ui) executeCommand(g *gocui.Gui, v *gocui.View) error {
 		ui.updateStatusView(g)
 		ui.updateCodeView(g)
 		ui.updateWatchView(g)
-	/*
         case "lo", "load":
-                ui.loadProgram(g, tokens)
+                ui.cmd_load(g, tokens)
+	/*
         case "run":
                 ui.runCPU(g, v)
         case "peek", "peek8", "peek16", "peek24":
@@ -349,6 +370,8 @@ func (ui *Ui) updateLogView(g *gocui.Gui) error {
 	fmt.Fprintf(v, "set reg <regname> <value> - set value of register\n")
 	fmt.Fprintf(v, "set pc <addr>             - set Program Counter of cpu\n")
 	fmt.Fprintf(v, "reset                     - perform cpu reset \n")
+	fmt.Fprintf(v, "load hex <filename>       - load IntelHex format into memory\n")
+
 
 	return nil
 }
@@ -609,6 +632,7 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
 		v.Title = "Log"
 
 		ui.logView = v
+		mylog.Logger.LogOutput = v	// not nice
 		ui.updateLogView(g)
 	}
 

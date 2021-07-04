@@ -43,14 +43,14 @@ func (p *Platform) loadFiles(cfg *ini.File, c emu.Processor) {
 	// at first read file=
 	if cfg.Section(cpu_section).HasKey("file") {
 		hexfile := cfg.Section(cpu_section).Key("file").String()
-		p.LoadHex(c, hexfile)
+		LoadHex(c, hexfile)
 	}
 	// then file0= to file99=
 	for i := 0; i<100; i += 1 {
 		keyname := fmt.Sprintf("file%d", i)
 		if cfg.Section(cpu_section).HasKey(keyname) {
 			hexfile := cfg.Section(cpu_section).Key(keyname).String()
-			p.LoadHex(c, hexfile)
+			LoadHex(c, hexfile)
 		}
 	}
 }
@@ -83,7 +83,7 @@ func (p *Platform) LoadConfig(filename string) {
 
 }
 
-func (p *Platform) LoadHex(cpu emu.Processor, filename string) {
+func LoadHex(cpu emu.Processor, filename string) {
 	path := filepath.Join(filename)
 	file, err := os.Open(path)
 	if err != nil {

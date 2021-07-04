@@ -3,11 +3,16 @@ package mylog
 
 import (
 	"fmt"
-	"github.com/aniou/go65c816/lib/queue"
+	"io"
+	"os"
 	"time"
+
+	"github.com/aniou/go65c816/lib/queue"
 )
 
 type MyLog struct {
+	LogOutput	 io.Writer
+
 	logMsg           chan string
 	logBuf   	 queue.QueueString   // for 'keyboard'
 
@@ -17,7 +22,7 @@ var Logger MyLog;
 
 func init() {
 	fmt.Println("logger is initialized")
-	Logger = MyLog{logMsg: make(chan string), logBuf: queue.NewQueueString(200)}
+	Logger = MyLog{LogOutput: os.Stdout, logMsg: make(chan string), logBuf: queue.NewQueueString(200)}
 }
 
 
@@ -34,8 +39,9 @@ func (l *MyLog) Log(msg string) {
 	//	l.logMsg<-message
 	//}(msg)
 	//l.logMsg<-msg
-        fmt.Printf("| %s\n", msg)
-	l.logBuf.Enqueue(msg)
+        //fmt.Printf("| %s\n", msg)
+	fmt.Fprintf(l.LogOutput, "| %s\n", msg)
+	//l.logBuf.Enqueue(msg)
 }
 
 func (l *MyLog) Len() int {
