@@ -215,6 +215,7 @@ func (ui *Ui) cmd_set(g *gocui.Gui, tokens []string) {
                 if val, err = hex2uint32(tokens[2]); err == nil {
 			ui.cpu.SetPC(val)
                         ui.updateStatusView(g)
+			ui.updateCodeView(g)
                 }
         default:
                 err = fmt.Errorf("unknown parameter %v", tokens[2])
@@ -236,6 +237,18 @@ func (ui *Ui) executeCommand(g *gocui.Gui, v *gocui.View) error {
 		ui.cmd_watch(g, tokens)
         case "se", "set":
                 ui.cmd_set(g, tokens)
+        case "reset":
+                ui.cpu.Reset()
+                ui.cpu.ResetCycles()
+	        v, err := g.View("code")
+        	if err != nil {
+                	return err
+        	} else {
+        		v.Clear()
+		}
+		ui.updateStatusView(g)
+		ui.updateCodeView(g)
+		ui.updateWatchView(g)
 	/*
         case "lo", "load":
                 ui.loadProgram(g, tokens)
@@ -335,6 +348,7 @@ func (ui *Ui) updateLogView(g *gocui.Gui) error {
 	fmt.Fprintf(v, "watch {add|del} <value>   - manage watch list vals\n")
 	fmt.Fprintf(v, "set reg <regname> <value> - set value of register\n")
 	fmt.Fprintf(v, "set pc <addr>             - set Program Counter of cpu\n")
+	fmt.Fprintf(v, "reset                     - perform cpu reset \n")
 
 	return nil
 }
