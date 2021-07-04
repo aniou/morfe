@@ -195,6 +195,7 @@ func (ui *Ui) cmd_watch(g *gocui.Gui, tokens []string) {
 
 func (ui *Ui) cmd_set(g *gocui.Gui, tokens []string) {
         var err error
+	var val uint32
 
         switch tokens[1] {
 		/*
@@ -205,10 +206,14 @@ func (ui *Ui) cmd_set(g *gocui.Gui, tokens []string) {
                         fmt.Fprintf(ui.logView, "set: error: %s\n", err)
                 }
 		*/
-        case "reg": // set reg name value
-		var val uint32
+        case "reg": // set reg <name> <value>
                 if val, err = hex2uint32(tokens[3]); err == nil {
 			err = ui.cpu.SetRegister(strings.ToUpper(tokens[2]), val)
+                        ui.updateStatusView(g)
+                }
+	case "pc": // set pc <value>
+                if val, err = hex2uint32(tokens[2]); err == nil {
+			ui.cpu.SetPC(val)
                         ui.updateStatusView(g)
                 }
         default:
@@ -329,6 +334,7 @@ func (ui *Ui) updateLogView(g *gocui.Gui) error {
 	fmt.Fprintf(v, "Commands:\n")
 	fmt.Fprintf(v, "watch {add|del} <value>   - manage watch list vals\n")
 	fmt.Fprintf(v, "set reg <regname> <value> - set value of register\n")
+	fmt.Fprintf(v, "set pc <addr>             - set Program Counter of cpu\n")
 
 	return nil
 }

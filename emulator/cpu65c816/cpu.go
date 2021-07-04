@@ -418,13 +418,11 @@ func (cpu *CPU) ResetCycles() {
 	cpu.AllCycles=0
 }
 
-// to fulfill interface, that doesn't allow direct acces to fields
 func (cpu *CPU) SetPC(addr uint32) {
 	cpu.PC = uint16(addr & 0xFFFF)
 	cpu.RK = uint8(addr >> 16)
 	return
 }
-
 
 // Reset resets the CPU to its initial powerup state
 func (cpu *CPU) Reset() {
