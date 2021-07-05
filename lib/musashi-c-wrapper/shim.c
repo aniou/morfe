@@ -219,7 +219,8 @@ unsigned int m68k_disassemble_program(char *go_buff, unsigned int pc, unsigned i
 
 	instr_size = m68k_disassemble(buff, pc, cpu_type);
 	make_hex(buff2, pc, instr_size);
-	sprintf(ptr, "%04x: %-20s: %s", pc, buff2, buff);
+	//sprintf(ptr, "%04x: %-20s: %s", pc, buff2, buff);
+	sprintf(ptr, "%4x %04x: %-20s: %s", pc>>16, pc&0x0000FFFF, buff2, buff);
 	pc += instr_size;
 	return(pc);
 }

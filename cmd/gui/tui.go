@@ -407,7 +407,7 @@ func (ui *Ui) updateCodeView(g *gocui.Gui) error {
         } else {
                 fmt.Fprintf(v, "\n")
         }
-        fmt.Fprintf(v, "%-52s", line)
+        fmt.Fprintf(v, "%-58s", line)
 
         return nil
 }
@@ -722,6 +722,7 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
                 v.Frame = true
                 v.Highlight = false
                 v.Autoscroll = true
+		v.Title = "code"
 
                 ui.updateCodeView(g)
         }

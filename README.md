@@ -25,6 +25,14 @@ At this moment You should consider following factors:
   first...
   
 
+## Built-in debugger
+
+Debugger interface is available for m68k only. Press ``F9`` to call
+debug window in terminal. Preferred terminal size is ``132x42`` 
+(interface can be scaled on fly).
+
+List of supported commands will be displayed in log frame.
+
 ## Build instructions for this branch
 
 As m68k I use Musashi core, built-in into emulator with some black
