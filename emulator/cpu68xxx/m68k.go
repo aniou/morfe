@@ -171,8 +171,8 @@ func (c *CPU) Read_8(addr uint32) byte {
 func (c *CPU) Reset() {
 
         // just for test
-        // C.m68k_write_memory_32(0,           0x10_0000)    // stack
-        // C.m68k_write_memory_32(4,           0x20_0000)    // instruction pointer
+        C.m68k_write_memory_32(0,           0x08_0000)    // stack
+        C.m68k_write_memory_32(4,           0x20_0000)    // instruction pointer
         // C.m68k_write_memory_16(0x20_0000,      0x7042)    // moveq  #41, D0
         // C.m68k_write_memory_16(0x20_0002,      0x13C0)    // move.b D0, $AFA000
         // C.m68k_write_memory_32(0x20_0004, 0x00AF_A000)    // ...

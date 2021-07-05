@@ -15,6 +15,7 @@ import (
 )
 
 const ansi_red   = "\x1b[0;31m"
+const ansi_green = "\x1b[0;32m"
 const ansi_reset = "\x1b[0m"
 
 type Ui struct {
@@ -126,6 +127,7 @@ func (ui *Ui) test_step(g *gocui.Gui, v *gocui.View) error {
         ui.updateCodeView(g)
         ui.updateWatchView(g)
         ui.updateMemoryView(g)
+        ui.updateStackView(g)
         return nil
 }
 
@@ -253,7 +255,7 @@ func (ui *Ui) cmd_load(g *gocui.Gui, tokens []string) {
                 ui.updateCodeView(g)
                 ui.updateWatchView(g)
                 ui.updateMemoryView(g)
-                //ui.updateStackView(g)
+                ui.updateStackView(g)
         default:
                 err = fmt.Errorf("unknown parameter %v", tokens[1])
         }
@@ -324,7 +326,7 @@ func (ui *Ui) updateStatusView(g *gocui.Gui) error {
                                 {"D4", "SP"},
                                 {"D5", "USP"},
                                 {"D6", "ISP"},
-                                {"D7", "MSC"},
+                                {"D7", "MSP"},
                                 {"",   "SFC"},
                                 {"A0", "DFC"},
                                 {"A1", "VBR"},
@@ -338,14 +340,14 @@ func (ui *Ui) updateStatusView(g *gocui.Gui) error {
 
         for _, val := range order {
                 if val[0] == "" {
-                        fmt.Fprintf(v, "               ")
+                        fmt.Fprintf(v, "              ")
                 } else {
                         hex       := makeHex32(reg[val[0]], " ")
                         different := ui.preg[val[0]] != reg[val[0]]
 
                         fmt.Fprintf(v, "%2s ", val[0])
                         printColored(v, different, hex)
-                        fmt.Fprintf(v, "   ")
+                        fmt.Fprintf(v, "  ")
                 }
 
 
@@ -455,6 +457,61 @@ func (ui *Ui) updateMemoryView(g *gocui.Gui) error {
         return nil
 }
 
+func (ui *Ui) updateStackView(g *gocui.Gui) error {
+        v, err := g.View("stack")
+        if err != nil {
+                return err
+        }
+        v.Clear()
+
+        reg := ui.cpu.GetRegisters()
+	sp  := reg["SP"]
+
+	switch (reg["SR"] >> 12) & 3 {
+	case 0:
+	case 1:
+		v.Title = "Stack (USP)"	
+	case 2:
+		v.Title = "Stack (ISP)"	
+	case 3:
+		v.Title = "Stack (MSP)"
+	}
+
+	_, sizeY := v.Size() 
+
+	offset := uint32((sizeY / 2) * 4)	// half of window and * 4 bytes
+
+	var start uint32
+	if (sp <= offset) {
+		start = 0
+	} else {
+		start = sp - offset
+	}
+
+	for x:=0; x<sizeY; x=x+1 {
+		addr := start+uint32(x*4)
+		if addr == sp {
+			fmt.Fprintf(v, ansi_green)
+		}
+
+		fmt.Fprintf(v, makeHex32(addr, " "))
+		fmt.Fprintf(v, ": ")
+		fmt.Fprintf(v, "%02x", ui.cpu.Read_8(addr  ))
+		fmt.Fprintf(v, "%02x", ui.cpu.Read_8(addr+1))
+		fmt.Fprintf(v, " ")
+		fmt.Fprintf(v, "%02x", ui.cpu.Read_8(addr+3))
+		fmt.Fprintf(v, "%02x", ui.cpu.Read_8(addr+4))
+
+		if addr == sp {
+			fmt.Fprintf(v, ansi_reset)
+		} 
+
+		fmt.Fprintf(v, "\n")
+	}
+
+	return nil
+}
+
 
 
 
@@ -508,7 +565,7 @@ func (ui *Ui) updateWatchView(g *gocui.Gui) error {
         
         // ...and use them to iterate over ui.watch
         for _, key := range keys {
-                fmt.Fprintf(v, "%s:  ", makeHex32(uint32(key), " "))
+                fmt.Fprintf(v, "%s: ", makeHex32(uint32(key), " "))
                 tmparr := [4]byte{}
 
                 // print HEX represenation of four consecutive bytes
@@ -576,17 +633,17 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
 
         const v_stat_x1    = 0
         const v_stat_y1    = 0
-        const v_stat_x2    = 30
+        const v_stat_x2    = 29
         const v_stat_y2    = 21
 
         const v_watch_x1   = 0
         const v_watch_y1   = v_stat_y2 + 1
-        const v_watch_x2   = 30
+        const v_watch_x2   = v_stat_x2
               v_watch_y2  := maxY - 1
 
         const v_stack_x1   = v_stat_x2 + 1
         const v_stack_y1   = 0
-        const v_stack_x2   = v_stat_x2 + 20
+        const v_stack_x2   = v_stat_x2 + 22
               v_stack_y2  := maxY - 1
 
         const v_code_x1    = v_stack_x2 + 1
@@ -650,9 +707,9 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
                 v.Wrap = false
                 v.Frame = true
                 v.Highlight = false
-                v.Autoscroll = true
+                v.Autoscroll = false
 
-                //ui.updateStatusView(g)
+                ui.updateStackView(g)
         }
 
         if v, err := g.SetView("code", v_code_x1, v_code_y1, v_code_x2, v_code_y2, 0); err != nil {
