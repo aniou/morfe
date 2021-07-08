@@ -344,6 +344,7 @@ type CPU struct {
 	Cycles    byte   // number of cycles for this step
 	stepPC    uint16 // how many bytes should PC be increased in this step?
 	Abort     bool   // temporary flag to determine that cpu should stop
+	enabled   bool   // indicates that cpu is enabled
 
 	// previous register's value exists for debugging purposes
 	PRK	  byte   // previous value of program banK register
@@ -388,10 +389,18 @@ type CPU struct {
 
 
 func New(bus emu.Bus, name string) *CPU {
-	cpu    := CPU{Bus: bus, name: name}
+	cpu    := CPU{Bus: bus, name: name, enabled: true}
 	cpu.WDM = 0
 	cpu.createTable()
 	return &cpu
+}
+
+func (cpu *CPU) Enable(state bool) {
+        cpu.enabled = state
+}
+
+func (cpu *CPU) IsEnabled() bool {
+        return cpu.enabled
 }
 
 func (cpu *CPU) GetName() string {

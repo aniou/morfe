@@ -499,15 +499,19 @@ func main() {
 				//           system is too slow to do desired number of
 				//           cycles per ms when *ms is used
 
-				for p.CPU0.GetAllCycles() < desired_cycles0 {
-					p.CPU0.Execute()
+				if p.CPU0.IsEnabled() {
+					for p.CPU0.GetAllCycles() < desired_cycles0 {
+						p.CPU0.Execute()
+					}
+					desired_cycles0 = desired_cycles0 + CPU0_STEP*ms_elapsed
 				}
-				desired_cycles0 = desired_cycles0 + CPU0_STEP*ms_elapsed
 
-				for p.CPU1.GetAllCycles() < desired_cycles1 {
-					p.CPU1.Execute()
+				if p.CPU1.IsEnabled() {
+					for p.CPU1.GetAllCycles() < desired_cycles1 {
+						p.CPU1.Execute()
+					}
+					desired_cycles1 = desired_cycles1 + CPU1_STEP*ms_elapsed
 				}
-				desired_cycles1 = desired_cycles1 + CPU1_STEP*ms_elapsed
 			}
 
 			// performance info --------------------------------------------------

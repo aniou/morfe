@@ -51,7 +51,7 @@ var (
 
 type CPU struct {
         Speed       uint32      // in milliseconds
-        Enabled     bool
+        enabled     bool
         Type        uint
         name        string      // cpu0, cpu1, etc.
 
@@ -129,13 +129,21 @@ func go_m68k_write_memory_32(addr, val C.uint) {
 
 
 func New(b emu.Bus, name string) *CPU {
-        cpu := CPU{name: name}
+	cpu := CPU{name: name, enabled: true}
         bus     = b
         C.m68k_init_ram();
         C.m68k_init();
         C.m68k_set_cpu_type(C.M68K_CPU_TYPE_68EC030)
         cpu.Type = uint(C.M68K_CPU_TYPE_68EC030)                // XXX - parametrize it!
         return &cpu
+}
+
+func (cpu *CPU) Enable(state bool) {
+        cpu.enabled = state
+}
+
+func (cpu *CPU) IsEnabled() bool {
+        return cpu.enabled
 }
 
 func (cpu *CPU) GetType() uint {

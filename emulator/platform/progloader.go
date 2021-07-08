@@ -65,6 +65,10 @@ func (p *Platform) setRegisters(cfg *ini.File, c emu.Processor) {
 		fmt.Printf("start addr set for cpu %s: %06X\n", cpu_section, addr)
 		c.SetPC(uint32(addr))
 	}
+	if cfg.Section(cpu_section).HasKey("enable") {
+		state, _ := cfg.Section(cpu_section).Key("enable").Bool()
+		c.Enable(state)
+	}
 }
 
 func (p *Platform) LoadConfig(filename string) {

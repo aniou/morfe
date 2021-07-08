@@ -6,6 +6,8 @@ type Processor interface {
         Step() uint32		           // execute single step and returns used cycles
 	GetRegisters() map[string]uint32   // returns all registers of CPU
 	GetType() uint			   // returns CPU id (when many types are available)
+	IsEnabled() bool                   // as name suggests
+	Enable(bool)			   // enables/disables CPU
 	Dissasm() string
 	GetCycles() uint32		   // number of cycles used by last step
 	GetAllCycles() uint64	           // cumulative number of cycles used
