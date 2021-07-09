@@ -1,6 +1,7 @@
 package main
 
 import (
+	"container/list"
         "fmt"
         "log"
         "sort"
@@ -18,6 +19,8 @@ const ansi_red   = "\x1b[0;31m"
 const ansi_green = "\x1b[0;32m"
 const ansi_reset = "\x1b[0m"
 
+const history_size = 30
+
 type Ui struct {
         viewArr     []string           // names of views to cycle
         active      int                // index in viewArr
@@ -31,10 +34,13 @@ type Ui struct {
         cpu         emu.Processor      // for what CPU is that GUI?     
         preg        map[string]uint32  // previous values of registers
         watch       map[int][4]byte    // list of addresses and previous values
+
+	h_queue	    *list.List         // cmd history
+	h_element   *list.Element      // actual position in history
 }
 
 func NewTUI(ch chan string, cpu emu.Processor) *Ui {
-        ui      := Ui{ch: ch, cpu: cpu}
+	ui      := Ui{ch: ch, cpu: cpu}
         return &ui
 }
 
@@ -45,6 +51,9 @@ func (ui *Ui) Init(g *gocui.Gui) {
         ui.watch = make(map[int][4]byte)
         ui.preg  = ui.cpu.GetRegisters()
         ui.memPrevious = &[128]byte{}
+	ui.h_queue = list.New()
+	ui.h_queue.PushFront("")
+	ui.h_element = ui.h_queue.Front()
 
         g.Cursor = true
         g.SelFgColor = gocui.ColorGreen
@@ -268,6 +277,12 @@ func (ui *Ui) cmd_load(g *gocui.Gui, tokens []string) {
 // executes multiple commands, separated by ';'
 func (ui *Ui) executeCommands(g *gocui.Gui, v *gocui.View) error {
         line      := strings.TrimSpace(v.Buffer())
+
+	if line != "history" && line != "hi" {
+		ui.h_element = ui.h_queue.Front()
+		ui.h_queue.InsertAfter(line, ui.h_element)	// remember history
+	}
+
         commands  := strings.Split(line, ";")
 	for _, c  := range commands {
 		if err := ui.executeSingleCommand(g, v, c); err != nil {
@@ -278,6 +293,7 @@ func (ui *Ui) executeCommands(g *gocui.Gui, v *gocui.View) error {
 
         v.Clear()
         v.SetCursor(0, 0)
+
         return nil
 }
 
@@ -307,6 +323,14 @@ func (ui *Ui) executeSingleCommand(g *gocui.Gui, v *gocui.View, command string) 
                 ui.updateWatchView(g)
         case "lo", "load":
                 ui.cmd_load(g, tokens)
+	case "hi", "history":
+		count := 0
+		for e := ui.h_queue.Back(); e != nil; e = e.Prev() {
+			fmt.Fprintf(ui.logView, "%d ", count)
+			fmt.Fprintf(ui.logView, e.Value.(string))
+			fmt.Fprintf(ui.logView, "\n")
+			count=count+1
+		}
         /*
         case "run":
                 ui.runCPU(g, v)
@@ -405,6 +429,7 @@ func (ui *Ui) updateLogView(g *gocui.Gui) error {
         fmt.Fprintf(v, "reset                     - perform cpu reset \n")
         fmt.Fprintf(v, "load hex <filename>       - load IntelHex format into memory\n")
         fmt.Fprintf(v, "set mem <addr>            - set memory view address\n")
+        fmt.Fprintf(v, "history                   - display history \n")
 
 
         return nil
@@ -611,6 +636,39 @@ func (ui *Ui) updateWatchView(g *gocui.Gui) error {
         return nil
 }
 
+func (ui *Ui) historyPrev(g *gocui.Gui, v *gocui.View) error {
+	v.Clear()
+	if ui.h_element == nil {
+		return nil
+	}
+
+	if e := ui.h_element.Next(); e != nil {
+		ui.h_element = e
+	}
+
+	// https://tour.golang.org/methods/15
+	t := ui.h_element.Value.(string)
+	fmt.Fprintf(v, t)
+	return nil
+}
+
+func (ui *Ui) historyNext(g *gocui.Gui, v *gocui.View) error {
+	v.Clear()
+	if ui.h_element == nil {
+		return nil
+	}
+
+	if e := ui.h_element.Prev(); e != nil {
+		ui.h_element = e
+	}
+
+	// https://tour.golang.org/methods/15
+	t := ui.h_element.Value.(string)
+	fmt.Fprintf(v, t)
+	return nil
+}
+
+
 func (ui *Ui) keybindings(g *gocui.Gui) error {
 
         if err := g.SetKeybinding("", gocui.KeyF5, gocui.ModNone, ui.test_step); err != nil {
@@ -626,6 +684,12 @@ func (ui *Ui) keybindings(g *gocui.Gui) error {
                 return err
         }
         if err := g.SetKeybinding("cmd", gocui.KeyEnter, gocui.ModNone, ui.executeCommands); err != nil {
+                return err
+        }
+        if err := g.SetKeybinding("cmd", gocui.KeyArrowUp, gocui.ModNone, ui.historyPrev); err != nil {
+                return err
+        }
+        if err := g.SetKeybinding("cmd", gocui.KeyArrowDown, gocui.ModNone, ui.historyNext); err != nil {
                 return err
         }
         if err := g.SetKeybinding("log", gocui.KeyArrowDown, gocui.ModNone, ui.cursorDown); err != nil {
@@ -785,7 +849,7 @@ func (ui *Ui) Layout(g *gocui.Gui) error {
                 v.Wrap = false
                 v.Frame = true
                 v.Highlight = false
-                v.Autoscroll = true
+                v.Autoscroll = false
                 v.Title = "Cmd"
 
                 if _, err := g.SetCurrentView("cmd"); err != nil {
