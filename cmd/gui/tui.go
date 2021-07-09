@@ -265,10 +265,29 @@ func (ui *Ui) cmd_load(g *gocui.Gui, tokens []string) {
         }
 }
 
+// executes multiple commands, separated by ';'
+func (ui *Ui) executeCommands(g *gocui.Gui, v *gocui.View) error {
+        line      := strings.TrimSpace(v.Buffer())
+        commands  := strings.Split(line, ";")
+	for _, c  := range commands {
+		if err := ui.executeSingleCommand(g, v, c); err != nil {
+			return err
+		}
 
-func (ui *Ui) executeCommand(g *gocui.Gui, v *gocui.View) error {
-        command := strings.TrimSpace(v.Buffer())
-        tokens := strings.Split(command, " ")
+	}
+
+        v.Clear()
+        v.SetCursor(0, 0)
+        return nil
+}
+
+// executes single command
+func (ui *Ui) executeSingleCommand(g *gocui.Gui, v *gocui.View, command string) error {
+        line   := strings.TrimSpace(command)
+	if len(line) == 0 {
+		return nil
+	}
+        tokens := strings.Split(line, " ")
         switch tokens[0] {
         case "wa", "watch":
                 ui.cmd_watch(g, tokens)
@@ -301,9 +320,7 @@ func (ui *Ui) executeCommand(g *gocui.Gui, v *gocui.View) error {
                 fmt.Fprintf(ui.logView, "executeCommand: unknown command: %s\n", command)
         }
 
-        v.Clear()
-        v.SetCursor(0, 0)
-        return nil
+	return nil
 }
 
 
@@ -381,7 +398,7 @@ func (ui *Ui) updateLogView(g *gocui.Gui) error {
         fmt.Fprintf(v, "F5     to execute single step\n")
         fmt.Fprintf(v, "CTRL+Q to exit debugger\n")
         fmt.Fprintf(v, "\n")
-        fmt.Fprintf(v, "Commands:\n")
+        fmt.Fprintf(v, "Commands (can be separated by ';' in single line):\n")
         fmt.Fprintf(v, "watch {add|del} <value>   - manage watch list vals\n")
         fmt.Fprintf(v, "set reg <regname> <value> - set value of register\n")
         fmt.Fprintf(v, "set pc <addr>             - set Program Counter of cpu\n")
@@ -608,7 +625,7 @@ func (ui *Ui) keybindings(g *gocui.Gui) error {
         if err := g.SetKeybinding("", gocui.KeyCtrlQ, gocui.ModNone, ui.quit); err != nil {
                 return err
         }
-        if err := g.SetKeybinding("cmd", gocui.KeyEnter, gocui.ModNone, ui.executeCommand); err != nil {
+        if err := g.SetKeybinding("cmd", gocui.KeyEnter, gocui.ModNone, ui.executeCommands); err != nil {
                 return err
         }
         if err := g.SetKeybinding("log", gocui.KeyArrowDown, gocui.ModNone, ui.cursorDown); err != nil {
