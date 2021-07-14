@@ -1,7 +1,9 @@
 # go65c816
 65c816 / [C256 Foenix](https://c256foenix.com/) emulator written in Go
 
-**Dual CPU (65c816 and m68k) version is available in [separate branch](https://github.com/aniou/go65c816/tree/m68k-wrapper/)**
+**This is the latest branch that can be compiled without Musashi m68k 
+core support. It may be out-of sync from current machine behaviour, 
+though**
 
 ## Preface
 
