@@ -1,9 +1,9 @@
 # go65c816
 65c816 / [C256 Foenix](https://c256foenix.com/) emulator written in Go
 
-**This is the latest branch that can be compiled without Musashi m68k 
-core support. It may be out-of sync from current machine behaviour, 
-though**
+**This is the latest 65c816-only branch that can be compiled without 
+Musashi m68k core support. It may be out-of sync from current machine 
+behaviour, though**
 
 ## Preface
 
