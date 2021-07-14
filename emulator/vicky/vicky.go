@@ -1,8 +1,9 @@
 package vicky
 
 import (
-	"fmt"
 	"encoding/binary"
+	"fmt"
+	_ "log"
 	_ "sync"
 	"github.com/aniou/go65c816/lib/mylog"
 )
@@ -127,13 +128,17 @@ func updateFontCache(pos uint32, val byte) {
 }
 
 // XXX - change it to new model (no recalculate text_cols without color change)
+// XXX - change it - current mode looks like columns/rows visible is calculated
+//                   from resolution/8
 func (v *Vicky) recalculateScreen() {
 	v.starting_fb_row_pos = v.x_res * uint32(v.Border_y_size) + uint32(v.Border_x_size)
 
         //v.text_cols = (640 - (uint32(v.Border_x_size) * 2)) / 8 // xxx - parametrize screen width
         //v.text_rows = (480 - (uint32(v.Border_y_size) * 2)) / 8 // xxx - parametrize screen height
-	v.text_cols = (v.x_res - (uint32(v.Border_x_size) * 2)) / (v.pixel_size * 8)
-	v.text_rows = (v.y_res - (uint32(v.Border_y_size) * 2)) / (v.pixel_size * 8)
+	//v.text_cols = (v.x_res - (uint32(v.Border_x_size) * 2)) / (v.pixel_size * 8)
+	//v.text_rows = (v.y_res - (uint32(v.Border_y_size) * 2)) / (v.pixel_size * 8)
+	v.text_cols = uint32(v.x_res / 8)
+	v.text_rows = uint32(v.y_res / 8)
 
 
         //if debug.gui {
@@ -182,7 +187,7 @@ func (v *Vicky) RenderBitmapText() {
 	// by manupipulating starting point (now 0) and end clause (now <v.text_rows)
 	fb_row_pos = v.starting_fb_row_pos
 	for text_y = 0; text_y < v.text_rows; text_y += 1 { // over lines of text
-		text_row_pos = text_y * 80				// calculate from resolution / 8 !
+		text_row_pos = text_y * v.text_cols
 		for text_x = 0; text_x < v.text_cols; text_x += 1 { // pre-calculate data for x-axis
 			fnttmp[text_x] = text[text_row_pos+text_x] * 64 // position in font array
 			dsttmp[text_x] = text_x * 8                     // position of char in dest FB
@@ -332,16 +337,20 @@ func (v *Vicky) Read(address uint32) byte {
 		return mem[a]
 
 	case address == 0xAF_0001:
-		return mem[a]
+		return 0x00             // 640x480, no pixel doubling
+
+	case address == 0xAF_0002:
+		return 0x10		// 1 = Hi-Res on BOOT OFF
 
 	case address == 0xAF_0004:
-		return mem[a]
+		//return mem[a]
+		return v.border_ctrl_reg
 
 	case address == 0xAF_0008:
-		return mem[a]
+		return byte(v.Border_x_size)
 
 	case address == 0xAF_0009:
-		return mem[a]
+		return byte(v.Border_y_size)
 
 	case address == 0xAF_000D:	// BACKGROUND_COLOR_B
 		return mem[a]
@@ -450,14 +459,14 @@ func (v *Vicky) Write(address uint32, val byte) {
 		v.recalculateScreen()
 
 	case address == 0xAF_0008:				// BORDER_X_SIZE
+		v.Border_x_size = int32(val & 0x3F)	// XXX: in spec - 0-32, bitmask allows to 0-63
 		if v.Border_visible {
-			v.Border_x_size = int32(val & 0x3F)	// XXX: in spec - 0-32, bitmask allows to 0-63
 			v.recalculateScreen()
 		}
 
 	case address == 0xAF_0009:				// BORDER_Y_SIZE
+		v.Border_y_size = int32(val & 0x3F)	// XXX: in spec - 0-32, bitmask allows to 0-63
 		if v.Border_visible {
-			v.Border_y_size = int32(val & 0x3F)	// XXX: in spec - 0-32, bitmask allows to 0-63
 			v.recalculateScreen()
 		}
 
