@@ -57,7 +57,6 @@ try to build emulator:
 ```
 $ git clone https://github.com/aniou/go65c816
 $ cd go65c816
-$ git checkout m68k
 $ cd lib/musashi-c-wrapper
 $ gcc -std=c99 -I ../../../Musashi -Wall -c shim.c
 $ cd ../../cmd/gui
