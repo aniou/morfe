@@ -66,7 +66,7 @@ $ ./gui m68k.ini
 ```
 
 After that we should see a normal Foenix kernel, running by 65c816
-and small, red letter 'A', visible in top-left corner of screen -
+and small, red(?) letter 'D', visible in top-left corner of screen -
 this is only effect of m68k, working in tight loop on predefined
 memory.
 
