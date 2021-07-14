@@ -61,16 +61,18 @@ func printCPUFlags(flag byte, name string) string {
         }
 }
 
-func memoryDump(p *platform.Platform, address uint32) {
-	/*
+func memoryDump(cpu emu.Processor, address uint32) {
         var x uint16
-        var a uint16
+        var a,b uint32
+	var data []byte = make([]byte, 16)
+	start := address & 0xFFFF_FFF0
 
-	TODO - implement CPU0.Dump? Or rewrite to Read_8
-        for a = 0; a < 0x100; a = a + 16 {
-                start, data := p.CPU0.Bus.EaDump(address + uint32(a))
-                bank := byte(start >> 16)
-                addr := uint16(start)
+        for a = 0; a<0x100; a=a+16 {
+		for b = 0; b<16; b=b+1 {
+			data[b] = cpu.Read_8(start + a + b)
+		}
+                bank := byte((start+a) >> 16)
+                addr := uint16(start+a)
                 fmt.Printf("\n%02x:%04x│", bank, addr)
                 if data != nil {
                         fmt.Printf("% x│% x│", data[0:8], data[8:16])
@@ -89,7 +91,6 @@ func memoryDump(p *platform.Platform, address uint32) {
                 }
         }
         fmt.Printf("\n")
-	*/
 }
 
 func waitForEnter() {
@@ -236,8 +237,8 @@ func main() {
         p.CPU0.Write_8(0xAF_0006, 0x00) // border G
         p.CPU0.Write_8(0xAF_0007, 0x20) // border R
 
-        p.CPU0.Write_8(0xAF_0008, 0x20) // border X
-        p.CPU0.Write_8(0xAF_0009, 0x20) // border Y
+        //p.CPU0.Write_8(0xAF_0008, 0x20) // border X
+        //p.CPU0.Write_8(0xAF_0009, 0x20) // border Y
 
         p.CPU0.Write_8(0xAF_0010, 0x03) // VKY_TXT_CURSOR_CTRL_REG
         p.CPU0.Write_8(0xAF_0012, 0xB1) // VKY_TXT_CURSOR_CHAR_REG
@@ -621,6 +622,8 @@ func main() {
                 window.SetFullscreen(0)
         }
 
-        //memoryDump(p, 0x0)
+        memoryDump(p.CPU0, 0x0c)
+        //memoryDump(p.CPU0, 0xAF_8000)
+        //memoryDump(p.CPU0, 0xAF_1f40)
 
 }
