@@ -25,8 +25,6 @@ const INT_PENDING_REG1  = 0x00_0141
 const CPU_CLOCK         = 14318000 // 14.381Mhz (not used)
 const CURSOR_BLINK_RATE = 500      // in ms (milliseconds)
 
-var CPU_TYPE = emu.CPU_65c816
-
 type GUI struct {
         p          *platform.Platform
         fullscreen bool
@@ -458,9 +456,7 @@ func main() {
                 // step 3, 4
                 if p.GPU.Master_L & 0x01 == 0x01 {                                      // todo ?
                         p.GPU.RenderBitmapText()
-			//p.GPU.Mu_tfb.Lock()
                         texture_txt.UpdateRGBA(nil, p.GPU.TFB, 640)
-			//p.GPU.Mu_tfb.Unlock()
                         renderer.Copy(texture_txt, nil, nil)
                 }       
 
