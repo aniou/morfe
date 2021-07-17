@@ -6,7 +6,7 @@
 // XXX - should I define eaRead(uint32) and bankRead(uint8, uint16)?
 // Or maybe Read(uint32)
 
-package bus
+package bus_fmx
 
 import (
 	"fmt"

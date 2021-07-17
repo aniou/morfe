@@ -5,8 +5,10 @@ package platform
 
 import (
         "github.com/aniou/go65c816/lib/mylog"
-        "github.com/aniou/go65c816/emulator/bus"
+
         "github.com/aniou/go65c816/emulator"
+        "github.com/aniou/go65c816/emulator/bus_fmx"
+        _ "github.com/aniou/go65c816/emulator/bus_genx"
         "github.com/aniou/go65c816/emulator/cpu65c816"
         "github.com/aniou/go65c816/emulator/cpu68xxx"
         "github.com/aniou/go65c816/emulator/memory"
@@ -28,8 +30,8 @@ func New() (*Platform) {
 
 // something like GenX
 func (p *Platform) InitGUI() {
-	bus0,_	   := bus.New()
-	bus1,_     := bus.New()
+	bus0,_	   := bus_fmx.New()
+	bus1,_     := bus_fmx.New()
         ram0, _    := memory.New(0x400000, 0x000000)
         p.GPU, _    = vicky.New()
         p.GABE, _   = gabe.New()

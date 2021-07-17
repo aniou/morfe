@@ -10,9 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aniou/go65c816/emulator/platform"
 	"github.com/aniou/go65c816/lib/mylog"
-	"github.com/jroimartin/gocui"
+	"github.com/aniou/go65c816/emulator"
+	"github.com/aniou/go65c816/emulator/platform"
+
+	"github.com/awesome-gocui/gocui"
 )
 
 type Ui struct {
