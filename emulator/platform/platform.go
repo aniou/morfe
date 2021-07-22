@@ -4,11 +4,13 @@
 package platform
 
 import (
+	"log"
+
         "github.com/aniou/go65c816/lib/mylog"
 
         "github.com/aniou/go65c816/emulator"
         "github.com/aniou/go65c816/emulator/bus_fmx"
-        _ "github.com/aniou/go65c816/emulator/bus_genx"
+        "github.com/aniou/go65c816/emulator/bus_genx"
         "github.com/aniou/go65c816/emulator/cpu65c816"
         "github.com/aniou/go65c816/emulator/cpu68xxx"
         "github.com/aniou/go65c816/emulator/memory"
@@ -30,6 +32,27 @@ func New() (*Platform) {
 
 // something like GenX
 func (p *Platform) InitGUI() {
+
+	bus2       := bus_genx.New()
+        bus2.Attach(nil,   "ram0",       0, 0x00_0000, 0x3F_FFFF)
+        bus2.Attach(nil,   "gpu0-vram",  0, 0x40_0000, 0x7F_FFFF) //  2 pages
+        bus2.Attach(nil,   "gpu1-vram",  0, 0x80_0000, 0xBF_FFFF) //  2 pages
+        bus2.Attach(nil,   "gabe",       0, 0xC0_0000, 0xC1_FFFF)
+        bus2.Attach(nil,   "beatrix",    0, 0xC2_0000, 0xC3_FFFF)
+        bus2.Attach(nil,   "gpu0-reg",   0, 0xC4_0000, 0xC5_FFFF)
+        bus2.Attach(nil,   "gpu0-text",  0, 0xC6_0000, 0xC6_3FFF)
+        bus2.Attach(nil,   "gpu0-color", 0, 0xC6_4000, 0xC6_7FFF)
+        bus2.Attach(nil,   "reserved0",  0, 0xC6_8000, 0xC7_FFFF) // todo put placeholder for restricted access
+        bus2.Attach(nil,   "gpu1-reg",   0, 0xC8_0000, 0xC9_FFFF)
+        bus2.Attach(nil,   "gpu1-text",  0, 0xCA_0000, 0xCA_3FFF)
+        bus2.Attach(nil,   "gpu1-color", 0, 0xCA_4000, 0xCA_7FFF)
+        bus2.Attach(nil,   "reserved1",  0, 0xCA_8000, 0xCF_FFFF) // todo put placeholder for restricted access
+        bus2.Attach(nil,   "reserved2",  0, 0xD0_0000, 0xDF_FFFF) // todo put placeholder for restricted access
+        bus2.Attach(nil,   "dram0",      0, 0xE0_0000, 0xFF_FFFF) // 32 pages
+
+	log.Panicln("it is ok to halt here")
+
+
 	bus0,_	   := bus_fmx.New()
 	bus1,_     := bus_fmx.New()
         ram0, _    := memory.New(0x400000, 0x000000)

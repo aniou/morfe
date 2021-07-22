@@ -1,0 +1,54 @@
+
+So, the deal with the MC68SEC000/MC68EC020 @ Reset, the system will copy 64K of the FLASH that is located in High-memory to the bottom of the memory and then from there, the CPU will boot from low mem, then if the Supervisor feels like going to run some code in the high-mem, it will be capable of doing it, but only the Super will be able to run the code of the flash.
+
+4MBytes of Static RAM
+4MBytes of FLASH
+64MBytes of DRAM
+8MBytes of VRAM Channel A
+8MBytes of VRAM Chhanel B
+1MBytes of Everything Else.
+
+# emulator map model
+
+// USER SPACE/PROG/SV DATA         |  SV PROGRAM
+     4MB SRAM FLAT
+ 2 x 4MB VRAM BANKED (Channel A)
+ 2 x 4MB VRAM BANKED (Channel B)
+     1MB registers                 | 2MB FLASH
+	 1MB hole                      | ...
+32 x 2MB DRAM BANKED               | 2MB FLASH
+
+# MC68SEC000 / MC68EC020 Memory Map Model
+
+// USER SPACE / USER PROGRAM / SUPERVISOR DATA
+1Mx16 (2Mx8) <- $0000_0000 - $001F_FFFF - RAM
+1Mx16 (2Mx8) <- $0020_0000 - $003F_FFFF - RAM
+2Mx32 (4Mx8) <- $0040_0000 - $007F_FFFF - VRAM CHANNEL A (2x 4Mx8 Page)
+2Mx32 (4Mx8) <- $0080_0000 - $00BF_FFFF - VRAM CHANNEL B (2x 4Mx8 Page)
+      (2Mx8) <- $00C0_0000 - $00CF_FFFF - System Registers
+	            $00D0_0000 - $00DF_FFFF - /hole/
+      (2Mx8) <- $00E0_0000 - $00FF_FFFF - DRAM Paging (32 Pages)
+
+// SUPERVISOR PROGRAM
+1Mx16 (2Mx8) <- $0000_0000 - $001F_FFFF - RAM
+1Mx16 (2Mx8) <- $0020_0000 - $003F_FFFF - RAM
+2Mx32 (4Mx8) <- $0040_0000 - $007F_FFFF - VRAM CHANNEL A (2x 4Mx8 Page)
+2Mx32 (4Mx8) <- $0080_0000 - $00BF_FFFF - VRAM CHANNEL B (2x 4Mx8 Page)
+1Mx16 (2Mx8) <- $00C0_0000 - $00CF_FFFF - FLASH - SV Code Only
+                $00D0_0000 - $00DF_FFFF - FLASH - SV Code       & SV Data
+1Mx16 (2Mx8) <- $00E0_0000 - $00FF_FFFF - FLASH
+
+// registers
+$00C0_0000 - $00C1_FFFF - GABE Registers (SuperIO/Math Block/SDCard/IDE/Ethernet/SDMA)
+$00C2_0000 - $00C3_FFFF - BEATRIX Registers (CODEC/ADC/DAC0/DAC1/DAC2/OPM/OPN2/PSG/SID)
+$00C4_0000 - $00C5_FFFF - VICKY Registers Channel A
+$00C6_0000 - $00C6_3FFF - TEXT Memory Channel A
+$00C6_4000 - $00C6_7FFF - Color Memory Channel A
+$00C6_8000 - $00C9_FFFF - Reserved
+$00C8_0000 - $00C9_FFFF - VICKY Registers Channel B
+$00CA_0000 - $00CA_3FFF - TEXT Memory Channel B
+$00CA_4000 - $00CA_7FFF - Color Memory Channel B
+$00C8_8000 - $00CF_FFFF - Reserved
+$00D0_0000 - $00DF_FFFF - Reserved
+
+

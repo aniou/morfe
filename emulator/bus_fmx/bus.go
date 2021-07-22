@@ -10,6 +10,8 @@ package bus_fmx
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/aniou/go65c816/emulator/memory"
 	"github.com/aniou/go65c816/lib/mylog"
 )
@@ -68,16 +70,14 @@ func New() (*Bus, error) {
 // There are two variants possible:
 // handler, "name", start, size
 // handler, "name", start, end      <- currently selected
-func (b *Bus) Attach(mem memory.Memory, name string, start uint32, end uint32) error {
+func (b *Bus) Attach(mem memory.Memory, name string, start uint32, end uint32) {
 
 	if (start & 0xf) != 0 {
-		mylog.Logger.Log(fmt.Sprintf("start are not 4-bit aligned: %06X", start))
-		return fmt.Errorf("start are not 4-bit aligned: %06X", start)
+		log.Panicln("start are not 4-bit aligned: %06X", start)
 	}
 
 	if ((end+1)  & 0xf) != 0 {
-		mylog.Logger.Log(fmt.Sprintf("bus: end are not 4-bit aligned: %06X", end))
-		return fmt.Errorf("end are not 4-bit aligned: %06X", end)
+		log.Panicln("end are not 4-bit aligned: %06X", end)
 	}
 
 	for x:=(start>>4); x<=(end>>4); x++ {
@@ -90,7 +90,7 @@ func (b *Bus) Attach(mem memory.Memory, name string, start uint32, end uint32) e
 	entry := busEntry{mem: mem, name: name, start: start, end: end}
 	mylog.Logger.Log(fmt.Sprintf("bus attach: %-20v %06x %06x", mem, start, end))
 	b.entries = append(b.entries, entry)
-	return nil
+	return
 }
 
 
