@@ -314,6 +314,9 @@ func (v *Vicky) Read(addr uint32) byte {
         case addr == 0x070C:            // model minor
                 return 0x00
 
+	case addr == 0xe902:		// CODEC_WR_CTRL - dummy value
+		return 0x00
+
         default:
                 return v.Mem[addr]
         }
