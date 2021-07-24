@@ -25,6 +25,9 @@ var (
 	instructions [256]instructionType
 )
 
+// cpu modes (only user mode is supported)
+const MODE_USER = 0
+
 // interrupt types
 const (
 	_ = iota
@@ -409,12 +412,12 @@ func (cpu *CPU) GetName() string {
 
 // at this moment simple write to bus, no direct RAM access
 func (cpu *CPU) Write_8(addr uint32, val byte) {
-	cpu.Bus.Write_8(addr, val)
+	cpu.Bus.Write_8(MODE_USER, addr, val)
 }
 
 // at this moment simple write to bus, no direct RAM access
 func (cpu *CPU) Read_8(addr uint32) byte {
-	return cpu.Bus.Read_8(addr)
+	return cpu.Bus.Read_8(MODE_USER, addr)
 }
 
 // to fulfill interface, that doesn't allow direct acces to fields

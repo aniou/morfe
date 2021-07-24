@@ -24,8 +24,19 @@ type Processor interface {
 }
 
 type Bus interface {
-	Write_8(uint32, uint8)
-	Read_8(uint32) uint8
+	Write_8(byte, uint32, byte)
+	Read_8 (byte, uint32) byte
+}
+
+type Memory interface {
+        Write(address uint32, value byte)
+        Read(address uint32) byte
+	Name() string
+        Size() (uint32, uint32)
+
+        //Shutdown()
+        //Clear()
+        //Dump(address uint32) []byte
 }
 
 const (

@@ -217,7 +217,8 @@ func main() {
         gui := new(GUI)
         gui.fullscreen = false
         gui.p = p                       // xxx - fix that mess
-        p.InitGUI()
+        //p.InitGUI()
+	p.InitFMX()
 
 
         // code load and PC set --------------------------------------------------------
@@ -249,7 +250,6 @@ func main() {
                 p.CPU0.Write_8(uint32(j), val)
 
         }
-
 
         // graphics init ---------------------------------------------------------------
         // step 1: SDL

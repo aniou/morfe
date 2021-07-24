@@ -228,9 +228,9 @@ func (g *GUI) sendKey(code sdl.Scancode, state byte) {
 			fmt.Printf("unknown scancode\n")
 		} else {
 			if state == sdl.RELEASED {
-				g.p.GABE.Data = code + 0x80
+				g.p.SIO.Data = code + 0x80
 			} else {
-				g.p.GABE.Data = code
+				g.p.SIO.Data = code
 			}
 			g.p.CPU0.Write_8(0xAF_1064, 0)
 			irq1 := g.p.CPU0.Read_8(INT_PENDING_REG1) | r1_FNX1_INT00_KBD

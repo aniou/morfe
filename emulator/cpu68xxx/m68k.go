@@ -12,6 +12,9 @@ import (
         "github.com/aniou/go65c816/emulator"
 )
 
+// cpu modes 
+const MODE_USER = 0
+const MODE_SV   = 1
 
 var bus emu.Bus
 var (
