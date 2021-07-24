@@ -300,6 +300,7 @@ func (v *Vicky) Size() (uint32, uint32) {
 }
 
 func (v *Vicky) Read(addr uint32) byte {
+	fmt.Printf("vicky2: %s Read addr %06x\n", v.name, addr)
         switch {
         case addr == 0x0001:
                 return 0x00             // 640x480, no pixel doubling
@@ -319,6 +320,7 @@ func (v *Vicky) Read(addr uint32) byte {
 }
 
 func (v *Vicky) Write(addr uint32, val byte) {
+	fmt.Printf("vicky2: %s Write addr %06x val %02x\n", v.name, addr, val)
         v.Mem[addr] = val
 
         switch {

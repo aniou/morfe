@@ -12,6 +12,7 @@ import (
         //"github.com/aniou/go65c816/emulator/bus_fmx"
         "github.com/aniou/go65c816/emulator/bus_genx"
         "github.com/aniou/go65c816/emulator/cpu65c816"
+        "github.com/aniou/go65c816/emulator/cpu_dummy"
         //"github.com/aniou/go65c816/emulator/cpu68xxx"
         //"github.com/aniou/go65c816/emulator/memory"
         //"github.com/aniou/go65c816/emulator/vicky"
@@ -106,7 +107,7 @@ func (p *Platform) InitFMX() {
 
 
         p.CPU0     = cpu65c816.New(bus0, "cpu0")
-        p.CPU1     = cpu65c816.New(bus1, "cpu1")
+        p.CPU1     = cpu_dummy.New(bus1, "cpu1")
         //p.CPU1     = cpu68xxx.New(bus1,  "cpu1")   // 20Mhz - not used yet
         
         p.CPU0.Write_8(  0xFFFC, 0x00)                      // boot vector for 65c816

@@ -76,8 +76,9 @@ func (b *Bus) Write_8(mode byte, addr uint32, val byte) {
 }
 
 func (b *Bus) Read_8(mode byte, addr uint32) byte {
-	//fmt.Printf("bus_genx: %s Read_8 mode %d addr %06x\n", b.name, mode, addr)
 	s      := addr >> PAGE_BITS
 	offset := b.segment[mode][s].offset
-	return b.segment[mode][s].mem.Read(addr - offset)
+	val    := b.segment[mode][s].mem.Read(addr - offset)
+	//fmt.Printf("bus_genx: %s Read_8 mode %d addr %06x val %02x\n", b.name, mode, addr, val)
+	return val
 }
