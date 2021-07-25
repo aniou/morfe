@@ -20,11 +20,11 @@ func New(name string, size int) *MathInt {
         return &m
 }
 
-func (m *MathInt) Read(addr uint32) byte {
-	return m.mem[addr]
+func (m *MathInt) Read(addr uint32) (byte, error) {
+	return m.mem[addr], nil
 }
 
-func (m *MathInt) Write(addr uint32, val byte) {
+func (m *MathInt) Write(addr uint32, val byte) error {
         switch addr {
         case 0x00, 0x01, 0x02, 0x03:   // UNSIGNED_MULT_A, UNSIGNED_MULT_B
         	m.mem[addr] = val
@@ -130,6 +130,7 @@ func (m *MathInt) Write(addr uint32, val byte) {
 		m.mem[addr] = val
         }
 
+	return nil
 }
 
 

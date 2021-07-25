@@ -29,8 +29,8 @@ type Bus interface {
 }
 
 type Memory interface {
-        Write(address uint32, value byte)
-        Read(address uint32) byte
+        Write(addr uint32, value byte)  error
+        Read (addr uint32)             (byte, error)
 	Name() string
         Size() (uint32, uint32)
 

@@ -21,12 +21,13 @@ func New(name string, banks int, size uint32) *Ram {
 	return &mem
 }
 
-func (mem *Ram) Write(addr uint32, val byte) {
+func (mem *Ram) Write(addr uint32, val byte) error {
 	mem.data[mem.bank][addr] = val
+	return nil
 }
 
-func (mem *Ram) Read(addr uint32) byte {
-	return mem.data[mem.bank][addr]
+func (mem *Ram) Read(addr uint32) (byte, error) {
+	return mem.data[mem.bank][addr], nil
 }
 
 func (mem *Ram) Name() string {

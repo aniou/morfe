@@ -3,7 +3,6 @@ package superio
 import (
         "fmt"
 
-        "github.com/aniou/go65c816/lib/mylog"
         "github.com/aniou/go65c816/lib/queue"
 )
 
@@ -52,26 +51,25 @@ func (s *SIO) Size() (uint32, uint32) {
         return 0x00, uint32(len(s.mem))
 }
 
-func (s *SIO) Read(addr uint32) byte {
+func (s *SIO) Read(addr uint32) (byte, error) {
         switch addr {
         case KBD_INPT_BUF:
-                return s.Data
+                return s.Data, nil			// XXX something gone wrong
                 if s.InBuf.Len() > 0 {
-                        return *s.InBuf.Dequeue()
+                        return *s.InBuf.Dequeue(), nil
                 } else {
-                        return 0
+                        return 0, nil
                 }
 
         case KBD_STATUS:
-                return s.command
+                return s.command, nil
         default:
-                mylog.Logger.Log(fmt.Sprintf("superio: %s read from addr %6X is not implemented, 0 returned", s.name, addr))
-                return 0
+                return 0, fmt.Errorf("superio: %4s Read  addr %6x is not implemented, 0 returned", s.name, addr)
         }
 }
 
 // taken from FoenixIDE
-func (s *SIO) Write(addr uint32, val byte) {
+func (s *SIO) Write(addr uint32, val byte) error {
         switch addr {
         case KBD_DATA_BUF:                      // AF:1060 FMX
                 if val == 0x69 {                // 
@@ -119,8 +117,8 @@ func (s *SIO) Write(addr uint32, val byte) {
                         s.command = 0x00
                 }
         default:
-                mylog.Logger.Log(fmt.Sprintf("superio: %s write to addr %6X val %2X is not implemented", s.name, addr, val))
+                return fmt.Errorf("superio: %4s Write addr %6x val %2x is not implemented", s.name, addr, val)
         }
-        return
+        return nil
 }
 

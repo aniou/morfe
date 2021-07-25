@@ -7,7 +7,7 @@ import (
         "fmt"
         "log"
         _ "sync"
-        "github.com/aniou/go65c816/lib/mylog"
+        _ "github.com/aniou/go65c816/lib/mylog"
         _ "github.com/aniou/go65c816/emulator"
         _ "github.com/aniou/go65c816/emulator/ram"
 )
@@ -284,33 +284,33 @@ func (v *Vicky) Size() (uint32, uint32) {
         return uint32(1), uint32(len(v.Mem))
 }
 
-func (v *Vicky) Read(addr uint32) byte {
+func (v *Vicky) Read(addr uint32) (byte, error) {
         //fmt.Printf("vicky2: %s Read addr %06x\n", v.name, addr)
         switch addr {
         case 0x0001:
-                return 0x00             // 640x480, no pixel doubling
+                return 0x00, nil        // 640x480, no pixel doubling
 
         case 0x0002:
-                return 0x10             // 1 = Hi-Res on BOOT OFF
+                return 0x10, nil        // 1 = Hi-Res on BOOT OFF
 
         case 0x070B:			// model major
-                return 0x00
+                return 0x00, nil
 
         case 0x070C:			// model minor
-                return 0x00
+                return 0x00, nil
 
         case 0xe902:			// CODEC_WR_CTRL - dummy value
-                return 0x00
+                return 0x00, nil
 
 	case 0xe80e:			// DIP_BOOTMODE - dummy value, XXX
-		return 0x03		// boot to BASIC
+		return 0x03, nil	// boot to BASIC
 
         default:
-                return v.Mem[addr]
+                return v.Mem[addr], nil
         }
 }
 
-func (v *Vicky) Write(addr uint32, val byte) {
+func (v *Vicky) Write(addr uint32, val byte) error {
         //fmt.Printf("vicky2: %s Write addr %06x val %02x\n", v.name, addr, val)
         v.Mem[addr] = val
 
@@ -479,7 +479,8 @@ func (v *Vicky) Write(addr uint32, val byte) {
                         v.BM1FB[dst] = v.blut[v.bm1_blut_pos + uint32(val)]
                 }
         default:
-                mylog.Logger.Log(fmt.Sprintf("vicky2: write for addr %6X val %2X is not implemented", addr, val))
+                return fmt.Errorf(" vicky2: %s Write addr %6X val %2X is not implemented", v.name, addr, val)
         }
+	return nil
 }
 
