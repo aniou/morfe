@@ -13,7 +13,7 @@ import (
         "github.com/aniou/go65c816/emulator/bus_genx"
         "github.com/aniou/go65c816/emulator/cpu_65c816"
         "github.com/aniou/go65c816/emulator/cpu_dummy"
-        //"github.com/aniou/go65c816/emulator/cpu68xxx"
+        //"github.com/aniou/go65c816/emulator/cpu_68xxx"
         //"github.com/aniou/go65c816/emulator/memory"
         //"github.com/aniou/go65c816/emulator/vicky"
         "github.com/aniou/go65c816/emulator/vicky2"
@@ -110,7 +110,7 @@ func (p *Platform) InitFMX() {
 
         p.CPU0     = cpu_65c816.New(bus0, "cpu0")
         p.CPU1     = cpu_dummy.New(bus1,  "cpu1")
-        //p.CPU1     = cpu68xxx.New(bus1,  "cpu1")   // 20Mhz - not used yet
+        //p.CPU1     = cpu_68xxx.New(bus1,  "cpu1")   // 20Mhz - not used yet
         
         p.CPU0.Write_8(  0xFFFC, 0x00)                      // boot vector for 65c816
         p.CPU0.Write_8(  0xFFFD, 0x10)
@@ -136,7 +136,7 @@ func (p *Platform) InitGUI() {
         bus1.Attach(p.GPU,  "vicky",     0xAF_0000, 0xEF_FFFF)
 
         p.CPU0     = cpu65c816.New(bus0, "cpu0")
-        //p.CPU1     = cpu68xxx.New(bus1,  "cpu1")   // 20Mhz - not used yet
+        //p.CPU1     = cpu_68xxx.New(bus1,  "cpu1")   // 20Mhz - not used yet
         
         p.CPU0.Write_8(  0xFFFC, 0x00)                      // boot vector for 65c816
         p.CPU0.Write_8(  0xFFFD, 0x10)

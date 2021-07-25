@@ -1,4 +1,4 @@
-package cpu68xxx
+package cpu_68xxx
 
 // #cgo CFLAGS: -I../../../Musashi  -I../../lib/musashi-c-wrapper
 // #cgo LDFLAGS: ../../lib/musashi-c-wrapper/shim.o ../../../Musashi/m68kcpu.o ../../../Musashi/m68kdasm.o ../../../Musashi/m68kops.o  ../../../Musashi/softfloat/softfloat.o
