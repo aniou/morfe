@@ -1,5 +1,5 @@
 
-package bus_genx
+package bus
 
 import (
 	"fmt"
@@ -31,36 +31,36 @@ type Bus struct {
 
 func New(name string) *Bus {
 	b := Bus{name: name}
-	fmt.Printf("bus_genx: %s max addr: %06X bits: %d page size: %04X page mask: %04x segments: %d\n",
+	fmt.Printf("bus: %s max addr: %06X bits: %d page size: %04X page mask: %04x segments: %d\n",
 			name, MAX_MEM_SIZE - 1, PAGE_BITS, PAGE_SIZE, PAGE_MASK, SEGMENTS)
 	return &b
 }
 
 func (b *Bus) Attach(mem emu.Memory, mode int, start uint32, end uint32) {
 
-	fmt.Printf("bus_genx: attaching mode %d start %06x end %06x name %s\n", mode, start, end, mem.Name())
+	fmt.Printf("bus: attaching mode %d start %06x end %06x name %s\n", mode, start, end, mem.Name())
 
         if (start & PAGE_MASK) != 0 {
-                log.Panicf("bus_genx: start are not properly aligned: %06X", start)
+                log.Panicf("bus: start are not properly aligned: %06X", start)
         }
 
         if ((end+1) & PAGE_MASK) != 0 {
-                log.Panicf("bus_genx:   end are not properly aligned: %06X", end)
+                log.Panicf("bus:   end are not properly aligned: %06X", end)
         }
 
 	region_size := end - start + 1
         if (region_size % PAGE_SIZE) != 0 {
-                log.Panicf("bus_genx:  size %06X is not multiplication of %04X", region_size, PAGE_SIZE)
+                log.Panicf("bus:  size %06X is not multiplication of %04X", region_size, PAGE_SIZE)
         }
 
 	_, ram_size := mem.Size()
 	if (region_size != ram_size) {
-                log.Panicf("bus_genx:  region_size %06X does not match ram size %06X", region_size, ram_size)
+                log.Panicf("bus:  region_size %06X does not match ram size %06X", region_size, ram_size)
 	}
 
 
         for x:=(start >> PAGE_BITS); x<=(end >> PAGE_BITS) ; x++ {
-                //fmt.Printf("bus_genx: %06x %06x - %s\n", start, x, mem.Name())
+                //fmt.Printf("bus: %06x %06x - %s\n", start, x, mem.Name())
 		b.segment[mode][x] = busEntry{mem: mem, offset: start}
         }
 
@@ -92,6 +92,6 @@ func (b *Bus) Read_8(mode byte, addr uint32) byte {
 	if err != nil {
 		fmt.Printf("bus: %4s Read_8  mode %d addr %06x : %s\n", b.name, mode, addr, err)
 	}
-	//fmt.Printf("bus_genx: %s Read_8 mode %d addr %06x val %02x\n", b.name, mode, addr, val)
+	//fmt.Printf("bus: %s Read_8 mode %d addr %06x val %02x\n", b.name, mode, addr, val)
 	return val
 }

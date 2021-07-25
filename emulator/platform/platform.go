@@ -10,7 +10,7 @@ import (
 
         "github.com/aniou/go65c816/emulator"
         //"github.com/aniou/go65c816/emulator/bus_fmx"
-        "github.com/aniou/go65c816/emulator/bus_genx"
+        "github.com/aniou/go65c816/emulator/bus"
         "github.com/aniou/go65c816/emulator/cpu_65c816"
         "github.com/aniou/go65c816/emulator/cpu_dummy"
         //"github.com/aniou/go65c816/emulator/cpu_68xxx"
@@ -39,7 +39,7 @@ func New() (*Platform) {
 
 /*
 func (p *Platform) InitGenX() {
-	bus0       := bus_genx.New()
+	bus0       := bus.New()
 
         ram0       :=    ram.New("ram0", 1, 0x400000)
 	gpu0       := vicky3.New("gpu0") 
@@ -74,8 +74,8 @@ func (p *Platform) InitGenX() {
 // something like FMX
 func (p *Platform) InitFMX() {
 
-	bus0       := bus_genx.New("bus0")
-	bus1       := bus_genx.New("bus1")
+	bus0       := bus.New("bus0")
+	bus1       := bus.New("bus1")
 
 	p.MATHI     =   mathi.New("mathi",       0x100)
         p.SIO       = superio.New("sio",         0x400)
