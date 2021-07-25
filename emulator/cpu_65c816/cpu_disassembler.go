@@ -1,5 +1,5 @@
 
-package cpu65c816
+package cpu_65c816
 
 import (
 	"fmt"

@@ -4,7 +4,7 @@
 // Copyright  2015-2019  Michael Fogleman, released under MIT license
 // Copyright  2019       Piotr Meyer
 
-package cpu65c816
+package cpu_65c816
 
 import (
 	"log"

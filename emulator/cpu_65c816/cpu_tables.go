@@ -1,5 +1,5 @@
 
-package cpu65c816
+package cpu_65c816
 
 // cycle reduction when M flag == 1
 var decCycles_flagM = [256]byte{
