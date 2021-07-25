@@ -120,6 +120,10 @@ func New(name string, size int) *Vicky {
 
         v.Mem[ BORDER_CTRL_REG ] = 0x01
 
+	// some tests
+	//fmt.Printf("vicky2: v.TFB    %p\n", &v.TFB  )
+	//fmt.Printf("vicky2: v.BM0FB  %p\n", &v.BM0FB)
+	//fmt.Printf("vicky2: v.BM1FB  %p\n", &v.BM1FB)
 
         v.Cursor_visible = true
         v.BM0_visible    = true
@@ -127,17 +131,15 @@ func New(name string, size int) *Vicky {
         v.Border_color_b = 0x20
         v.Border_color_g = 0x00
         v.Border_color_r = 0x20
-        v.Border_x_size = 0x20
-        v.Border_y_size = 0x20
+        v.Border_x_size  = 0x20
+        v.Border_y_size  = 0x20
         v.starting_fb_row_pos =  0x00
         v.text_cols = 0x00
         v.text_rows = 0x00
         v.bm0_blut_pos = 0x00
         v.bm1_blut_pos = 0x00
-        //v.bm0_start_addr = 0xB0_0000
-        //v.bm1_start_addr = 0xB0_0000
-        v.bm0_start_addr = 0x1_0000
-        v.bm1_start_addr = 0x1_0000
+        v.bm0_start_addr = 0x1_0000	// relative from beginning of vicky segment
+        v.bm1_start_addr = 0x1_0000	// relative from beginning of vicky segment
 
         v.x_res         = 640
         v.y_res         = 480
