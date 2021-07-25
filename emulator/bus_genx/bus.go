@@ -58,7 +58,7 @@ func (b *Bus) Attach(mem emu.Memory, mode int, start uint32, end uint32) {
 
 
         for x:=(start >> PAGE_BITS); x<=(end >> PAGE_BITS) ; x++ {
-                fmt.Printf("bus_genx: %06x %06x - %s\n", start, x, mem.Name())
+                //fmt.Printf("bus_genx: %06x %06x - %s\n", start, x, mem.Name())
 		b.segment[mode][x] = busEntry{mem: mem, offset: start}
         }
 

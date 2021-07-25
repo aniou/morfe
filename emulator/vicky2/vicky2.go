@@ -14,12 +14,6 @@ import (
 
 var bm0fb  []uint32     // bitmap0 framebuffer
 var bm1fb  []uint32     // bitmap1 framebuffer
-var tfb    []uint32     // text    framebuffer
-var text   []uint32     // text memory cache
-var fg     []uint32     // text foreground LUT cache
-var bg     []uint32     // text background LUT cache
-var font   []byte       // font cache       : 256 chars  * 8 lines * 8 columns
-var blut   []uint32     // bitmap LUT cache : 256 colors * 8 banks (lut0 to lut7)
 
 const MASTER_CTRL_REG_L  = 0x0000
 const MASTER_CTRL_REG_H  = 0x0001
@@ -42,7 +36,9 @@ const VKY_TXT_CURSOR_CTRL_REG = 0x0010
 const VKY_TXT_CURSOR_CHAR_REG = 0x0012
 const VKY_TXT_CURSOR_COLR_REG = 0x0013
 const VKY_TXT_CURSOR_X_REG_L  = 0x0014
+const VKY_TXT_CURSOR_X_REG_H  = 0x0015
 const VKY_TXT_CURSOR_Y_REG_L  = 0x0016
+const VKY_TXT_CURSOR_Y_REG_H  = 0x0017
 
 const BM0_CONTROL_REG         = 0x0100
 const BM0_START_ADDY_L        = 0x0101
@@ -67,16 +63,21 @@ const VRAM_START              = 0x01_0000
 
 
 type Vicky struct {
-        name    string          // id of instance
-        VRAM    emu.Memory      // VRAM
-        TEXT    emu.Memory      // TEXT memory
-        COLOR   emu.Memory      // TEXT color attributes memory
-        Mem     []byte          // general Vicky memory
+        name    string         // id of instance
+        Mem     []byte         // general Vicky memory
+        VRAM    emu.Memory     // VRAM
 
-        // not modified yet
-        TFB    []uint32         // text   framebuffer
-        BM0FB  []uint32         // bitmap0 framebuffer
-        BM1FB  []uint32         // bitmap1 framebuffer
+        text    []uint32       // text memory cache
+        blut    []uint32       // bitmap LUT cache : 256 colors * 8 banks (lut0 to lut7)
+        fg      []uint32       // text foreground LUT cache
+        bg      []uint32       // text background LUT cache
+        font    []byte         // font cache       : 256 chars  * 8 lines * 8 columns
+
+        TFB     []uint32       // text   framebuffer
+
+
+        BM0FB  []uint32        // bitmap0 framebuffer
+        BM1FB  []uint32        // bitmap1 framebuffer
 
         // some convinient registers that should be converted
         // into some kind of memory indexes...
@@ -107,20 +108,15 @@ type Vicky struct {
         y_res           uint32
         pixel_size      uint32          // 1 for normal, 2 for double
 
-        //Mu_tfb                sync.Mutex
 }
 
 /*
 func init() {
         text = make([]uint32,  8192)
-        fg   = make([]uint32,  8192)
-        bg   = make([]uint32,  8192)
         mem  = make([]byte  ,  0x10_0000 + 0x40_0000)   // vicky and bitmap area
-        tfb  = make([]uint32,    480000)                // for max 800x600
         bm0fb  = make([]uint32,  0x40_0000)             // max bitmap area - XXX - too large, we always write from 0x00
         bm1fb  = make([]uint32,  0x40_0000)             // max bitmap area - XXX - too large, we always write from 0x00
         font = make([]byte, 256 * 8 * 8)
-        blut = make([]uint32, 256*8)
         fmt.Println("vicky areas are initialized")
 }
 */
@@ -128,14 +124,18 @@ func init() {
 func New(name string, size int) *Vicky {
         v       := Vicky{name: name}
         v.VRAM   = ram.New(name + "-vram",  2, 0x40_0000)  // 2 banks for 4MB each
-        v.TEXT   = ram.New(name + "-text",  1,    0x4000) 
-        v.COLOR  = ram.New(name + "-color", 1,    0x4000)
-        v.Mem    = make([]byte, size)
+
+        v.Mem    = make([]byte,   size)
+        v.blut   = make([]uint32, 0x0800)        // bitmap LUT cache : 256 colors * 8 banks (lut0 to lut7)
+        v.text   = make([]uint32, 0x2000)        // text memory cache - 0x4000 in GenX
+        v.fg     = make([]uint32, 0x2000)        // foreground cache -  0x4000 in GenX
+        v.bg     = make([]uint32, 0x2000)        // background color cache - 0x4000 in GenX
+        v.font   = make([]byte  , 0x100 * 8 * 8) // font cache 256 chars * 8 lines * 8 columns
+        v.TFB    = make([]uint32, 480000)        // for max 800x600
         
 
         v.Mem[ BORDER_CTRL_REG ] = 0x01
 
-        v.TFB   = make([]uint32,    480000) // / for max 800x600
         v.BM0FB = bm0fb
         v.BM1FB = bm1fb
         v.Cursor_visible = true
@@ -176,13 +176,13 @@ func New(name string, size int) *Vicky {
 // updates font cache by converting bits to bytes
 // position - position of indyvidual byte in font bank
 // val      - particular value
-func updateFontCache(pos uint32, val byte) {
+func (v *Vicky) updateFontCache(pos uint32, val byte) {
         pos = pos * 8
         for j := uint32(8); j > 0; j = j - 1 {          // counting down spares from shifting val left
                 if (val & 1) == 1 {
-                        font[pos + j - 1] = 1
+                        v.font[pos + j - 1] = 1
                 } else {
-                        font[pos + j - 1] = 0
+                        v.font[pos + j - 1] = 0
                 }
                 val = val >> 1
         }
@@ -239,11 +239,11 @@ func (v *Vicky) RenderBitmapText() {
         for text_y = 0; text_y < v.text_rows; text_y += 1 { // over lines of text
                 text_row_pos = text_y * v.text_cols
                 for text_x = 0; text_x < v.text_cols; text_x += 1 { // pre-calculate data for x-axis
-                        fnttmp[text_x] = text[text_row_pos+text_x] * 64 // position in font array
+                        fnttmp[text_x] = v.text[text_row_pos+text_x] * 64 // position in font array
                         dsttmp[text_x] = text_x * 8                     // position of char in dest FB
 
-                        f := fg[text_row_pos+text_x] // fg and bg colors
-                        b := bg[text_row_pos+text_x]
+                        f := v.fg[text_row_pos+text_x] // fg and bg colors
+                        b := v.bg[text_row_pos+text_x]
 
                         if v.Cursor_visible && (cursor_y == text_y) && (cursor_x == text_x) && (cursor_state & 0x01 == 1) {
                                 f = uint32((v.Mem[ VKY_TXT_CURSOR_COLR_REG ] & 0xf0) >> 4)
@@ -264,13 +264,11 @@ func (v *Vicky) RenderBitmapText() {
                         for text_x = 0; text_x < v.text_cols; text_x += 1 { // for each line iterate over columns of text
                                 font_pos = fnttmp[text_x] + font_row_pos
                                 for i = 0; i < 8; i += 1 { // for every font iterate over 8 pixels of font
-                                        //v.Mu_tfb.Lock()
-                                        if font[font_pos+i] == 0 {
-                                                tfb[fb_row_pos+dsttmp[text_x]+i] = bgctmp[text_x]
+                                        if v.font[font_pos+i] == 0 {
+                                                v.TFB[fb_row_pos+dsttmp[text_x]+i] = bgctmp[text_x]
                                         } else {
-                                                tfb[fb_row_pos+dsttmp[text_x]+i] = fgctmp[text_x]
+                                                v.TFB[fb_row_pos+dsttmp[text_x]+i] = fgctmp[text_x]
                                         }
-                                        //v.Mu_tfb.Unlock()
                                 }
                         }
                         fb_row_pos += v.x_res
@@ -300,22 +298,25 @@ func (v *Vicky) Size() (uint32, uint32) {
 }
 
 func (v *Vicky) Read(addr uint32) byte {
-	fmt.Printf("vicky2: %s Read addr %06x\n", v.name, addr)
-        switch {
-        case addr == 0x0001:
+        //fmt.Printf("vicky2: %s Read addr %06x\n", v.name, addr)
+        switch addr {
+        case 0x0001:
                 return 0x00             // 640x480, no pixel doubling
 
-        case addr == 0x0002:
+        case 0x0002:
                 return 0x10             // 1 = Hi-Res on BOOT OFF
 
-        case addr == 0x070B:            // model major
+        case 0x070B:			// model major
                 return 0x00
 
-        case addr == 0x070C:            // model minor
+        case 0x070C:			// model minor
                 return 0x00
 
-	case addr == 0xe902:		// CODEC_WR_CTRL - dummy value
-		return 0x00
+        case 0xe902:			// CODEC_WR_CTRL - dummy value
+                return 0x00
+
+	case 0xe80e:			// DIP_BOOTMODE - dummy value, XXX
+		return 0x03		// boot to BASIC
 
         default:
                 return v.Mem[addr]
@@ -323,7 +324,7 @@ func (v *Vicky) Read(addr uint32) byte {
 }
 
 func (v *Vicky) Write(addr uint32, val byte) {
-	fmt.Printf("vicky2: %s Write addr %06x val %02x\n", v.name, addr, val)
+        //fmt.Printf("vicky2: %s Write addr %06x val %02x\n", v.name, addr, val)
         v.Mem[addr] = val
 
         switch {
@@ -369,6 +370,12 @@ func (v *Vicky) Write(addr uint32, val byte) {
                 if v.Border_visible {
                         v.recalculateScreen()
                 }
+
+	case addr == VKY_TXT_CURSOR_X_REG_L:
+	case addr == VKY_TXT_CURSOR_X_REG_H:
+	case addr == VKY_TXT_CURSOR_Y_REG_L:
+	case addr == VKY_TXT_CURSOR_Y_REG_H:
+		break					// just write to mem
 
         case addr == BACKGROUND_COLOR_B:
                 v.Background[2] = val
@@ -448,10 +455,10 @@ func (v *Vicky) Write(addr uint32, val byte) {
                 dst := (addr - GRPH_LUT0_PTR) >> 2              // clear bits 0-1, we need 4 bytes for in mem BGRA
                                                                 // in memory representation fo uint32: ARGB
                 if (dst & 0xff) == 0 {
-                        blut[dst] = 0x00FFFFFF                  // LUTx[0] is always transparent, by design
+                        v.blut[dst] = 0x00FFFFFF                  // LUTx[0] is always transparent, by design
 
                 } else {
-                        blut[dst] = binary.LittleEndian.Uint32(
+                        v.blut[dst] = binary.LittleEndian.Uint32(
                                         []byte{v.Mem[src], 
                                                v.Mem[src+1], 
                                                v.Mem[src+2], 
@@ -461,17 +468,17 @@ func (v *Vicky) Write(addr uint32, val byte) {
                 //fmt.Printf("addr: %6x val %2x mem %4x dst: %4d pix: %08x ram: %v\n", address, val, src, dst, blut[dst], mem[src:src+4])
 
         case addr >= FONT_MEMORY_BANK0 && addr < FONT_MEMORY_BANK0 + 0x800:
-                updateFontCache(addr - FONT_MEMORY_BANK0, val)  // every bit in font cache is mapped to byte
+                v.updateFontCache(addr - FONT_MEMORY_BANK0, val)  // every bit in font cache is mapped to byte
 
         case addr >= CS_TEXT_MEM_PTR   && addr < CS_TEXT_MEM_PTR + 0x2000:
-                text[ addr - CS_TEXT_MEM_PTR ] = uint32(val)
+                v.text[ addr - CS_TEXT_MEM_PTR ] = uint32(val)
 
         case addr >= CS_COLOR_MEM_PTR && addr < CS_COLOR_MEM_PTR + 0x2000:
                 a     := addr - CS_COLOR_MEM_PTR
                 bgc   := uint32( val & 0x0F)
                 fgc   := uint32((val & 0xF0)>> 4)
-                fg[a]  = fgc
-                bg[a]  = bgc
+                v.fg[a]  = fgc
+                v.bg[a]  = bgc
 
         /* no bitmap support yet
         case addr >= VRAM_START && addr < VRAM_START + 0x40_0000:                             // 4MB, xxx: parametrize
