@@ -4,6 +4,8 @@ package bus_genx
 import (
 	"fmt"
 	"log"
+	"os"
+	"runtime/debug"
 
 	_ "github.com/aniou/go65c816/lib/mylog"
 	"github.com/aniou/go65c816/emulator"
@@ -66,12 +68,18 @@ func (b *Bus) Attach(mem emu.Memory, mode int, start uint32, end uint32) {
 }
 
 func (b *Bus) Write_8(mode byte, addr uint32, val byte) {
-	//fmt.Printf("bus_genx: %s Write_8 mode %d addr %06x val %02x\n", b.name, mode, addr, val)
 	s      := addr >> PAGE_BITS
-	//fmt.Printf("bus_genx: %s Write_8 segment %06x\n", b.name, s)
 	offset := b.segment[mode][s].offset
-	//fmt.Printf("bus_genx: %s Write_8 offset  %06x\n", b.name, offset)
-	//fmt.Printf("bus_genx: %s Write_8 name    %s\n", b.name, b.segment[mode][s].mem.Name() )
+
+        defer func() {
+        	if err := recover(); err != nil {
+            		log.Println("panic occurred:", err)
+			debug.PrintStack()
+			fmt.Printf("bus_genx: %s Write_8 mode %d addr %06x offset %06x val %02x\n", b.name, mode, addr, offset, val)
+			os.Exit(1)
+        	}
+    	}()
+
 	b.segment[mode][s].mem.Write(addr - offset, val)
 }
 

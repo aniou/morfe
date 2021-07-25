@@ -139,6 +139,25 @@ no vsync, both cores in goroutine at max
     frames:  366 ticks 1013 cpu0 cycles  506352613 speed 21 MHz cpu1 cycles  151700958 speed 6 MHz
     frames:  374 ticks 1005 cpu0 cycles  527414383 speed 21 MHz cpu1 cycles  158734782 speed 7 MHz
 
+bm0.ini test in Vicky2()
+========================
+*25-07-2021*
+
+ ::
+
+    frames:  228 ticks 1003 cpu0 cycles   16795014 speed 16 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  257 ticks 1001 cpu0 cycles   31184604 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  271 ticks 1000 cpu0 cycles   45502605 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  272 ticks 1003 cpu0 cycles   59849241 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  253 ticks 1000 cpu0 cycles   74181559 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  262 ticks 1003 cpu0 cycles   88528194 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  274 ticks 1002 cpu0 cycles  102889149 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  274 ticks 1005 cpu0 cycles  117221467 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  272 ticks 1003 cpu0 cycles  131625375 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  272 ticks 1000 cpu0 cycles  145943375 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  271 ticks 1001 cpu0 cycles  160261374 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  273 ticks 1001 cpu0 cycles  174608010 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+
 
 Text rendered in Vicky2()
 =========================
@@ -179,6 +198,28 @@ dereferenced from object)
     frames:  461 ticks 1000 cpu0 cycles  403323744 speed 14 MHz cpu1 cycles          0 speed 0 Hz
     frames:  464 ticks 1001 cpu0 cycles  417656061 speed 14 MHz cpu1 cycles          0 speed 0 Hz
     frames:  443 ticks 1001 cpu0 cycles  431988379 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+
+Text rendered in Vicky2() with deferred panic (for debug)
+=========================================================
+*25-07-2021*
+
+ ::
+
+    frames:  350 ticks 1001 cpu0 cycles   16021844 speed 16 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  455 ticks 1001 cpu0 cycles   30397115 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  452 ticks 1000 cpu0 cycles   44715117 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  460 ticks 1001 cpu0 cycles   59033115 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  440 ticks 1000 cpu0 cycles   73351117 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  447 ticks 1000 cpu0 cycles   87683434 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  450 ticks 1000 cpu0 cycles  101987116 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  450 ticks 1000 cpu0 cycles  116305114 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  454 ticks 1000 cpu0 cycles  130623115 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  456 ticks 1000 cpu0 cycles  144926799 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  458 ticks 1001 cpu0 cycles  159259116 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  449 ticks 1000 cpu0 cycles  173577114 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  452 ticks 1001 cpu0 cycles  187880797 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  458 ticks 1000 cpu0 cycles  202213116 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  453 ticks 1000 cpu0 cycles  216531115 speed 14 MHz cpu1 cycles          0 speed 0 Hz
 
 
 
