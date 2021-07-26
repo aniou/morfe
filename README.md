@@ -43,7 +43,9 @@ from Musashi.
 Following instructions was tested with go1.13.8.
 
 ```
+$ git clone https://github.com/aniou/go65c816
 $ git clone https://github.com/kstenerud/Musashi/
+$ cp go65c816/lib/musashi-c-wrapper/m68kconf.h Musashi/
 $ cd  Musashi
 $ make
 $ ls *o softfloat/*o
@@ -55,9 +57,7 @@ If we can see four object files, as described above, then we can
 try to build emulator:
 
 ```
-$ git clone https://github.com/aniou/go65c816
-$ cd go65c816
-$ cd lib/musashi-c-wrapper
+$ cd go65c816/lib/musashi-c-wrapper
 $ gcc -std=c99 -I ../../../Musashi -Wall -c shim.c
 $ cd ../../cmd/gui
 $ export CGO_LDFLAGS_ALLOW=".+/(Musashi|musashi-c-wrapper)/.+\.o"

@@ -35,18 +35,20 @@
 
 
 // forward declarations
-unsigned int go_m68k_read_memory_8(unsigned int address);
-void go_m68k_write_memory_8(unsigned int address, unsigned int value);
-unsigned int go_m68k_read_memory_16(unsigned int address);
-void go_m68k_write_memory_16(unsigned int address, unsigned int value);
-unsigned int go_m68k_read_memory_32(unsigned int address);
-void go_m68k_write_memory_32(unsigned int address, unsigned int value);
+unsigned int go_m68k_read_memory_8(unsigned char mode, unsigned int address);
+void go_m68k_write_memory_8(unsigned char mode, unsigned int address, unsigned int value);
+unsigned int go_m68k_read_memory_16(unsigned char mode, unsigned int address);
+void go_m68k_write_memory_16(unsigned char mode, unsigned int address, unsigned int value);
+unsigned int go_m68k_read_memory_32(unsigned char mode, unsigned int address);
+void go_m68k_write_memory_32(unsigned char mode, unsigned int address, unsigned int value);
+void cpu_set_fc(unsigned int fc);
 
 /* Prototypes */
 void exit_error(char* fmt, ...);
 
 /* variables */
 unsigned char *g_ram;
+unsigned char mode;		// RAM mode (0 or 1 at this moment)
 
 
 /* Exit with an error message.  Use printf syntax. */
@@ -73,10 +75,20 @@ void exit_error(char* fmt, ...)
 	exit(EXIT_FAILURE);
 }
 
+/* Called when the CPU changes the function code pins */
+void cpu_set_fc(unsigned int fc)
+{
+	if (fc & 3)	{	// supervisor program
+    	mode = 1; 
+	} else {
+		mode = 0;
+	}	
+}
+
 unsigned int m68k_read_memory_8(unsigned int address)
 {
 	if(address > MAX_RAM)
-        return go_m68k_read_memory_8(address);
+        return go_m68k_read_memory_8(mode, address);
 
 	return READ_BYTE(g_ram, address);
 }
@@ -84,7 +96,7 @@ unsigned int m68k_read_memory_8(unsigned int address)
 unsigned int m68k_read_memory_16(unsigned int address)
 {
 	if(address > MAX_RAM)
-		return go_m68k_read_memory_16(address);
+		return go_m68k_read_memory_16(mode, address);
 
 	return READ_WORD(g_ram, address);
 }
@@ -92,7 +104,7 @@ unsigned int m68k_read_memory_16(unsigned int address)
 unsigned int m68k_read_memory_32(unsigned int address)
 {
 	if(address > MAX_RAM)
-		return go_m68k_read_memory_32(address);
+		return go_m68k_read_memory_32(mode, address);
 
 	return READ_LONG(g_ram, address);
 }
@@ -101,7 +113,7 @@ void m68k_write_memory_8(unsigned int address, unsigned int value)
 {
     //printf("write8  at %x\n", address);
 	if(address > MAX_RAM) {
-        go_m68k_write_memory_8(address, value);
+        go_m68k_write_memory_8(mode, address, value);
         return;
     }
 
@@ -112,7 +124,7 @@ void m68k_write_memory_16(unsigned int address, unsigned int value)
 {
     //printf("write16  at %x\n", address);
 	if(address > MAX_RAM) {
-        go_m68k_write_memory_16(address, value);
+        go_m68k_write_memory_16(mode, address, value);
         return;
     }
 
@@ -123,7 +135,7 @@ void m68k_write_memory_32(unsigned int address, unsigned int value)
 {
     //printf("write32  at %x\n", address);
 	if(address > MAX_RAM) {
-        go_m68k_write_memory_32(address, value);
+        go_m68k_write_memory_32(mode, address, value);
         return;
     }
 
@@ -142,6 +154,7 @@ unsigned int m68k_read_disassembler_32(unsigned int address)
 
 unsigned char* m68k_init_ram() {
     g_ram = calloc(MAX_RAM, sizeof(unsigned char));
+	mode  = 0;	
 	return(g_ram);
 }
 

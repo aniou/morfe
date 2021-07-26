@@ -1,5 +1,7 @@
 package cpu_68xxx
 
+// +build m68k
+
 // #cgo CFLAGS: -I../../../Musashi  -I../../lib/musashi-c-wrapper
 // #cgo LDFLAGS: ../../lib/musashi-c-wrapper/shim.o ../../../Musashi/m68kcpu.o ../../../Musashi/m68kdasm.o ../../../Musashi/m68kops.o  ../../../Musashi/softfloat/softfloat.o
 // #include "shim.h"
@@ -63,70 +65,76 @@ type CPU struct {
 }
 
 //export go_m68k_read_memory_8
-func go_m68k_read_memory_8(addr C.uint) C.uint {
+func go_m68k_read_memory_8(mode C.uchar, addr C.uint) C.uint {
         //fmt.Printf("m68k read8  %8x", addr)
 
         a   := uint32(addr)
-        val := bus.Read_8(a)
+	m   := byte(mode)
+        val := bus.Read_8(m, a)
 
         //fmt.Printf(" val  %8x %d\n", val, val)
         return C.uint(val)
 }
 
 //export go_m68k_read_memory_16
-func go_m68k_read_memory_16(addr C.uint) C.uint {
+func go_m68k_read_memory_16(mode C.uchar, addr C.uint) C.uint {
         //fmt.Printf("m68k read16  %8x", addr)
 
         a   := uint32(addr)
-        val := ( uint32(bus.Read_8(a))   << 8 ) |
-                 uint32(bus.Read_8(a+1))
+	m   := byte(mode)
+        val := ( uint32(bus.Read_8(m, a))   << 8 ) |
+                 uint32(bus.Read_8(m, a+1))
 
         //fmt.Printf(" val  %8x %d\n", val, val)
         return C.uint(val)
 }
 
 //export go_m68k_read_memory_32
-func go_m68k_read_memory_32(addr C.uint) C.uint {
+func go_m68k_read_memory_32(mode C.uchar, addr C.uint) C.uint {
         //fmt.Printf("m68k read32  %8x", addr)
 
         a   := uint32(addr)
-        val := ( uint32(bus.Read_8(a))   <<  24 ) |
-               ( uint32(bus.Read_8(a+1)) <<  16 ) |
-               ( uint32(bus.Read_8(a+2)) <<   8 ) |
-                 uint32(bus.Read_8(a+3))
+	m   := byte(mode)
+        val := ( uint32(bus.Read_8(m, a))   <<  24 ) |
+               ( uint32(bus.Read_8(m, a+1)) <<  16 ) |
+               ( uint32(bus.Read_8(m, a+2)) <<   8 ) |
+                 uint32(bus.Read_8(m, a+3))
 
         //fmt.Printf(" val  %8x %d\n", val, val)
         return C.uint(val)
 }
 
 //export go_m68k_write_memory_8
-func go_m68k_write_memory_8(addr, val C.uint) {
+func go_m68k_write_memory_8(mode C.uchar, addr, val C.uint) {
         //fmt.Printf("m68k write8  %8x val  %8x %d\n", addr, val, val)
 
         a   := uint32(addr)
-        bus.Write_8(a, byte(val))
+	m   := byte(mode)
+        bus.Write_8(m, a, byte(val))
         return
 }
 
 //export go_m68k_write_memory_16
-func go_m68k_write_memory_16(addr, val C.uint) {
+func go_m68k_write_memory_16(mode C.uchar, addr, val C.uint) {
         //fmt.Printf("m68k write16 %8x val  %8x %d\n", addr, val, val)
 
         a   := uint32(addr)
-        bus.Write_8(a,   byte((val >> 8) & 0xff))
-        bus.Write_8(a+1, byte( val       & 0xff))
+	m   := byte(mode)
+        bus.Write_8(m, a,   byte((val >> 8) & 0xff))
+        bus.Write_8(m, a+1, byte( val       & 0xff))
         return
 }
 
 //export go_m68k_write_memory_32
-func go_m68k_write_memory_32(addr, val C.uint) {
+func go_m68k_write_memory_32(mode C.uchar, addr, val C.uint) {
         //fmt.Printf("m68k write32 %8x val  %8x %d\n", addr, val, val)
 
         a   := uint32(addr)
-        bus.Write_8(a,   byte((val >> 24) & 0xff))
-        bus.Write_8(a+1, byte((val >> 16) & 0xff))
-        bus.Write_8(a+2, byte((val >>  8) & 0xff))
-        bus.Write_8(a+3, byte( val        & 0xff))
+	m   := byte(mode)
+        bus.Write_8(m, a,   byte((val >> 24) & 0xff))
+        bus.Write_8(m, a+1, byte((val >> 16) & 0xff))
+        bus.Write_8(m, a+2, byte((val >>  8) & 0xff))
+        bus.Write_8(m, a+3, byte( val        & 0xff))
         return
 }
 
