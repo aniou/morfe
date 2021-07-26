@@ -15,6 +15,10 @@ import (
 	"github.com/aniou/go65c816/emulator"
 )
 
+type Config struct {
+	Mode	string
+}
+
 // xxx - duplicate in TUI, go to lib
 func hex2uint24(hexStr string) (uint32, error) {
         // remove 0x suffix, $ and : characters
@@ -71,7 +75,8 @@ func (p *Platform) setRegisters(cfg *ini.File, c emu.Processor) {
 	}
 }
 
-func (p *Platform) LoadConfig(filename string) {
+// XXX - make it more common and move loadFiles to gui?
+func (p *Platform) LoadCpuConfig(filename string) {
 	cfg, err := ini.LoadSources(ini.LoadOptions{
 		SkipUnrecognizableLines: false,
 	}, filename)
@@ -84,6 +89,21 @@ func (p *Platform) LoadConfig(filename string) {
 
 	p.loadFiles(cfg, p.CPU1)
 	p.setRegisters(cfg, p.CPU1)
+
+}
+
+func (p *Platform) LoadPlatformConfig(filename string) (*Config, error) {
+	cfg, err := ini.LoadSources(ini.LoadOptions{
+		SkipUnrecognizableLines: false,
+	}, filename)
+	if err != nil {
+        	log.Fatalf("Failed to load from %s - error: %s\n", filename, err)
+        }
+
+	pcfg      := Config{}
+	pcfg.Mode  = cfg.Section("platform").Key("mode").In("fmx-like", []string{"fmx-like", "frankenmode", "genx-like"})
+
+	return &pcfg, nil
 
 }
 

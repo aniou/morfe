@@ -200,6 +200,7 @@ func main() {
         var CPU1_STEP   uint64 = 20000 // I'm able to achieve 25Mhz too
 	var ch		chan string
 	var msg	        string
+	var pcfg	*platform.Config
 
 	runtime.LockOSThread()
 
@@ -217,18 +218,30 @@ func main() {
         gui := new(GUI)
         gui.fullscreen = false
         gui.p = p                       // xxx - fix that mess
-        //p.InitGUI()
-	p.InitFMX()
 
 
         // code load and PC set --------------------------------------------------------
         if len(os.Args) < 2 {
                 log.Fatalf("Usage: %s filename.ini\n", os.Args[0])
-        } else {
-		// TODO - move to platform
-                gui.p.LoadConfig(os.Args[1])
-        }
- 
+        } 
+
+	if pcfg, err = gui.p.LoadPlatformConfig(os.Args[1]); err != nil {
+		log.Fatalf("%s", err)
+	}
+
+	switch pcfg.Mode {
+	case "fmx-like":
+		p.InitFMX()
+	case "frankenmode":
+		p.InitGenX()
+	case "genx-like":
+		p.InitGenX()
+	default:
+		log.Fatalf("unknown mode %s", pcfg.Mode)
+	}
+
+        gui.p.LoadCpuConfig(os.Args[1])
+        log.Fatalf("nice to end here\n")
 
         // some additional tweaks ------------------------------------------------------
         // XXX - move it somewhere
