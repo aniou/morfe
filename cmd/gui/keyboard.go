@@ -7,6 +7,10 @@ import (
 	"github.com/veandco/go-sdl2/sdl"
 )
 
+// keyboard memory registers
+const INT_MASK_REG1     = 0x00_014D
+const INT_PENDING_REG1  = 0x00_0141
+
 const (
 	sc_null            = 0x00
 	sc_escape          = 0x01

@@ -17,10 +17,6 @@ import (
         "github.com/aniou/go65c816/lib/mylog"
 )
 
-// keyboard memory registers
-const INT_MASK_REG1     = 0x00_014D
-const INT_PENDING_REG1  = 0x00_0141
-
 // some general consts
 const CPU_CLOCK         = 14318000 // 14.381Mhz (not used)
 const CURSOR_BLINK_RATE = 500      // in ms (milliseconds)
@@ -48,14 +44,6 @@ func showCPUSpeed(cycles uint64) (uint64, string) {
                 return cycles / 100, "kHz"
         default:
                 return cycles, "Hz"
-        }
-}
-
-func printCPUFlags(flag byte, name string) string {
-        if flag > 0 {
-                return name
-        } else {
-                return "-"
         }
 }
 
@@ -96,23 +84,6 @@ func waitForEnter() {
         fmt.Scanln() // wait for Enter Key
 }
 
-/*
-func loadFont(p *platform.Platform, fontset *[2048]uint32) {
-        for i, v := range fontset {
-                for j := 0; j < 8; j = j + 1 {
-                        v = v << 1
-                        if (v & 256) == 256 {
-                                //fmt.Printf("#")
-                                p.GPU.FONT[i*8+j] = 1
-                        } else {
-                                //fmt.Printf(" ")
-                                p.GPU.FONT[i*8+j] = 0
-                        }
-                }
-                //fmt.Printf("\n")
-        }
-}
-*/
 
 // debug routines
 func debugPixelFormat(window *sdl.Window) {
@@ -202,6 +173,11 @@ func main() {
 	var msg	        string
 	var pcfg	*platform.Config
 
+	// first things first
+        if len(os.Args) < 2 {
+                log.Fatalf("Usage: %s filename.ini\n", os.Args[0])
+        } 
+
 	runtime.LockOSThread()
 
 	/*
@@ -214,24 +190,18 @@ func main() {
 	*/
 
         // platform init ---------------------------------------------------------------
-        //p := platform.New()           // must be global now
-        gui := new(GUI)
+        //p := platform.New()           // must be global now - but it is still true?
+	gui := new(GUI)
         gui.fullscreen = false
         gui.p = p                       // xxx - fix that mess
 
-
-        // code load and PC set --------------------------------------------------------
-        if len(os.Args) < 2 {
-                log.Fatalf("Usage: %s filename.ini\n", os.Args[0])
-        } 
-
-	if pcfg, err = gui.p.LoadPlatformConfig(os.Args[1]); err != nil {
+	if pcfg, err = p.LoadPlatformConfig(os.Args[1]); err != nil {
 		log.Fatalf("%s", err)
 	}
 
 	switch pcfg.Mode {
 	case "fmx-like":
-		p.InitFMX()
+		p.SetFMX()
 	case "frankenmode":
 		p.InitGenX()
 	case "genx-like":
@@ -240,29 +210,11 @@ func main() {
 		log.Fatalf("unknown mode %s", pcfg.Mode)
 	}
 
-        gui.p.LoadCpuConfig(os.Args[1])
-        log.Fatalf("nice to end here\n")
+	// kernel and others files loading also here
+        p.LoadCpuConfig(os.Args[1])
 
-        // some additional tweaks ------------------------------------------------------
-        // XXX - move it somewhere
-        p.CPU0.Write_8(0xAF_0005, 0x20) // border B 
-        p.CPU0.Write_8(0xAF_0006, 0x00) // border G
-        p.CPU0.Write_8(0xAF_0007, 0x20) // border R
-
-        //p.CPU0.Write_8(0xAF_0008, 0x20) // border X
-        //p.CPU0.Write_8(0xAF_0009, 0x20) // border Y
-
-        p.CPU0.Write_8(0xAF_0010, 0x03) // VKY_TXT_CURSOR_CTRL_REG
-        p.CPU0.Write_8(0xAF_0012, 0xB1) // VKY_TXT_CURSOR_CHAR_REG
-        p.CPU0.Write_8(0xAF_0013, 0xED) // VKY_TXT_CURSOR_COLR_REG
-
-        // act as gavin/gabe - copy "flash" area from 38:1000 to 00:1000 (0x200) bytes
-        // jump tables
-        for j := 0x1000; j < 0x1200; j = j + 1 {
-                val := p.CPU0.Read_8(uint32(0x38_0000 + j))
-                p.CPU0.Write_8(uint32(j), val)
-
-        }
+	// call platform-specific function that settles cpus
+	p.Init()
 
         // graphics init ---------------------------------------------------------------
         // step 1: SDL

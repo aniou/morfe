@@ -20,6 +20,7 @@ type Platform struct {
 	GPU1     *vicky2.Vicky
         SIO      *superio.SIO
 	MATHI    *mathi.MathInt
+	Init	 func()
 }
 
 func New() (*Platform) {
