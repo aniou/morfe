@@ -213,7 +213,7 @@ func main() {
 	// kernel and others files loading also here
         p.LoadCpuConfig(os.Args[1])
 
-	// call platform-specific function that settles cpus
+	// platform-specific init function 
 	p.Init()
 
         // graphics init ---------------------------------------------------------------
@@ -289,7 +289,6 @@ func main() {
 
 	desired_cycles0 := uint64(CPU0_STEP)
 	desired_cycles1 := uint64(CPU1_STEP)
-
 
 
 

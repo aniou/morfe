@@ -197,6 +197,7 @@ func (v *Vicky) RenderBitmapText() {
         var text_row_pos uint32   // beginning of current text row in text memory
         var fb_row_pos uint32     // beginning of current FB   row in memory
         var font_pos uint32       // position in font array (char * 64 + char_line * 8)
+        var   fb_pos uint32       // position in destination framebuffer
         var font_line uint32      // line in current font
         var font_row_pos uint32   // position of line in current font (=font_line*8 because every line has 8 bytes)
         var i uint32              // counter
@@ -250,11 +251,12 @@ func (v *Vicky) RenderBitmapText() {
                         font_row_pos = font_line * 8
                         for text_x = 0; text_x < v.text_cols; text_x += 1 { // for each line iterate over columns of text
                                 font_pos = fnttmp[text_x] + font_row_pos
+	                        fb_pos   = dsttmp[text_x] + fb_row_pos
                                 for i = 0; i < 8; i += 1 { // for every font iterate over 8 pixels of font
                                         if v.font[font_pos+i] == 0 {
-                                                v.TFB[fb_row_pos+dsttmp[text_x]+i] = bgctmp[text_x]
+                                                v.TFB[fb_pos+i] = bgctmp[text_x]
                                         } else {
-                                                v.TFB[fb_row_pos+dsttmp[text_x]+i] = fgctmp[text_x]
+                                                v.TFB[fb_pos+i] = fgctmp[text_x]
                                         }
                                 }
                         }
