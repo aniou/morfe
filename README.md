@@ -150,7 +150,7 @@ Project also draws inspirations, knowledge about Foenix's behaviour and even
 whole code snippets from [Foenix IDE](https://github.com/Trinity-11/FoenixIDE) 
 by Daniel Tremblay.
 
-When I was in doubt (usually) I was able to find solution and hints into 
+When I was in doubt (usually) I was able to find solution and hints in 
 [Foenix Kernel Code](https://github.com/Trinity-11/Kernel_FMX/) created and 
 maintained by https://github.com/pweingar/
 
