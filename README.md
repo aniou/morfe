@@ -8,6 +8,11 @@ state, that changes almost every day. Stay tuned and look
 for updates! I need it for my personal experiments, so 
 features should pop-up and mutate without warning! :):
 
+Second warning: because of heavy re-factoring an GenX
+features are not available yet. So far I was able to
+restore FMX-like behaviour with new code - but GenX-like
+memory map is on the way!
+
 At this moment You should also consider following factors:
 
 * **MOST IMPORTANT:** it is unofficial work and features/lack 
