@@ -8,7 +8,7 @@ state, that changes almost every day. Stay tuned and look
 for updates! I need it for my personal experiments, so 
 features should pop-up and mutate without warning! :):
 
-Second warning: because of heavy re-factoring an GenX
+Second warning: because of heavy re-factoring GenX
 features are not available yet. So far I was able to
 restore FMX-like behaviour with new code - but GenX-like
 memory map is on the way!
