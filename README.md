@@ -1,30 +1,63 @@
-# go65c816 with m68k support
+# MORFE - Meyer's Own Re-combinable FrankenEmulator
 
-This is latest version updated for experiments with additional 
-CPU cards, announced for [C256 Foenix Gen X](https://c256foenix.com/). 
+A kind-of-emulator software, created for my experiments and 
+development for [Foenix](https://c256foenix.com/) machines.
 
-It means, that - contrary to name - emulator has preliminary support
-for running Motorla 68000 as secondary CPU.
+**Warning:** this is an fast-evolving project in pre-alpha
+state, that changes almost every day. Stay tuned and look 
+for updates! I need it for my personal experiments, so 
+features should pop-up and mutate without warning! :):
 
-If You are interested in previous, 65c816-only version that can be
-compiled without Musashi m68k core use branch [65c816-only](https://github.com/aniou/go65c816/tree/65c816-only).
-
-At this moment You should consider following factors:
+At this moment You should also consider following factors:
 
 * **MOST IMPORTANT:** it is unofficial work and features/lack 
-  of featuers or emulator design does not correspond to features 
-  or design of real Gen X machine! 
+  of features or emulator design does not correspond to features 
+  or design of real FMX/U/GenX machine! 
 
   Do not make any unauthorized assumptions about real hardware!
-
-* Adding secondary CPU causes some refactoring in code, thus
-  some debug features, described below, are not available now.
 
 * In this branch m68k is easily able to achieve 25Mhz, although now
   it is capped at 20Mhz. I have a plan for making all setting easily
   configurable, but first things (like debug facilities for both cpus)
   first...
   
+## Build instructions for this branch
+
+First, clone repo by ``git clone https://github.com/aniou/morfe``
+
+Type ``make morfe`` for a 65c816-only version or ``make morfe-m68k`` 
+for dual, 65c816/m68k one.
+
+There is also ``make help`` that shows actual targets.
+
+Typical session:
+
+```shell
+git clone https://github.com/aniou/morfe
+cd morfe
+make morfe
+./morfe conf/c256.ini
+```
+
+### Note about m68k
+
+For m68k a [Musashi](https://github.com/kstenerud/Musashi/) core
+is used, built-in into emulator with some black magic around ``cgo``. 
+Standard makefile should build all object files for You, although
+working gcc will be necessary.
+
+## Running
+
+Emulator requires config file, that defines platform behaviour, files 
+to be loaded at start and some other parameters.
+
+Binaries should be run from project directory (all paths are relative
+to top-directory of project), i.e.:
+
+```shell
+./morfe conf/c256.ini
+./morfe-m68k conf/m68-debug.ini
+```
 
 ## Built-in debugger
 
@@ -34,113 +67,12 @@ debug window in terminal. Preferred terminal size is ``132x42``
 
 List of supported commands will be displayed in log frame.
 
-## Build instructions for this branch
+## Compatibility status
 
-As m68k I use Musashi core, built-in into emulator with some black
-magic around ``cgo``. At first we need a object files '*.o' built
-from Musashi.
+### Memory map
 
-Following instructions was tested with go1.13.8.
-
-```
-$ git clone https://github.com/aniou/go65c816
-$ git clone https://github.com/kstenerud/Musashi/
-$ cp go65c816/lib/musashi-c-wrapper/m68kconf.h Musashi/
-$ cd  Musashi
-$ make
-$ ls *o softfloat/*o
-m68kcpu.o  m68kdasm.o  m68kops.o  softfloat/softfloat.o
-$ cd ..
-```
-
-If we can see four object files, as described above, then we can
-try to build emulator:
-
-```
-$ cd go65c816/lib/musashi-c-wrapper
-$ gcc -std=c99 -I ../../../Musashi -Wall -c shim.c
-$ cd ../../cmd/gui
-$ export CGO_LDFLAGS_ALLOW=".+/(Musashi|musashi-c-wrapper)/.+\.o"
-$ go build -a -o gui *go
-$ ./gui m68k.ini
-```
-
-After that we should see a normal Foenix kernel, running by 65c816
-and small, red(?) letter 'D', visible in top-left corner of screen -
-this is only effect of m68k, working in tight loop on predefined
-memory.
-
-## Creating HEX files for M68k CPU
-
-You need an [VASM assembler](http://sun.hasenbraten.de/vasm/) and
-``srec_cat`` command (on Ubuntu it comes in package ``srecord``).
-
-When You ocmpile VASM for selected target (i.e. Motorola):
-
-```
-$ cat test.asm
-
-        org    $00100000
-
-init:
-        moveq  #$43,d0
-        move.b d0,$00AFA000
-        bra    init
-
-$ ./vasmm68k_mot -Fbin -o test.bin  test.asm
-$ srec_cat test.bin -binary -offset 0x100000 -o test.hex -intel
-```
-
-## Important changes
-
-* 2021-07-14: ``enable={0|1}`` was added to ``cpu`` section in ``*.ini``
-  files - directive enables/disables selected CPU at start (even in 
-  "disabled" state CPU can be used in debugger, though.
-
-* 2021-06-22: there is an important change in ``*.ini`` files format,
-  from now there are two sections available - ``cpu0`` and ``cpu1``
-  with only two keywords, so far: ``file`` (and ``file1 - file99``)
-  that loads Intel Hex files into RAM, tied to specific CPU  and 
-  ``start`` keyword, that set PC (and only PC).
-
-  ```ini
-  [cpu0]
-  file1=../../data/kernel.hex
-
-  [cpu1]
-  file=../../../vasm/test.hex
-  start=0x10:0000
-  ```
-
-# Original README
-
-**Warning:** original README comes from main branch, emulator created
-only for single, 65c816-based computer. Following instructions may not
-fit for current branch!
-
-## Some screenshots
-
-[of816 port](https://github.com/aniou/of816/tree/C256/platforms/C256)
-
-![of816port](images/of816.png)
-
-Simple overlay test
-
-![overlay test](images/graph5bm0.png)
-
-Simple disassembler
-
-![disassembler](images/disasm.png)
-
-## Supported systems
-
-Program was tested on:
-
-* Ubuntu 20.04 / Go 1.13
- 
-Word of warning: my SDL code is rather naive, so there is a possibility that
-it would not work on Your system (bizarre colors or something). It may be
-corrected in future.
+At this moment a sort-of FMX memory map is available, but GenX is on the horizont:
+it is fast moving target, so stay tuned!
 
 ### Vicky II
 
@@ -153,7 +85,7 @@ See [here](https://wiki.c256foenix.com/index.php?title=VICKY_II) for VICKY II sp
 - [x] border support (partial, no scroll)
 - [x] text mode 
 - [x] text LUT
-- [x] cursor (but no second font bank)
+- [x] cursor 
 - [x] fonts
 - [x] bm0 bitmap
 - [x] bm1 bitmap
@@ -169,7 +101,7 @@ See [here](https://wiki.c256foenix.com/index.php?title=VICKY_II) for VICKY II sp
 See [here](https://wiki.c256foenix.com/index.php?title=GABE) for GABE spec
 
 - [x] math coprocessor
-- [x] keyboard input (GABE)
+- [x] keyboard input (GABE) - FMX style at this moment!
 - [ ] mouse
 - [ ] all other
 
@@ -191,21 +123,32 @@ F10      |- (nothing)
 F11      |Toggle full-screen
 F12      |Exit emulator
 
-## Memory map
-
-Machine parameters may be tweaked by editing `emulator/platform/platform.go` file. Every memory area should be attached to internal bus, like in following example:
-
-### current memory map - TBD
-
-### notes about stacking memory routines
-
- * minimal area size: **16 bytes**
- * areas **must be** aligned at 4 bits (16 bytes)
- * areas are stacked, i.e. later shadows previous 
-
 ## Foreword
 
-Project was inspired by [NES emulator](https://github.com/fogleman/nes) created by Michael Fogleman and [MOS 6502 emulator](https://github.com/pda/go6502) by Paul Annesley and contains files or concepts from both projects. Some algorithms and behaviours are modeled on the [C++ 65c816 emulator](https://github.com/andrew-jacobs/emu816) by Andrew Jacobs.
+I owe thankful word for too many people. Excuse me if I omitted someone.
 
-Project draws inspiration and code snippets from [Foenix IDE](https://github.com/Trinity-11/FoenixIDE)
+First at all: all hail to [Stefany Allaire](https://twitter.com/stefanyallaire), 
+a Dark Mistress that brought to life all Foenix Family! We all praise her
+brilliant work, persistence and vision!
+
+Project was inspired by [NES emulator](https://github.com/fogleman/nes) 
+created by Michael Fogleman and general layout as well as architectural
+concepts are based on that project. I'm very grateful to Michael for 
+inspiration and all thing I learned from their code.
+
+During development a 65c816 emulation I draw inspiration and concepts
+from Michael's project as well as from [MOS 6502 emulator](https://github.com/pda/go6502) 
+by Paul Annesley. Some algorithms and behaviours are modeled on the 
+[C++ 65c816 emulator](https://github.com/andrew-jacobs/emu816) by Andrew Jacobs.
+
+Project draws inspiration, model Foenix's behaviour and even took whole code 
+snippets from [Foenix IDE](https://github.com/Trinity-11/FoenixIDE) by Daniel Tremblay.
+
+When I was in doubt (usually) I usually was able to find solution and hints
+int [Foenix Kernel Code](https://github.com/Trinity-11/Kernel_FMX/) created and 
+maintained by https://github.com/pweingar/
+
+A heart and all code for Motorola is taken from [Musashi core](https://github.com/kstenerud/Musashi/).
+
+Finally: daschewie - thanks for Your support!
 
