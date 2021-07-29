@@ -14,3 +14,10 @@
 
 # Editor files
 *.swp
+
+# external libraries
+external/*
+
+# built binaries
+morfe
+morfe-m68k

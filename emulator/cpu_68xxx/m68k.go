@@ -2,8 +2,8 @@ package cpu_68xxx
 
 // +build m68k
 
-// #cgo CFLAGS: -I../../../Musashi  -I../../lib/musashi-c-wrapper
-// #cgo LDFLAGS: ../../lib/musashi-c-wrapper/shim.o ../../../Musashi/m68kcpu.o ../../../Musashi/m68kdasm.o ../../../Musashi/m68kops.o  ../../../Musashi/softfloat/softfloat.o
+// #cgo CFLAGS: -I../../external/Musashi  -I../../lib/musashi-c-wrapper
+// #cgo LDFLAGS: lib/musashi-c-wrapper/shim.o external/Musashi/m68kcpu.o external/Musashi/m68kdasm.o external/Musashi/m68kops.o external/Musashi/softfloat/softfloat.o
 // #include "shim.h"
 // #include "m68k.h"
 import "C"
