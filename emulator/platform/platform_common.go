@@ -47,14 +47,18 @@ func (p *Platform) loadFiles(cfg *ini.File, c emu.Processor) {
 	// at first read file=
 	if cfg.Section(cpu_section).HasKey("file") {
 		hexfile := cfg.Section(cpu_section).Key("file").String()
-		LoadHex(c, hexfile)
+		if err := LoadHex(c, hexfile); err != nil {
+			log.Panicln(err)
+		}
 	}
 	// then file0= to file99=
 	for i := 0; i<100; i += 1 {
 		keyname := fmt.Sprintf("file%d", i)
 		if cfg.Section(cpu_section).HasKey(keyname) {
 			hexfile := cfg.Section(cpu_section).Key(keyname).String()
-			LoadHex(c, hexfile)
+			if err := LoadHex(c, hexfile); err != nil {
+				log.Panicln(err)
+			}
 		}
 	}
 }
@@ -107,12 +111,13 @@ func (p *Platform) LoadPlatformConfig(filename string) (*Config, error) {
 
 }
 
-func LoadHex(cpu emu.Processor, filename string) {
+// XXX - move error support and displaying into upper layer
+func LoadHex(cpu emu.Processor, filename string) error {
 	path := filepath.Join(filename)
 	file, err := os.Open(path)
 	if err != nil {
 		mylog.Logger.Log(fmt.Sprintf("LoadHex failed: %s", err))
-		return
+		return err
 	}
 	defer file.Close()
 
@@ -131,4 +136,5 @@ func LoadHex(cpu emu.Processor, filename string) {
                 }
 	}
 	mylog.Logger.Log(fmt.Sprintf("LoadHex done"))
+	return nil
 }
