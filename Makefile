@@ -26,11 +26,11 @@ $(shim_objects): lib/musashi-c-wrapper/shim.c
 
 morfe-m68k: $(musashi_dir) $(musashi_objects) $(shim_objects)
 	CGO_LDFLAGS_ALLOW=".+/(Musashi|musashi-c-wrapper)/.+\.o" \
-	go build --tags m68k -o $@ cmd/gui/*.go
+	go build --tags m68k -o $@ cmd/morfe/*.go
 	@echo "type ./$(@) conf/m68k.ini to run"
 
 morfe:
-	go build             -o $@ cmd/gui/*.go
+	go build             -o $@ cmd/morfe/*.go
 	@echo "type ./$(@) conf/c256.ini to run"
 
 clean:
@@ -40,5 +40,5 @@ clean-all: $(musashi_objects) $(shim_objects)
 	rm -fv $^
 
 
-.PHONY: all help
+.PHONY: all help morfe morfe-m68k
 
