@@ -134,21 +134,22 @@ brilliant work, persistence and vision!
 Project was inspired by [NES emulator](https://github.com/fogleman/nes) 
 created by Michael Fogleman and general layout as well as architectural
 concepts are based on that project. I'm very grateful to Michael for 
-inspiration and all thing I learned from their code.
+inspiration and all things I learned from their code.
 
 During development a 65c816 emulation I draw inspiration and concepts
 from Michael's project as well as from [MOS 6502 emulator](https://github.com/pda/go6502) 
 by Paul Annesley. Some algorithms and behaviours are modeled on the 
 [C++ 65c816 emulator](https://github.com/andrew-jacobs/emu816) by Andrew Jacobs.
 
-Project draws inspiration, model Foenix's behaviour and even took whole code 
-snippets from [Foenix IDE](https://github.com/Trinity-11/FoenixIDE) by Daniel Tremblay.
+Project also draws inspirations, knowledge about Foenix's behaviour and even 
+whole code snippets from [Foenix IDE](https://github.com/Trinity-11/FoenixIDE) 
+by Daniel Tremblay.
 
-When I was in doubt (usually) I usually was able to find solution and hints
-int [Foenix Kernel Code](https://github.com/Trinity-11/Kernel_FMX/) created and 
+When I was in doubt (usually) I was able to find solution and hints into 
+[Foenix Kernel Code](https://github.com/Trinity-11/Kernel_FMX/) created and 
 maintained by https://github.com/pweingar/
 
-A heart and all code for Motorola is taken from [Musashi core](https://github.com/kstenerud/Musashi/).
+All code for Motorola is provided by [Musashi core](https://github.com/kstenerud/Musashi/).
 
 Finally: daschewie - thanks for Your support!
 
