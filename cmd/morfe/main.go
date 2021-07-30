@@ -203,7 +203,7 @@ func main() {
 	case "fmx-like":
 		p.SetFMX()
 	case "frankenmode":
-		p.InitGenX()
+		p.SetFranken()
 	case "genx-like":
 		p.InitGenX()
 	default:
