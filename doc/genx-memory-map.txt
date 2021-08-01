@@ -1,5 +1,9 @@
 
-So, the deal with the MC68SEC000/MC68EC020 @ Reset, the system will copy 64K of the FLASH that is located in High-memory to the bottom of the memory and then from there, the CPU will boot from low mem, then if the Supervisor feels like going to run some code in the high-mem, it will be capable of doing it, but only the Super will be able to run the code of the flash.
+So, the deal with the MC68SEC000/MC68EC020 @ Reset, the system will copy 64K 
+of the FLASH that is located in High-memory to the bottom of the memory and 
+then from there, the CPU will boot from low mem, then if the Supervisor feels 
+like going to run some code in the high-mem, it will be capable of doing it, 
+but only the Super will be able to run the code of the flash.
 
 4MBytes of Static RAM
 4MBytes of FLASH
