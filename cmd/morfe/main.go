@@ -205,7 +205,7 @@ func main() {
 	case "frankenmode":
 		p.SetFranken()
 	case "genx-like":
-		p.SetGenX()
+		p.InitGenX()
 	default:
 		log.Fatalf("unknown mode %s", pcfg.Mode)
 	}
