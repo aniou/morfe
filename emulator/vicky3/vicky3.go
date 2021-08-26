@@ -9,8 +9,8 @@ import (
         "log"
         _ "sync"
         _ "github.com/aniou/go65c816/lib/mylog"
-        _ "github.com/aniou/go65c816/emulator"
-        _ "github.com/aniou/go65c816/emulator/ram"
+        "github.com/aniou/go65c816/emulator"
+        "github.com/aniou/go65c816/emulator/ram"
 )
 
 const MASTER_CTRL_REG_L  = 0x0000
@@ -63,6 +63,7 @@ const VRAM_START              = 0x01_0000
 type Vicky struct {
         name    string         // id of instance
         Mem     []byte         // general Vicky memory
+	VRAM	emu.Memory     // two banks of VRAM (2x4MB)
 
         text    []uint32       // text memory cache
         blut    []uint32       // bitmap LUT cache : 256 colors * 8 banks (lut0 to lut7)
@@ -117,6 +118,7 @@ func New(name string, size int) *Vicky {
         v.TFB    = make([]uint32, 480000)        // for max 800x600
         v.BM0FB  = make([]uint32,  0x40_0000)    // max bitmap area - XXX - too large, we always write from 0x00
         v.BM1FB  = make([]uint32,  0x40_0000)    // max bitmap area - XXX - too large, we always write from 0x00
+	v.VRAM   = ram.New(name + "vram0", 2, 0x40_0000)
         
 
         v.Mem[ BORDER_CTRL_REG ] = 0x01
