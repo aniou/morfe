@@ -498,6 +498,14 @@ func main() {
 			case "step":
 				p.CPU1.Step()
 				ch<-"done"
+			case "disable_cpu0":
+				p.CPU0.Enable(false)
+			case "disable_cpu1":
+				p.CPU1.Enable(false)
+			case "enable_cpu0":
+				p.CPU0.Enable(true)
+			case "enable_cpu1":
+				p.CPU1.Enable(true)
 			case "run":
 				ticks_now = sdl.GetTicks()
 				disasm = false

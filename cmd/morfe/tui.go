@@ -185,6 +185,27 @@ func makeSafeAscii(val byte) string {
         }
 }
 
+func (ui *Ui) cmd_enable(g *gocui.Gui, tokens []string) {
+	switch tokens[1] {
+	case "cpu0":
+		ui.ch<-"enable_cpu0"
+	case "cpu1":
+		ui.ch<-"enable_cpu1"
+        default:
+                fmt.Fprintf(ui.logView, "enable: unknown parameter '%s'\n", tokens[1:])
+	}
+}
+
+func (ui *Ui) cmd_disable(g *gocui.Gui, tokens []string) {
+	switch tokens[1] {
+	case "cpu0":
+		ui.ch<-"disable_cpu0"
+	case "cpu1":
+		ui.ch<-"disable_cpu1"
+        default:
+                fmt.Fprintf(ui.logView, "disable: unknown parameter '%s'\n", tokens[1:])
+	}
+}
 
 func (ui *Ui) cmd_watch(g *gocui.Gui, tokens []string) {
         switch tokens[1] {
@@ -305,6 +326,10 @@ func (ui *Ui) executeSingleCommand(g *gocui.Gui, v *gocui.View, command string) 
 	}
         tokens := strings.Split(line, " ")
         switch tokens[0] {
+        case "di", "disable":
+                ui.cmd_disable(g, tokens)
+        case "en", "enable":
+                ui.cmd_enable(g, tokens)
         case "wa", "watch":
                 ui.cmd_watch(g, tokens)
         case "se", "set":
@@ -331,14 +356,13 @@ func (ui *Ui) executeSingleCommand(g *gocui.Gui, v *gocui.View, command string) 
 			fmt.Fprintf(ui.logView, "\n")
 			count=count+1
 		}
+        case "quit":
+                return ui.quit(g, v)
         /*
         case "run":
                 ui.runCPU(g, v)
         case "peek", "peek8", "peek16", "peek24":
                 ui.peek(g, tokens)
-        case "quit":
-                ui.quit(g, v)
-                return gocui.ErrQuit
         */
         default:
                 fmt.Fprintf(ui.logView, "executeCommand: unknown command: %s\n", command)
@@ -420,16 +444,17 @@ func (ui *Ui) updateLogView(g *gocui.Gui) error {
         v.Clear()
         fmt.Fprintf(v, "Preliminary debug interface\npress keys:\n")
         fmt.Fprintf(v, "F5     to execute single step\n")
-        fmt.Fprintf(v, "CTRL+Q to exit debugger\n")
+        fmt.Fprintf(v, "CTRL+Q or 'quit' cmd to exit debugger\n")
         fmt.Fprintf(v, "\n")
         fmt.Fprintf(v, "Commands (can be separated by ';' in single line):\n")
-        fmt.Fprintf(v, "watch {add|del} <value>   - manage watch list vals\n")
-        fmt.Fprintf(v, "set reg <regname> <value> - set value of register\n")
-        fmt.Fprintf(v, "set pc <addr>             - set Program Counter of cpu\n")
-        fmt.Fprintf(v, "reset                     - perform cpu reset \n")
-        fmt.Fprintf(v, "load hex <filename>       - load IntelHex format into memory\n")
-        fmt.Fprintf(v, "set mem <addr>            - set memory view address\n")
-        fmt.Fprintf(v, "history                   - display history \n")
+        fmt.Fprintf(v, "watch {add|del} <value>    - manage watch list vals\n")
+        fmt.Fprintf(v, "set reg <regname> <value>  - set value of register\n")
+        fmt.Fprintf(v, "set pc <addr>              - set Program Counter of cpu\n")
+        fmt.Fprintf(v, "reset                      - perform cpu reset \n")
+        fmt.Fprintf(v, "load hex <filename>        - load IntelHex format into memory\n")
+        fmt.Fprintf(v, "set mem <addr>             - set memory view address\n")
+        fmt.Fprintf(v, "history                    - display history \n")
+        fmt.Fprintf(v, "enable|disable {cpu0|cpu1} - enables/disables cpu\n")
 
 
         return nil
