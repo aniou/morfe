@@ -5,7 +5,7 @@ import (
 	"fmt"
 	_ "log"
 	_ "sync"
-	"github.com/aniou/go65c816/lib/mylog"
+	"github.com/aniou/morfe/lib/mylog"
 )
 
 var bm0fb  []uint32	// bitmap0 framebuffer

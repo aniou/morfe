@@ -3,7 +3,7 @@ package superio
 import (
         "fmt"
 
-        "github.com/aniou/go65c816/lib/queue"
+        "github.com/aniou/morfe/lib/queue"
 )
 
 // base 0xAF_1000 for FMX

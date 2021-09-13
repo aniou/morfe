@@ -1,4 +1,4 @@
-module github.com/aniou/go65c816
+module github.com/aniou/morfe
 
 go 1.13
 

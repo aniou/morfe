@@ -11,8 +11,8 @@ import (
 
 	"gopkg.in/ini.v1"
 	"github.com/marcinbor85/gohex"
-	"github.com/aniou/go65c816/lib/mylog"
-	"github.com/aniou/go65c816/emulator"
+	"github.com/aniou/morfe/lib/mylog"
+	"github.com/aniou/morfe/emulator"
 )
 
 type Config struct {

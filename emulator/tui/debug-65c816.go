@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aniou/go65c816/lib/mylog"
-	"github.com/aniou/go65c816/emulator"
-	"github.com/aniou/go65c816/emulator/platform"
+	"github.com/aniou/morfe/lib/mylog"
+	"github.com/aniou/morfe/emulator"
+	"github.com/aniou/morfe/emulator/platform"
 
 	"github.com/awesome-gocui/gocui"
 )

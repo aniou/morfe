@@ -10,11 +10,11 @@ import (
 	"runtime"
 	_ "runtime/pprof"
         _ "time"
-        // "github.com/aniou/go65c816/emulator/cpu"
-        "github.com/aniou/go65c816/emulator"
+        // "github.com/aniou/morfe/emulator/cpu"
+        "github.com/aniou/morfe/emulator"
 
-        "github.com/aniou/go65c816/emulator/platform"
-        "github.com/aniou/go65c816/lib/mylog"
+        "github.com/aniou/morfe/emulator/platform"
+        "github.com/aniou/morfe/lib/mylog"
 )
 
 // some general consts

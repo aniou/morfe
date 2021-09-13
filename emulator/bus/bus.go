@@ -7,8 +7,8 @@ import (
 	"os"
 	"runtime/debug"
 
-	_ "github.com/aniou/go65c816/lib/mylog"
-	"github.com/aniou/go65c816/emulator"
+	_ "github.com/aniou/morfe/lib/mylog"
+	"github.com/aniou/morfe/emulator"
 )
 
 const MAX_MEM_SIZE = 0xff_ffff + 1
