@@ -39,6 +39,16 @@ type Memory interface {
         //Dump(address uint32) []byte
 }
 
+type GPU interface {
+        Write(addr uint32, value byte)  error
+        Read (addr uint32)             (byte, error)
+	Name() string
+        Size() (uint32, uint32)
+
+	GetCommon() *GPU_common
+	RenderBitmapText()
+}
+
 const (
         CPU_65c816 = 0
         CPU_68000  = 1
