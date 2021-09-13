@@ -1,0 +1,15 @@
+c256foenix
+ — 
+Dziś o 01:25
+C256U
+RAM: $00:0000 - $1F:FFFF
+VRAM: $B0:0000 - $CF:FFFF
+FLASH: $F8:0000 - FF:FFFF (not accessible by CPU, it is is virtual Location)
+C256U+
+RAM: $00:0000 - $3F:FFFF
+VRAM: $B0:0000 - $CF:FFFF
+FLASH: $F8:0000 - FF:FFFF (not accessible by CPU, it is is virtual Location)
+FMX
+RAM: $00:0000 - $3F:FFFF
+VRAM: $B0:0000 - $EF:FFFF
+FLASH: $F8:0000 - FF:FFFF (not accessible by CPU, it is is virtual Location)
