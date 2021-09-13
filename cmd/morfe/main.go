@@ -172,6 +172,7 @@ func main() {
 	var ch		chan string
 	var msg	        string
 	var pcfg	*platform.Config
+	var gpu		*emu.GPU_common
 
 	// first things first
         if len(os.Args) < 2 {
@@ -209,6 +210,7 @@ func main() {
 	default:
 		log.Fatalf("unknown mode %s", pcfg.Mode)
 	}
+	gpu = p.GPU.GetCommon()
 
 	// kernel and others files loading also here
         p.LoadCpuConfig(os.Args[1])
@@ -401,40 +403,40 @@ func main() {
 
         for running {
                 // step 1
-                renderer.SetDrawColor(p.GPU.Background[0], p.GPU.Background[1], p.GPU.Background[2], 255)
+                renderer.SetDrawColor(gpu.Background[0], gpu.Background[1], gpu.Background[2], 255)
                 renderer.Clear()
 
                 // step 2 - bm0 and bm1 are updated in vicky, when write is made
-                if p.GPU.Master_L & 0x0C == 0x0C {                                      // todo?
-                        if p.GPU.BM0_visible {
-                                texture_bm0.UpdateRGBA(nil, p.GPU.BM0FB, 640)
+                if gpu.Master_L & 0x0C == 0x0C {                                      // todo?
+                        if gpu.BM0_visible {
+                                texture_bm0.UpdateRGBA(nil, gpu.BM0FB, 640)
                                 renderer.Copy(texture_bm0, nil, nil)
                         }
 
-                        if p.GPU.BM1_visible  {
-                                texture_bm1.UpdateRGBA(nil, p.GPU.BM1FB, 640)
+                        if gpu.BM1_visible  {
+                                texture_bm1.UpdateRGBA(nil, gpu.BM1FB, 640)
                                 renderer.Copy(texture_bm1, nil, nil)
                         }
                 }
 
                 // step 3, 4
-                if p.GPU.Master_L & 0x01 == 0x01 {                                      // todo ?
+                if gpu.Master_L & 0x01 == 0x01 {                                      // todo ?
                         p.GPU.RenderBitmapText()
-                        texture_txt.UpdateRGBA(nil, p.GPU.TFB, 640)
+                        texture_txt.UpdateRGBA(nil, gpu.TFB, 640)
                         renderer.Copy(texture_txt, nil, nil)
                 }       
 
                 // stea 5
-                if p.GPU.Border_visible {
-                        renderer.SetDrawColor(p.GPU.Border_color_r, 
-                                              p.GPU.Border_color_g, 
-                                              p.GPU.Border_color_b, 
+                if gpu.Border_visible {
+                        renderer.SetDrawColor(gpu.Border_color_r, 
+                                              gpu.Border_color_g, 
+                                              gpu.Border_color_b, 
                                               255)
                         renderer.FillRects([]sdl.Rect{
-                                sdl.Rect{0, 0, 640, p.GPU.Border_y_size},
-                                sdl.Rect{0, 480-p.GPU.Border_y_size, 640, p.GPU.Border_y_size},
-                                sdl.Rect{0, p.GPU.Border_y_size,  p.GPU.Border_x_size, 480-p.GPU.Border_y_size},
-                                sdl.Rect{640-p.GPU.Border_x_size, p.GPU.Border_y_size, p.GPU.Border_x_size, 480-p.GPU.Border_y_size},
+                                sdl.Rect{0, 0, 640, gpu.Border_y_size},
+                                sdl.Rect{0, 480-gpu.Border_y_size, 640, gpu.Border_y_size},
+                                sdl.Rect{0, gpu.Border_y_size,  gpu.Border_x_size, 480-gpu.Border_y_size},
+                                sdl.Rect{640-gpu.Border_x_size, gpu.Border_y_size, gpu.Border_x_size, 480-gpu.Border_y_size},
                         })
                 }
 
@@ -453,7 +455,7 @@ func main() {
 				cursor_counter = cursor_counter - int32(ms_elapsed)
 				if cursor_counter <= 0 {
 					cursor_counter = CURSOR_BLINK_RATE
-					p.GPU.Cursor_visible = ! p.GPU.Cursor_visible
+					gpu.Cursor_visible = ! gpu.Cursor_visible
 				}
 
 				// WARNING - it has tendency to going in tight loop if
