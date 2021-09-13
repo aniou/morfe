@@ -4,15 +4,15 @@ package platform
 import (
 	//"log"
 
-        "github.com/aniou/go65c816/lib/mylog"
+        "github.com/aniou/morfe/lib/mylog"
 
-        "github.com/aniou/go65c816/emulator/bus"
-        "github.com/aniou/go65c816/emulator/cpu_65c816"
-        "github.com/aniou/go65c816/emulator/cpu_dummy"
-        "github.com/aniou/go65c816/emulator/vicky2"
-        "github.com/aniou/go65c816/emulator/superio"
-        "github.com/aniou/go65c816/emulator/ram"
-        "github.com/aniou/go65c816/emulator/mathi"
+        "github.com/aniou/morfe/emulator/bus"
+        "github.com/aniou/morfe/emulator/cpu_65c816"
+        "github.com/aniou/morfe/emulator/cpu_dummy"
+        "github.com/aniou/morfe/emulator/vicky2"
+        "github.com/aniou/morfe/emulator/superio"
+        "github.com/aniou/morfe/emulator/ram"
+        "github.com/aniou/morfe/emulator/mathi"
 )
 
 // FMX/U/U+ memory model

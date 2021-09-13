@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-        "github.com/aniou/go65c816/emulator"
+        "github.com/aniou/morfe/emulator"
 )
 
 type CPU struct {

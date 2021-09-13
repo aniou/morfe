@@ -8,9 +8,9 @@ import (
         "fmt"
         "log"
         _ "sync"
-        _ "github.com/aniou/go65c816/lib/mylog"
-        _ "github.com/aniou/go65c816/emulator"
-        _ "github.com/aniou/go65c816/emulator/ram"
+        _ "github.com/aniou/morfe/lib/mylog"
+        _ "github.com/aniou/morfe/emulator"
+        _ "github.com/aniou/morfe/emulator/ram"
 )
 
 const MASTER_CTRL_REG_L  = 0x0000

@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/aniou/go65c816/lib/queue"
+	"github.com/aniou/morfe/lib/queue"
 )
 
 type MyLog struct {

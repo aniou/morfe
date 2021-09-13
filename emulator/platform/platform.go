@@ -6,10 +6,10 @@ package platform
 import (
 	//"log"
 
-        "github.com/aniou/go65c816/emulator"
-        "github.com/aniou/go65c816/emulator/mathi"
-        "github.com/aniou/go65c816/emulator/superio"
-        "github.com/aniou/go65c816/emulator/vicky2"
+        "github.com/aniou/morfe/emulator"
+        "github.com/aniou/morfe/emulator/mathi"
+        "github.com/aniou/morfe/emulator/superio"
+        "github.com/aniou/morfe/emulator/vicky2"
 )
 
 type Platform struct {
