@@ -1,5 +1,9 @@
 package emu
 
+import (
+	"github.com/aniou/morfe/emulator/vram"
+)
+
 type Processor interface {
         Reset()
         Execute() uint32	           // execute one or more steps and returns used cycles
@@ -56,8 +60,9 @@ const (
 )
 
 // a 'common' set of Vicky's data
-
 type GPU_common struct {
+	Text    *vram.Vram
+
         TFB     []uint32       // text   framebuffer
         BM0FB   []uint32       // bitmap0 framebuffer
         BM1FB   []uint32       // bitmap1 framebuffer
@@ -78,7 +83,4 @@ type GPU_common struct {
         Border_y_size   int32
         Background      [3]byte         // r, g, b
 }
-
-
-
 
