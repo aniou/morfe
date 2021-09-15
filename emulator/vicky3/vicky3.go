@@ -9,7 +9,7 @@ import (
         _ "sync"
         _ "github.com/aniou/morfe/lib/mylog"
         "github.com/aniou/morfe/emulator"
-        "github.com/aniou/morfe/emulator/vram"
+        _ "github.com/aniou/morfe/emulator/vram"
 )
 
 const MASTER_CTRL_REG_L  = 0x0000
@@ -63,7 +63,6 @@ type Vicky struct {
         name    string         // id of instance
         Mem     []byte         // general Vicky memory
 
-        Text    *vram.Vram     // text memory cache
         blut    []uint32       // bitmap LUT cache : 256 colors * 8 banks (lut0 to lut7)
         fg      []uint32       // text foreground LUT cache
         bg      []uint32       // text background LUT cache
