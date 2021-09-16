@@ -33,10 +33,10 @@ type Bus interface {
 }
 
 type Memory interface {
-        Write(addr uint32, value byte)  error
-        Read (addr uint32)             (byte, error)
-	Name() string
-        Size() (uint32, uint32)
+        Write(fn byte, addr uint32, value byte)  error
+        Read (fn byte, addr uint32)             (byte, error)
+	Name(fn byte) string
+        Size(fn byte) (uint32, uint32)
 
         //Shutdown()
         //Clear()
@@ -44,15 +44,10 @@ type Memory interface {
 }
 
 type GPU interface {
-        Write(addr uint32, value byte)  error
-        Read (addr uint32)             (byte, error)
-	Name() string
-        Size() (uint32, uint32)
-
-        TextWrite(addr uint32, value byte)  error
-        TextRead (addr uint32)             (byte, error)
-	TextName() string
-        TextSize() (uint32, uint32)
+        Write(fn byte, addr uint32, value byte)  error
+        Read (fn byte, addr uint32)             (byte, error)
+	Name(fn byte) string
+        Size(fn byte) (uint32, uint32)
 
 	GetCommon() *GPU_common
 	RenderBitmapText()

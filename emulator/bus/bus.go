@@ -8,7 +8,7 @@ import (
 	"runtime/debug"
 
 	_ "github.com/aniou/morfe/lib/mylog"
-	_ "github.com/aniou/morfe/emulator"
+	"github.com/aniou/morfe/emulator"
 )
 
 const MAX_MEM_SIZE = 0xff_ffff + 1
@@ -17,20 +17,18 @@ const PAGE_SIZE    = 1 << PAGE_BITS
 const PAGE_MASK    = PAGE_SIZE-1
 const SEGMENTS     = MAX_MEM_SIZE >> PAGE_BITS
 
-type BE struct {			// BusEntry
-        Start   uint32
-        End     uint32
-        Name	func()             string
-	Size	func()             (uint32,uint32)
-	Read	func(uint32)       (byte, error)
-	Write   func(uint32, byte) error
+type busEntry struct {
+        start    uint32
+        end      uint32
+	fn       byte
+	mem      emu.Memory
 }
 
 type Bus struct {
         EA        uint32                  // last memory access - r/w
         Write     bool                    // is write op?
 	name	  string
-        segment   [2][SEGMENTS]BE
+        segment   [2][SEGMENTS]busEntry
 }
 
 func New(name string) *Bus {
@@ -40,32 +38,32 @@ func New(name string) *Bus {
 	return &b
 }
 
-func (b *Bus) Attach(mode  int, mem BE) {
+func (b *Bus) Attach(mode  int, mem emu.Memory, fn byte, start uint32, end uint32) {
 
-	fmt.Printf("bus: attaching mode %d start %06x end %06x name %s\n", mode, mem.Start, mem.End, mem.Name())
+	fmt.Printf("bus: attaching mode %d start %06x end %06x name %s\n", mode, start, end, mem.Name(fn))
 
-        if (mem.Start & PAGE_MASK) != 0 {
-                log.Panicf("bus: start are not properly aligned: %06X", mem.Start)
+        if (start & PAGE_MASK) != 0 {
+                log.Panicf("bus: start are not properly aligned: %06X", start)
         }
 
-        if ((mem.End+1) & PAGE_MASK) != 0 {
-                log.Panicf("bus:   end are not properly aligned: %06X", mem.End)
+        if ((end+1) & PAGE_MASK) != 0 {
+                log.Panicf("bus:   end are not properly aligned: %06X", end)
         }
 
-	region_size := mem.End - mem.Start + 1
+	region_size := end - start + 1
         if (region_size % PAGE_SIZE) != 0 {
                 log.Panicf("bus:  size %06X is not multiplication of %04X", region_size, PAGE_SIZE)
         }
 
-	_, ram_size := mem.Size()
+	_, ram_size := mem.Size(fn)
 	if (region_size != ram_size) {
                 log.Panicf("bus:  region_size %06X does not match ram size %06X", region_size, ram_size)
 	}
 
 
-        for x:=(mem.Start >> PAGE_BITS); x<=(mem.End >> PAGE_BITS) ; x++ {
+        for x:=(start >> PAGE_BITS); x<=(end >> PAGE_BITS) ; x++ {
                 //fmt.Printf("bus: %06x %06x - %s\n", start, x, mem.Name())
-		b.segment[mode][x] = mem
+		b.segment[mode][x] = busEntry{start: start, end: end, fn: fn, mem: mem}
         }
 
         return
@@ -73,7 +71,8 @@ func (b *Bus) Attach(mode  int, mem BE) {
 
 func (b *Bus) Write_8(mode byte, addr uint32, val byte) {
 	s      := addr >> PAGE_BITS
-	offset := b.segment[mode][s].Start
+	offset := b.segment[mode][s].start
+	fn     := b.segment[mode][s].fn
 
         defer func() {
         	if err := recover(); err != nil {
@@ -84,15 +83,16 @@ func (b *Bus) Write_8(mode byte, addr uint32, val byte) {
         	}
     	}()
 
-	if err := b.segment[mode][s].Write(addr - offset, val); err != nil {
+	if err := b.segment[mode][s].mem.Write(fn, addr - offset, val); err != nil {
 		fmt.Printf("bus: %4s Write_8 mode %d addr %06x : %s\n", b.name, mode, addr, err)
 	}
 }
 
 func (b *Bus) Read_8(mode byte, addr uint32) byte {
 	s           := addr >> PAGE_BITS
-	offset      := b.segment[mode][s].Start
-	val, err    := b.segment[mode][s].Read(addr - offset)
+	offset      := b.segment[mode][s].start
+	fn          := b.segment[mode][s].fn
+	val, err    := b.segment[mode][s].mem.Read(fn, addr - offset)
 	if err != nil {
 		fmt.Printf("bus: %4s Read_8  mode %d addr %06x : %s\n", b.name, mode, addr, err)
 	}

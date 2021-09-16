@@ -6,6 +6,8 @@ import (
         "github.com/aniou/morfe/lib/queue"
 )
 
+const F_MAIN = 0
+
 // base 0xAF_1000 for FMX
 const KBD_DATA_BUF = 0x60       // for writing
 const KBD_INPT_BUF = 0x60       // for reading
@@ -40,18 +42,18 @@ func New(name string, size int) *SIO {
         return &s
 }
 
-func (s *SIO) Name() string {
+func (s *SIO) Name(fn byte) string {
         return s.name
 }
 
 func (s *SIO) Clear() { 
 }
 
-func (s *SIO) Size() (uint32, uint32) {
+func (s *SIO) Size(fn byte) (uint32, uint32) {
         return 0x00, uint32(len(s.mem))
 }
 
-func (s *SIO) Read(addr uint32) (byte, error) {
+func (s *SIO) Read(fn byte, addr uint32) (byte, error) {
         switch addr {
         case KBD_INPT_BUF:
                 return s.Data, nil			// XXX something gone wrong
@@ -69,7 +71,7 @@ func (s *SIO) Read(addr uint32) (byte, error) {
 }
 
 // taken from FoenixIDE
-func (s *SIO) Write(addr uint32, val byte) error {
+func (s *SIO) Write(fn byte, addr uint32, val byte) error {
         switch addr {
         case KBD_DATA_BUF:                      // AF:1060 FMX
                 if val == 0x69 {                // 

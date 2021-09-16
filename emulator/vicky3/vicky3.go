@@ -12,6 +12,9 @@ import (
         _ "github.com/aniou/morfe/emulator/ram"
 )
 
+const F_MAIN = 0
+const F_TEXT = 1
+
 const MASTER_CTRL_REG_L  = 0x0000
 const MASTER_CTRL_REG_H  = 0x0001
 const GAMMA_CTRL_REG     = 0x0002
@@ -125,9 +128,9 @@ func New(name string, size int) *Vicky {
         v.Mem[ BORDER_CTRL_REG ] = 0x01
 
 	// some tests
-	//fmt.Printf("vicky2: v.TFB    %p\n", &v.TFB  )
-	//fmt.Printf("vicky2: v.BM0FB  %p\n", &v.BM0FB)
-	//fmt.Printf("vicky2: v.BM1FB  %p\n", &v.BM1FB)
+	//fmt.Printf("vicky3: v.TFB    %p\n", &v.TFB  )
+	//fmt.Printf("vicky3: v.BM0FB  %p\n", &v.BM0FB)
+	//fmt.Printf("vicky3: v.BM1FB  %p\n", &v.BM1FB)
 
         v.c.Cursor_visible = true
         v.c.BM0_visible    = true
@@ -274,44 +277,49 @@ func (v *Vicky) RenderBitmapText() {
         // render text - end
 }
 
-
-func (v *Vicky) TextName() string {
-        return v.name + "-text"
-}
-
-func (v *Vicky) TextSize() (uint32, uint32) {
-        return uint32(1), uint32(len(v.text))
-}
-
-func (v *Vicky) TextRead(addr uint32) (byte, error) {
-       return byte(v.text[addr]), nil 
-}
-
-func (v *Vicky) TextWrite(addr uint32, val byte) error {
-	v.text[addr] = uint32(val)
-	return nil
-}
-
 // RAM-interface specific
 func (v *Vicky) Dump(address uint32) []byte {
         log.Panicf("vicky3 Dump is not implemented yet")
         return []byte{}
 }
 
-func (v *Vicky) Name() string {
-        return v.name
+func (v *Vicky) Name(fn byte) string {
+	switch fn {
+	case F_MAIN:
+		return v.name
+	case F_TEXT:
+		return v.name + "-text"
+	}
+	return v.name + "-UNKNOWN"
 }
 
 func (v *Vicky) Clear() { 
         log.Panicf("vicky3 Clear is not implemented yet")
 }
 
-func (v *Vicky) Size() (uint32, uint32) {
-        return uint32(1), uint32(len(v.Mem))
+func (v *Vicky) Size(fn byte) (uint32, uint32) {
+	switch fn {
+	case F_MAIN:
+		return uint32(1), uint32(len(v.Mem))
+	case F_TEXT:
+		return uint32(1), uint32(len(v.text))
+	}
+	return 0, 0
 }
 
-func (v *Vicky) Read(addr uint32) (byte, error) {
-        //fmt.Printf("vicky2: %s Read addr %06x\n", v.name, addr)
+func (v *Vicky) Read(fn byte, addr uint32) (byte, error) {
+	switch fn {
+	case F_MAIN:
+		return v.ReadReg(addr)
+	case F_TEXT:
+		return byte(v.text[addr]), nil
+	}
+	return 0, fmt.Errorf(" vicky3: %s Read addr %6X fn %d is not implemented", v.name, addr, fn)
+
+}
+
+func (v *Vicky) ReadReg(addr uint32) (byte, error) {
+        //fmt.Printf("vicky3: %s Read addr %06x\n", v.name, addr)
         switch addr {
         case 0x0001:
                 return 0x00, nil        // 640x480, no pixel doubling
@@ -336,8 +344,20 @@ func (v *Vicky) Read(addr uint32) (byte, error) {
         }
 }
 
-func (v *Vicky) Write(addr uint32, val byte) error {
-        //fmt.Printf("vicky2: %s Write addr %06x val %02x\n", v.name, addr, val)
+func (v *Vicky) Write(fn byte, addr uint32, val byte) (error) {
+	switch fn {
+	case F_MAIN:
+		return v.WriteReg(addr, val)
+	case F_TEXT:
+		v.text[addr] = uint32(val)
+		return nil
+	}
+        return fmt.Errorf(" vicky3: %s Write addr %6X val %2X fn %d is not implemented", v.name, addr, val)
+
+}
+
+func (v *Vicky) WriteReg(addr uint32, val byte) error {
+        //fmt.Printf("vicky3: %s Write addr %06x val %02x\n", v.name, addr, val)
         v.Mem[addr] = val
 
         switch {
@@ -505,7 +525,7 @@ func (v *Vicky) Write(addr uint32, val byte) error {
                         v.c.BM1FB[dst] = v.blut[v.bm1_blut_pos + uint32(val)]
                 }
         default:
-                return fmt.Errorf(" vicky2: %s Write addr %6X val %2X is not implemented", v.name, addr, val)
+                return fmt.Errorf(" vicky3: %s Write addr %6X val %2X is not implemented", v.name, addr, val)
         }
 	return nil
 }

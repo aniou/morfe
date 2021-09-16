@@ -46,11 +46,11 @@ func (p *Platform) SetFMX() {
 	p.GPU       =  vicky3.New("gpu0",    0x01_0000 + 0x40_0000 ) // +bitmap area
         ram0       :=     ram.New("ram0", 1, 0x40_0000)              // single bank
 
-	bus0.Attach(emu.M_USER, bus.BE{0x00_0000, 0x3F_FFFF,    ram0.Name,    ram0.Size,    ram0.Read,    ram0.Write})
-        bus0.Attach(emu.M_USER, bus.BE{0x00_0100, 0x00_01FF, p.MATHI.Name, p.MATHI.Size, p.MATHI.Read, p.MATHI.Write})
-        bus0.Attach(emu.M_USER, bus.BE{0xAF_0000, 0xEF_FFFF,   p.GPU.Name,   p.GPU.Size,   p.GPU.Read,   p.GPU.Write})
-        bus0.Attach(emu.M_USER, bus.BE{0xAF_1000, 0xAF_13FF,   p.SIO.Name,   p.SIO.Size,   p.SIO.Read,   p.SIO.Write})
-        bus0.Attach(emu.M_USER, bus.BE{0xAF_A000, 0xAF_BFFF, p.GPU.TextName, p.GPU.TextSize, p.GPU.TextRead, p.GPU.TextWrite})
+	bus0.Attach(emu.M_USER, ram0,        ram.F_MAIN, 0x00_0000, 0x3F_FFFF)
+        bus0.Attach(emu.M_USER, p.MATHI,   mathi.F_MAIN, 0x00_0100, 0x00_01FF)
+        bus0.Attach(emu.M_USER, p.GPU,    vicky3.F_MAIN, 0xAF_0000, 0xEF_FFFF)
+        bus0.Attach(emu.M_USER, p.GPU,    vicky3.F_TEXT, 0xAF_A000, 0xAF_BFFF)
+        bus0.Attach(emu.M_USER, p.SIO,   superio.F_MAIN, 0xAF_1000, 0xAF_13FF)
 
         p.CPU0     = cpu_65c816.New(bus0, "cpu0")
         p.CPU1     = cpu_dummy.New(bus1,  "cpu1")

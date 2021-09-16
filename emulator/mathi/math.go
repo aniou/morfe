@@ -7,6 +7,7 @@ package mathi
 import (
 )
 
+const F_MAIN = 0
 
 type MathInt struct {
 	name	string
@@ -20,11 +21,11 @@ func New(name string, size int) *MathInt {
         return &m
 }
 
-func (m *MathInt) Read(addr uint32) (byte, error) {
+func (m *MathInt) Read(fn byte, addr uint32) (byte, error) {
 	return m.mem[addr], nil
 }
 
-func (m *MathInt) Write(addr uint32, val byte) error {
+func (m *MathInt) Write(fn byte, addr uint32, val byte) error {
         switch addr {
         case 0x00, 0x01, 0x02, 0x03:   // UNSIGNED_MULT_A, UNSIGNED_MULT_B
         	m.mem[addr] = val
@@ -134,11 +135,11 @@ func (m *MathInt) Write(addr uint32, val byte) error {
 }
 
 
-func (m *MathInt) Name() string {
+func (m *MathInt) Name(fn byte) string {
         return m.name
 }
 
-func (m *MathInt) Size() (uint32, uint32) {
+func (m *MathInt) Size(fn byte) (uint32, uint32) {
         return 0x00, uint32(len(m.mem))
 }
 
