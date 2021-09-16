@@ -1,7 +1,7 @@
 package emu
 
 import (
-	"github.com/aniou/morfe/emulator/vram"
+	_ "github.com/aniou/morfe/emulator/vram"
 )
 
 type Processor interface {
@@ -49,6 +49,11 @@ type GPU interface {
 	Name() string
         Size() (uint32, uint32)
 
+        TextWrite(addr uint32, value byte)  error
+        TextRead (addr uint32)             (byte, error)
+	TextName() string
+        TextSize() (uint32, uint32)
+
 	GetCommon() *GPU_common
 	RenderBitmapText()
 }
@@ -66,8 +71,6 @@ const (
 
 // a 'common' set of Vicky's data
 type GPU_common struct {
-	Text    *vram.Vram	// text memory attached at platform level
-
         TFB     []uint32       // text   framebuffer
         BM0FB   []uint32       // bitmap0 framebuffer
         BM1FB   []uint32       // bitmap1 framebuffer

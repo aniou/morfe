@@ -9,7 +9,7 @@ import (
         _ "sync"
         _ "github.com/aniou/morfe/lib/mylog"
         "github.com/aniou/morfe/emulator"
-        _ "github.com/aniou/morfe/emulator/vram"
+        _ "github.com/aniou/morfe/emulator/ram"
 )
 
 const MASTER_CTRL_REG_L  = 0x0000
@@ -63,6 +63,7 @@ type Vicky struct {
         name    string         // id of instance
         Mem     []byte         // general Vicky memory
 
+        text    []uint32       // text memory cache
         blut    []uint32       // bitmap LUT cache : 256 colors * 8 banks (lut0 to lut7)
         fg      []uint32       // text foreground LUT cache
         bg      []uint32       // text background LUT cache
@@ -112,12 +113,10 @@ func New(name string, size int) *Vicky {
 
         v.Mem    = make([]byte,   size)
         v.blut   = make([]uint32, 0x0800)        // bitmap LUT cache : 256 colors * 8 banks (lut0 to lut7)
+        v.text   = make([]uint32, 0x2000)        // text memory cache - 0x4000 in GenX
         v.fg     = make([]uint32, 0x2000)        // foreground cache -  0x4000 in GenX
         v.bg     = make([]uint32, 0x2000)        // background color cache - 0x4000 in GenX
         v.font   = make([]byte  , 0x100 * 8 * 8) // font cache 256 chars * 8 lines * 8 columns
-
-        //v.c.Text   = vram.New(name + "-text",  0x2000)        // text memory cache - 0x4000 in GenX
-
         v.c.TFB    = make([]uint32, 480000)        // for max 800x600
         v.c.BM0FB  = make([]uint32,  0x40_0000)    // max bitmap area - XXX - too large, we always write from 0x00
         v.c.BM1FB  = make([]uint32,  0x40_0000)    // max bitmap area - XXX - too large, we always write from 0x00
@@ -236,7 +235,7 @@ func (v *Vicky) RenderBitmapText() {
         for text_y = 0; text_y < v.text_rows; text_y += 1 { // over lines of text
                 text_row_pos = text_y * v.text_cols
                 for text_x = 0; text_x < v.text_cols; text_x += 1 { // pre-calculate data for x-axis
-                        fnttmp[text_x] = v.c.Text.Data[text_row_pos+text_x] * 64 // position in font array
+                        fnttmp[text_x] = v.text[text_row_pos+text_x] * 64 // position in font array
                         dsttmp[text_x] = text_x * 8                     // position of char in dest FB
 
                         f := v.fg[text_row_pos+text_x] // fg and bg colors
@@ -276,6 +275,22 @@ func (v *Vicky) RenderBitmapText() {
 }
 
 
+func (v *Vicky) TextName() string {
+        return v.name + "-text"
+}
+
+func (v *Vicky) TextSize() (uint32, uint32) {
+        return uint32(1), uint32(len(v.text))
+}
+
+func (v *Vicky) TextRead(addr uint32) (byte, error) {
+       return byte(v.text[addr]), nil 
+}
+
+func (v *Vicky) TextWrite(addr uint32, val byte) error {
+	v.text[addr] = uint32(val)
+	return nil
+}
 
 // RAM-interface specific
 func (v *Vicky) Dump(address uint32) []byte {
@@ -468,8 +483,8 @@ func (v *Vicky) Write(addr uint32, val byte) error {
         case addr >= FONT_MEMORY_BANK0 && addr < FONT_MEMORY_BANK0 + 0x800:
                 v.updateFontCache(addr - FONT_MEMORY_BANK0, val)  // every bit in font cache is mapped to byte
 
-        //case addr >= CS_TEXT_MEM_PTR   && addr < CS_TEXT_MEM_PTR + 0x2000:
-        //        v.text[ addr - CS_TEXT_MEM_PTR ] = uint32(val)
+        case addr >= CS_TEXT_MEM_PTR   && addr < CS_TEXT_MEM_PTR + 0x2000:
+                v.text[ addr - CS_TEXT_MEM_PTR ] = uint32(val)
 
         case addr >= CS_COLOR_MEM_PTR && addr < CS_COLOR_MEM_PTR + 0x2000:
                 a     := addr - CS_COLOR_MEM_PTR
