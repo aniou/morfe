@@ -59,6 +59,11 @@ const (
         CPU_68030  = 2
 )
 
+const (
+	M_USER  = 0
+	M_SV    = 1
+)
+
 // a 'common' set of Vicky's data
 type GPU_common struct {
 	Text    *vram.Vram	// text memory attached at platform level

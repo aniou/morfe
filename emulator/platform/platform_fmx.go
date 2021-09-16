@@ -6,12 +6,14 @@ import (
 
         "github.com/aniou/morfe/lib/mylog"
 
+        "github.com/aniou/morfe/emulator"
         "github.com/aniou/morfe/emulator/bus"
         "github.com/aniou/morfe/emulator/cpu_65c816"
         "github.com/aniou/morfe/emulator/cpu_dummy"
-        "github.com/aniou/morfe/emulator/vicky3"
+        "github.com/aniou/morfe/emulator/vicky2"
+        _ "github.com/aniou/morfe/emulator/vicky3"
         "github.com/aniou/morfe/emulator/superio"
-        "github.com/aniou/morfe/emulator/vram"
+        _ "github.com/aniou/morfe/emulator/vram"
         "github.com/aniou/morfe/emulator/ram"
         "github.com/aniou/morfe/emulator/mathi"
 )
@@ -41,19 +43,13 @@ func (p *Platform) SetFMX() {
 
 	p.MATHI     =   mathi.New("mathi",       0x100)
         p.SIO       = superio.New("sio",         0x400)
-	p.GPU       =  vicky3.New("gpu0",    0x01_0000 + 0x40_0000 ) // +bitmap area
+	p.GPU       =  vicky2.New("gpu0",    0x01_0000 + 0x40_0000 ) // +bitmap area
         ram0       :=     ram.New("ram0", 1, 0x40_0000)              // single bank
 
-        bus0.Attach(ram0,       0, 0x00_0000, 0x3F_FFFF)
-        bus0.Attach(p.MATHI,    0, 0x00_0100, 0x00_01FF)
-        bus0.Attach(p.GPU,      0, 0xAF_0000, 0xEF_FFFF)
-        bus0.Attach(p.SIO,      0, 0xAF_1000, 0xAF_13FF)
-
-	// GPU initialisation
-	c := p.GPU.GetCommon()
-	c.Text = vram.New("gpu0-text",  0x2000)
-
-	bus0.Attach(c.Text, 0, 0xAF_A000, 0xAF_BFFF) // new way of using text memory
+	bus0.Attach(emu.M_USER, bus.BE{0x00_0000, 0x3F_FFFF,    ram0.Name,    ram0.Size,    ram0.Read,    ram0.Write})
+        bus0.Attach(emu.M_USER, bus.BE{0x00_0100, 0x00_01FF, p.MATHI.Name, p.MATHI.Size, p.MATHI.Read, p.MATHI.Write})
+        bus0.Attach(emu.M_USER, bus.BE{0xAF_0000, 0xEF_FFFF,   p.GPU.Name,   p.GPU.Size,   p.GPU.Read,   p.GPU.Write})
+        bus0.Attach(emu.M_USER, bus.BE{0xAF_1000, 0xAF_13FF,   p.SIO.Name,   p.SIO.Size,   p.SIO.Read,   p.SIO.Write})
 
         p.CPU0     = cpu_65c816.New(bus0, "cpu0")
         p.CPU1     = cpu_dummy.New(bus1,  "cpu1")
