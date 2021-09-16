@@ -61,7 +61,7 @@ const (
 
 // a 'common' set of Vicky's data
 type GPU_common struct {
-	Text    *vram.Vram
+	Text    *vram.Vram	// text memory attached at platform level
 
         TFB     []uint32       // text   framebuffer
         BM0FB   []uint32       // bitmap0 framebuffer
