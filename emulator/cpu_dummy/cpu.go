@@ -89,9 +89,14 @@ func (c *CPU) SetRegister(reg string, val uint32) error {
         return fmt.Errorf("SetRegister in dummy is not implemented yet")
 }
 
-func (cpu *CPU) GetRegisters() map[string]uint32 {
+func (c *CPU) GetRegisters() map[string]uint32 {
         var register = map[string]uint32{}
         log.Panic("GetRegisters in dummy is not implemented yet!")
         return register
 }
+
+func (c *CPU) DisassembleCurrentPC() string {
+        return "m68k: DisassembleCurrentPC() is not implemented yet\n"
+}
+
 

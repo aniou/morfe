@@ -25,6 +25,7 @@ type Processor interface {
 	Read_8(uint32) byte                // read  byte from cpu memory
 
 	GetName() string	           // get id as "cpu0" / "cpu1" of unit
+	DisassembleCurrentPC() string	   // disassemble current line
 }
 
 type Bus interface {
