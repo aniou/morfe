@@ -50,19 +50,21 @@ func (p *Platform) SetFMX() {
         bus0.Attach(emu.M_USER, p.MATHI,   mathi.F_MAIN, 0x00_0100, 0x00_01FF)
         bus0.Attach(emu.M_USER, p.GPU,    vicky3.F_MAIN, 0xAF_0000, 0xEF_FFFF)
         bus0.Attach(emu.M_USER, p.GPU,    vicky3.F_TEXT, 0xAF_A000, 0xAF_BFFF)
+        bus0.Attach(emu.M_USER, p.GPU,  vicky3.F_TEXT_C, 0xAF_C000, 0xAF_DFFF)
+        bus0.Attach(emu.M_USER, p.GPU,    vicky3.F_VRAM, 0xB0_0000, 0xEF_FFFF)	// TODO - parametrize that
         bus0.Attach(emu.M_USER, p.SIO,   superio.F_MAIN, 0xAF_1000, 0xAF_13FF)
 
         p.CPU0     = cpu_65c816.New(bus0, "cpu0")
         p.CPU1     = cpu_dummy.New(bus1,  "cpu1")
         
+        p.CPU0.Write_8(  0xFFFC, 0x00)                      // boot vector for 65c816
+        p.CPU0.Write_8(  0xFFFD, 0x10)
+        p.CPU0.Reset()
+
 	mylog.Logger.Log("platform: fmx-like created")
 }
 
 func (p *Platform) InitFMX() {
-
-        p.CPU0.Write_8(  0xFFFC, 0x00)                      // boot vector for 65c816
-        p.CPU0.Write_8(  0xFFFD, 0x10)
-        p.CPU0.Reset()
 
         p.CPU0.Write_8(0xAF_0005, 0x20) // border B                                                                                 
         p.CPU0.Write_8(0xAF_0006, 0x00) // border G
