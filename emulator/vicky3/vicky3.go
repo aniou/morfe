@@ -549,27 +549,6 @@ func (v *Vicky) WriteReg(addr uint32, val byte) error {
         case addr >= FONT_MEMORY_BANK0 && addr < FONT_MEMORY_BANK0 + 0x800:
                 v.updateFontCache(addr - FONT_MEMORY_BANK0, val)  // every bit in font cache is mapped to byte
 
-        //case addr >= CS_TEXT_MEM_PTR   && addr < CS_TEXT_MEM_PTR + 0x2000:
-        //        v.text[ addr - CS_TEXT_MEM_PTR ] = uint32(val)
-
-        //case addr >= CS_COLOR_MEM_PTR && addr < CS_COLOR_MEM_PTR + 0x2000:
-        //        a     := addr - CS_COLOR_MEM_PTR
-        //        bgc   := uint32( val & 0x0F)
-        //        fgc   := uint32((val & 0xF0)>> 4)
-	//	  v.fg[a]  = fgc
-        //        v.bg[a]  = bgc
-
-        //case addr >= VRAM_START && addr < VRAM_START + 0x40_0000:                             // 4MB, xxx: parametrize
-        //        if addr >= v.bm0_start_addr && addr<v.bm0_start_addr + 0x7_5300 { // max 800x600 bytes
-        //                dst := addr - v.bm0_start_addr
-        //                //fmt.Printf("bm0fb addr: %6X dst: %6X val %2X blut %4X\n", addr, dst, val, v.blut[v.bm0_blut_pos + uint32(val)])
-        //                v.c.BM0FB[dst] = v.blut[v.bm0_blut_pos + uint32(val)]
-        //        }
-        //        if addr >= v.bm1_start_addr && addr<v.bm1_start_addr + 0x7_5300 {  // max 800x600 bytes
-        //                dst := addr - v.bm1_start_addr
-        //                //fmt.Printf("bm1fb addr: %6X dst: %6X val %2X blut %4X\n", addr, dst, val, v.blut[v.bm1_blut_pos + uint32(val)])
-        //                v.c.BM1FB[dst] = v.blut[v.bm1_blut_pos + uint32(val)]
-        //        }
         default:
                 return fmt.Errorf(" vicky3: %s Write addr %6X val %2X is not implemented", v.name, addr, val)
         }
