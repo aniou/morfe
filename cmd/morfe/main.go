@@ -24,6 +24,8 @@ const CURSOR_BLINK_RATE = 500      // in ms (milliseconds)
 type GUI struct {
         p          *platform.Platform
         fullscreen bool
+	xsize	   int32	// screen size
+	ysize	   int32
 }
 
 type DEBUG struct {
@@ -109,8 +111,8 @@ func debugRendererInfo(renderer *sdl.Renderer) {
 }
 
 // xxx - window parametrization
-func newTexture(renderer *sdl.Renderer) *sdl.Texture {
-        texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, 640, 480)
+func (gui *GUI) newTexture(renderer *sdl.Renderer) *sdl.Texture {
+        texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, gui.xsize, gui.ysize)
         if err != nil {
                 log.Fatalf("Failed to create texture font from surface: %s\n", err)
         }
@@ -135,8 +137,8 @@ func newTexture(renderer *sdl.Renderer) *sdl.Texture {
    during return to original mode,  so don't improve following in this way
 */
 
-func setFullscreen(window *sdl.Window) sdl.DisplayMode {
-        var wanted_mode = sdl.DisplayMode{sdl.PIXELFORMAT_ARGB8888, 640, 480, 60, nil}
+func (gui *GUI) setFullscreen(window *sdl.Window) sdl.DisplayMode {
+        var wanted_mode = sdl.DisplayMode{sdl.PIXELFORMAT_ARGB8888, gui.xsize, gui.ysize, 60, nil}
         var result_mode sdl.DisplayMode
         display_index, _ := window.GetDisplayIndex()
         orig_mode, _ := sdl.GetCurrentDisplayMode(display_index)
@@ -166,8 +168,6 @@ func main() {
         var running     bool
         var disasm      bool		// indicator for debug/disasm mode
         var live_disasm bool		// indicator for debug/disasm mode
-        var winWidth    int32 = 640
-        var winHeight   int32 = 480
         var CPU0_STEP   uint64 = 14318 // 14.318 MHz in milliseconds, apply for 65c816
         var CPU1_STEP   uint64 = 20000 // I'm able to achieve 25Mhz too
 	var ch		chan string
@@ -195,7 +195,9 @@ func main() {
         //p := platform.New()           // must be global now - but it is still true?
 	gui := new(GUI)
         gui.fullscreen = false
-        gui.p = p                       // xxx - fix that mess
+	gui.xsize      = 640
+	gui.ysize      = 480
+        gui.p          = p              // xxx - fix that mess
 
 	if pcfg, err = p.LoadPlatformConfig(os.Args[1]); err != nil {
 		log.Fatalf("%s", err)
@@ -233,7 +235,7 @@ func main() {
                 "go65c816 / c256 emu",
                 sdl.WINDOWPOS_UNDEFINED,
                 sdl.WINDOWPOS_UNDEFINED,
-                winWidth, winHeight,
+                gui.xsize, gui.ysize,
                 sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL,
         )
         if err != nil {
@@ -253,13 +255,13 @@ func main() {
         debugRendererInfo(renderer)
 
         // step 4: textures 
-        texture_txt := newTexture(renderer)
+        texture_txt := gui.newTexture(renderer)
         texture_txt.SetBlendMode(sdl.BLENDMODE_BLEND)
 
-        texture_bm0 := newTexture(renderer)
+        texture_bm0 := gui.newTexture(renderer)
         texture_bm0.SetBlendMode(sdl.BLENDMODE_BLEND)
 
-        texture_bm1 := newTexture(renderer)
+        texture_bm1 := gui.newTexture(renderer)
         texture_bm1.SetBlendMode(sdl.BLENDMODE_BLEND)
 
 
@@ -302,12 +304,12 @@ func main() {
                 // step 2 - bm0 and bm1 are updated in vicky, when write is made
                 if gpu.Master_L & 0x0C == 0x0C {                                      // todo?
                         if gpu.BM0_visible {
-                                texture_bm0.UpdateRGBA(nil, gpu.BM0FB, 640)
+                                texture_bm0.UpdateRGBA(nil, gpu.BM0FB, int(gui.xsize))
                                 renderer.Copy(texture_bm0, nil, nil)
                         }
 
                         if gpu.BM1_visible  {
-                                texture_bm1.UpdateRGBA(nil, gpu.BM1FB, 640)
+                                texture_bm1.UpdateRGBA(nil, gpu.BM1FB, int(gui.xsize))
                                 renderer.Copy(texture_bm1, nil, nil)
                         }
                 }
@@ -315,7 +317,7 @@ func main() {
                 // step 3, 4
                 if gpu.Master_L & 0x01 == 0x01 {                                      // todo ?
                         p.GPU.RenderBitmapText()
-                        texture_txt.UpdateRGBA(nil, gpu.TFB, 640)
+                        texture_txt.UpdateRGBA(nil, gpu.TFB, int(gui.xsize))
                         renderer.Copy(texture_txt, nil, nil)
                 }       
 
@@ -326,10 +328,10 @@ func main() {
                                               gpu.Border_color_b, 
                                               255)
                         renderer.FillRects([]sdl.Rect{
-                                sdl.Rect{0, 0, 640, gpu.Border_y_size},
-                                sdl.Rect{0, 480-gpu.Border_y_size, 640, gpu.Border_y_size},
-                                sdl.Rect{0, gpu.Border_y_size,  gpu.Border_x_size, 480-gpu.Border_y_size},
-                                sdl.Rect{640-gpu.Border_x_size, gpu.Border_y_size, gpu.Border_x_size, 480-gpu.Border_y_size},
+                                sdl.Rect{0, 0, gui.xsize, gpu.Border_y_size},
+                                sdl.Rect{0, gui.ysize-gpu.Border_y_size, gui.xsize, gpu.Border_y_size},
+                                sdl.Rect{0, gpu.Border_y_size,  gpu.Border_x_size, gui.ysize-gpu.Border_y_size},
+                                sdl.Rect{gui.xsize-gpu.Border_x_size, gpu.Border_y_size, gpu.Border_x_size, gui.ysize-gpu.Border_y_size},
                         })
                 }
 
@@ -450,7 +452,7 @@ func main() {
                                                         window.SetFullscreen(0)
                                                 } else {
                                                         gui.fullscreen = true
-                                                        orig_mode = setFullscreen(window)
+                                                        orig_mode = gui.setFullscreen(window)
                                                 }
                                         case sdl.K_F10:
 						if ! live_disasm {
