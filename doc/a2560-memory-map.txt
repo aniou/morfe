@@ -22,3 +22,23 @@ This is Memory MAP for the A2560 U "Preliminary"
 // 2Mx16 (4Mx8) <- $0000_0000 - $003F_FFFF - RAM
 // 1Mx32 (4Mx8) <- $0080_0000 - $00BF_FFFF - VRAM (4x 1Mx8)
 // 1Mx16 (2Mx8) <- $00E0_0000 - $00FF_FFFF - FLASH0
+
+
+c256foenix
+19.09.2021
+Tentative Memory Map for the A2560U - PRELIMINARY
+// MC68SEC000 Memory Map Model
+//1Mx16   (2x 1Mx8) <- $0000_0000 - $001F_FFFF - RAM (U Model)
+//2Mx16   (2x 2Mx8) <- $0000_0000 - $003F_FFFF - RAM (U + Model)
+//                                          $0040_0000 - $00AF_FFFF - FREE SPACE (Future SDRAM Expansion Card?)
+
+//                     $00B0_0000 - $00B1_FFFF - GABE Registers (SuperIO/Math Block/SDCard/IDE/Ethernet/SDMA)
+//                     $00B2_0000 - $00B3_FFFF - BEATRIX Registers (CODEC/ADC/DAC0/DAC1/PSG/SID)
+//                             $00B4_0000 - $00B5_FFFF - VICKY Registers
+//                             $00B6_0000 - $00B6_3FFF - TEXT Memory
+//                             $00B6_4000 - $00B6_7FFF - Color Memory
+
+//                            $00BF_0000 - $00BF_FFFF - EXPANSION Chip Select
+// 512Kx32 (2Mx8) <- $00C0_0000 - $00DF_FFFF - VRAM MEMORY
+// 1Mx16   (2Mx8) <- $00E0_0000 - $00FF_FFFF - FLASH0
+
