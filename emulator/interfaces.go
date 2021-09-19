@@ -4,6 +4,11 @@ import (
 	_ "github.com/aniou/morfe/emulator/vram"
 )
 
+var (
+	DIP = [9]bool{false}		   // there are 8 switches, but numbering from 1 is convinient
+	                                   // thus DIP[0] is never used
+)
+
 type Processor interface {
         Reset()
         Execute() uint32	           // execute one or more steps and returns used cycles

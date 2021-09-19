@@ -144,6 +144,7 @@ func New(name string, size int) *Vicky {
 	//fmt.Printf("vicky3: v.BM0FB  %p\n", &v.BM0FB)
 	//fmt.Printf("vicky3: v.BM1FB  %p\n", &v.BM1FB)
 
+	v.c.Master_H	   = 0x00 // 640x480 no pixel doubling
         v.c.Cursor_visible = true
         v.c.BM0_visible    = true
         v.c.BM1_visible    = true
@@ -385,11 +386,15 @@ func (v *Vicky) ReadVram(addr uint32) (byte, error) {
 func (v *Vicky) ReadReg(addr uint32) (byte, error) {
         //fmt.Printf("vicky3: %s Read addr %06x\n", v.name, addr)
         switch addr {
-        case 0x0001:
-                return 0x00, nil        // 640x480, no pixel doubling
+        //case 0x0001:
+        //        return 0x00, nil        // 640x480, no pixel doubling
 
         case 0x0002:
-                return 0x10, nil        // 1 = Hi-Res on BOOT OFF
+		if emu.DIP[6] {
+			return 0x10, nil        // 1 = Hi-Res on BOOT OFF
+		} else {
+			return 0x00, nil        // 0 = Hi-Res on BOOT ON
+		}
 
         case 0x070B:			// model major
                 return 0x00, nil
@@ -418,6 +423,14 @@ func (v *Vicky) WriteReg(addr uint32, val byte) error {
 
         case addr == MASTER_CTRL_REG_H:
                 v.c.Master_H = val
+		if val & 0x01 == 0 {
+			v.x_res = 640
+			v.y_res = 480
+		} else {
+			v.x_res = 800
+			v.y_res = 600
+		}
+		v.recalculateScreen()
 
         case addr == BORDER_CTRL_REG:
                 if (val & 0x01) == 1 {

@@ -23,9 +23,16 @@ const CURSOR_BLINK_RATE = 500      // in ms (milliseconds)
 
 type GUI struct {
         p          *platform.Platform
-        fullscreen bool
-	xsize	   int32	// screen size
-	ysize	   int32
+
+	renderer    *sdl.Renderer
+	texture_txt *sdl.Texture
+	texture_bm0 *sdl.Texture
+	texture_bm1 *sdl.Texture
+
+        fullscreen  bool
+	master_h    byte		  // master_h that corresponds with current screen size
+	x_size	    int32		  // screen size
+	y_size	    int32
 }
 
 type DEBUG struct {
@@ -110,9 +117,32 @@ func debugRendererInfo(renderer *sdl.Renderer) {
         fmt.Printf("\n")
 }
 
-// xxx - window parametrization
-func (gui *GUI) newTexture(renderer *sdl.Renderer) *sdl.Texture {
-        texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, gui.xsize, gui.ysize)
+func (gui *GUI) newRendererAndTexture(window *sdl.Window) {
+	var err error
+
+	gui.renderer, err = sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
+        //gui.renderer, err = sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED|sdl.RENDERER_PRESENTVSYNC)
+        if err != nil {
+                log.Fatalf("Failed to create renderer: %s\n", err)
+        }
+        debugRendererInfo(gui.renderer)
+
+        gui.texture_txt = gui.newTexture()
+        gui.texture_txt.SetBlendMode(sdl.BLENDMODE_BLEND)
+
+        gui.texture_bm0 = gui.newTexture()
+        gui.texture_bm0.SetBlendMode(sdl.BLENDMODE_BLEND)
+
+        gui.texture_bm1 = gui.newTexture()
+        gui.texture_bm1.SetBlendMode(sdl.BLENDMODE_BLEND)
+
+
+        // not sure that it should be re-set after every renderer, but at this moment...
+        sdl.SetHint("SDL_HINT_RENDER_BATCHING", "1")
+}
+
+func (gui *GUI) newTexture() *sdl.Texture {
+        texture, err := gui.renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, gui.x_size, gui.y_size)
         if err != nil {
                 log.Fatalf("Failed to create texture font from surface: %s\n", err)
         }
@@ -138,7 +168,7 @@ func (gui *GUI) newTexture(renderer *sdl.Renderer) *sdl.Texture {
 */
 
 func (gui *GUI) setFullscreen(window *sdl.Window) sdl.DisplayMode {
-        var wanted_mode = sdl.DisplayMode{sdl.PIXELFORMAT_ARGB8888, gui.xsize, gui.ysize, 60, nil}
+        var wanted_mode = sdl.DisplayMode{sdl.PIXELFORMAT_ARGB8888, gui.x_size, gui.y_size, 60, nil}
         var result_mode sdl.DisplayMode
         display_index, _ := window.GetDisplayIndex()
         orig_mode, _ := sdl.GetCurrentDisplayMode(display_index)
@@ -171,7 +201,7 @@ func main() {
         var CPU0_STEP   uint64 = 14318 // 14.318 MHz in milliseconds, apply for 65c816
         var CPU1_STEP   uint64 = 20000 // I'm able to achieve 25Mhz too
 	var ch		chan string
-	var msg	        string
+	var msg		string
 	var pcfg	*platform.Config
 	var gpu		*emu.GPU_common
 
@@ -195,8 +225,8 @@ func main() {
         //p := platform.New()           // must be global now - but it is still true?
 	gui := new(GUI)
         gui.fullscreen = false
-	gui.xsize      = 640
-	gui.ysize      = 480
+	gui.x_size      = 640
+	gui.y_size      = 480
         gui.p          = p              // xxx - fix that mess
 
 	if pcfg, err = p.LoadPlatformConfig(os.Args[1]); err != nil {
@@ -221,6 +251,9 @@ func main() {
 	// platform-specific init function 
 	p.Init()
 
+	// set initial graphics mode
+	gui.master_h = gpu.Master_H
+
         // graphics init ---------------------------------------------------------------
         // step 1: SDL
         err = sdl.Init(sdl.INIT_EVERYTHING)
@@ -232,10 +265,10 @@ func main() {
         // step 2: Window
         var window *sdl.Window
         window, err = sdl.CreateWindow(
-                "go65c816 / c256 emu",
+                "morfe 65c816/m68k emu",
                 sdl.WINDOWPOS_UNDEFINED,
                 sdl.WINDOWPOS_UNDEFINED,
-                gui.xsize, gui.ysize,
+                gui.x_size, gui.y_size,
                 sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL,
         )
         if err != nil {
@@ -245,28 +278,8 @@ func main() {
         debugPixelFormat(window)
 
         // step 3: Renderer
-        var renderer *sdl.Renderer
-        renderer, err = sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
-        //renderer, err = sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED|sdl.RENDERER_PRESENTVSYNC)
-        if err != nil {
-                log.Fatalf("Failed to create renderer: %s\n", err)
-        }
-        defer renderer.Destroy()
-        debugRendererInfo(renderer)
+	gui.newRendererAndTexture(window)
 
-        // step 4: textures 
-        texture_txt := gui.newTexture(renderer)
-        texture_txt.SetBlendMode(sdl.BLENDMODE_BLEND)
-
-        texture_bm0 := gui.newTexture(renderer)
-        texture_bm0.SetBlendMode(sdl.BLENDMODE_BLEND)
-
-        texture_bm1 := gui.newTexture(renderer)
-        texture_bm1.SetBlendMode(sdl.BLENDMODE_BLEND)
-
-
-        // -----------------------------------------------------------------------------
-        sdl.SetHint("SDL_HINT_RENDER_BATCHING", "1")
         //sdl.StartTextInput()
 
 
@@ -297,47 +310,70 @@ func main() {
 	desired_cycles1 := uint64(CPU1_STEP)
 
         for running {
+		// step 0 - handle resolution changes
+
+		// if Master_H was changed, then resolution change may be neccessary
+		if gui.master_h != gpu.Master_H {
+
+			// warning - no double pixel support yet!
+			gui.master_h = gpu.Master_H
+			if gui.master_h & 0x01 == 0 {
+				gui.x_size = 640
+				gui.y_size = 480
+			} else {
+				gui.x_size = 800
+				gui.y_size = 600
+			}
+
+			gui.texture_txt.Destroy()
+			gui.texture_bm0.Destroy()
+			gui.texture_bm1.Destroy()
+			gui.renderer.Destroy()
+
+			window.SetSize(gui.x_size, gui.y_size)
+			gui.newRendererAndTexture(window)
+		}
+
                 // step 1
-                renderer.SetDrawColor(gpu.Background[0], gpu.Background[1], gpu.Background[2], 255)
-                renderer.Clear()
+                gui.renderer.SetDrawColor(gpu.Background[0], gpu.Background[1], gpu.Background[2], 255)
+                gui.renderer.Clear()
 
                 // step 2 - bm0 and bm1 are updated in vicky, when write is made
                 if gpu.Master_L & 0x0C == 0x0C {                                      // todo?
                         if gpu.BM0_visible {
-                                texture_bm0.UpdateRGBA(nil, gpu.BM0FB, int(gui.xsize))
-                                renderer.Copy(texture_bm0, nil, nil)
+                                gui.texture_bm0.UpdateRGBA(nil, gpu.BM0FB, int(gui.x_size))
+                                gui.renderer.Copy(gui.texture_bm0, nil, nil)
                         }
 
                         if gpu.BM1_visible  {
-                                texture_bm1.UpdateRGBA(nil, gpu.BM1FB, int(gui.xsize))
-                                renderer.Copy(texture_bm1, nil, nil)
+                                gui.texture_bm1.UpdateRGBA(nil, gpu.BM1FB, int(gui.x_size))
+                                gui.renderer.Copy(gui.texture_bm1, nil, nil)
                         }
                 }
 
                 // step 3, 4
                 if gpu.Master_L & 0x01 == 0x01 {                                      // todo ?
                         p.GPU.RenderBitmapText()
-                        texture_txt.UpdateRGBA(nil, gpu.TFB, int(gui.xsize))
-                        renderer.Copy(texture_txt, nil, nil)
+                        gui.texture_txt.UpdateRGBA(nil, gpu.TFB, int(gui.x_size))
+                        gui.renderer.Copy(gui.texture_txt, nil, nil)
                 }       
 
                 // stea 5
                 if gpu.Border_visible {
-                        renderer.SetDrawColor(gpu.Border_color_r, 
+                        gui.renderer.SetDrawColor(gpu.Border_color_r, 
                                               gpu.Border_color_g, 
                                               gpu.Border_color_b, 
                                               255)
-                        renderer.FillRects([]sdl.Rect{
-                                sdl.Rect{0, 0, gui.xsize, gpu.Border_y_size},
-                                sdl.Rect{0, gui.ysize-gpu.Border_y_size, gui.xsize, gpu.Border_y_size},
-                                sdl.Rect{0, gpu.Border_y_size,  gpu.Border_x_size, gui.ysize-gpu.Border_y_size},
-                                sdl.Rect{gui.xsize-gpu.Border_x_size, gpu.Border_y_size, gpu.Border_x_size, gui.ysize-gpu.Border_y_size},
+                        gui.renderer.FillRects([]sdl.Rect{
+                                sdl.Rect{0, 0, gui.x_size, gpu.Border_y_size},
+                                sdl.Rect{0, gui.y_size-gpu.Border_y_size, gui.x_size, gpu.Border_y_size},
+                                sdl.Rect{0, gpu.Border_y_size,  gpu.Border_x_size, gui.y_size-gpu.Border_y_size},
+                                sdl.Rect{gui.x_size-gpu.Border_x_size, gpu.Border_y_size, gpu.Border_x_size, gui.y_size-gpu.Border_y_size},
                         })
                 }
 
                 // step 6
-                renderer.Present()
-
+                gui.renderer.Present()
 
                 // cpu running routines ---------------------------------------------
 		if ! disasm {
@@ -494,6 +530,10 @@ func main() {
                 window.SetDisplayMode(&orig_mode)
                 window.SetFullscreen(0)
         }
+	gui.texture_txt.Destroy()
+	gui.texture_bm0.Destroy()
+	gui.texture_bm1.Destroy()
+        gui.renderer.Destroy()
 
         memoryDump(p.CPU0, 0x0c)
         //memoryDump(p.CPU0, 0xAF_8000)

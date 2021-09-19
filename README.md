@@ -74,6 +74,11 @@ List of supported commands will be displayed in log frame.
 
 ## Compatibility status
 
+### General
+
+- a preliminary DIP-switch support exists, so far only DIP6 (HI/LO graphics mode
+  selector) is implemented, see ``conf/c256.ini`` for examples
+
 ### Memory map
 
 At this moment a sort-of FMX memory map is available, but GenX is on the horizont:
@@ -84,7 +89,7 @@ it is fast moving target, so stay tuned!
 See [here](https://wiki.c256foenix.com/index.php?title=VICKY_II) for VICKY II spec
 
 - [x] 640x480 mode
-- [ ] 800x600 mode
+- [x] 800x600 mode (from 19.09.2021)
 - [ ] double pixel mode
 - [x] fullscreen mode
 - [x] border support (partial, no scroll)
