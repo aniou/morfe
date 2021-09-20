@@ -9,15 +9,17 @@ import (
         "github.com/aniou/morfe/emulator"
         "github.com/aniou/morfe/emulator/mathi"
         "github.com/aniou/morfe/emulator/superio"
-        "github.com/aniou/morfe/emulator/vicky2"
 )
 
 type Platform struct {
         CPU0     emu.Processor           // on-board one (65c816 by default)
         CPU1     emu.Processor           // add-on
-	GPU      *vicky2.Vicky
-	GPU0     *vicky2.Vicky
-	GPU1     *vicky2.Vicky
+	//GPU      *vicky2.Vicky
+	//GPU0     *vicky2.Vicky
+	//GPU1     *vicky2.Vicky
+	GPU      emu.GPU
+	GPU0     emu.GPU
+	GPU1     emu.GPU
         SIO      *superio.SIO
 	MATHI    *mathi.MathInt
 	Init	 func()

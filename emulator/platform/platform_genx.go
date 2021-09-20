@@ -8,11 +8,11 @@ import (
 
 	"github.com/aniou/morfe/lib/mylog"
 
-        _ "github.com/aniou/morfe/emulator"
+        "github.com/aniou/morfe/emulator"
         "github.com/aniou/morfe/emulator/bus"
         "github.com/aniou/morfe/emulator/cpu_65c816"
         "github.com/aniou/morfe/emulator/cpu_68xxx"
-        "github.com/aniou/morfe/emulator/vicky2"
+        "github.com/aniou/morfe/emulator/vicky3"
         "github.com/aniou/morfe/emulator/superio"
         "github.com/aniou/morfe/emulator/ram"
         "github.com/aniou/morfe/emulator/mathi"
@@ -28,27 +28,43 @@ func (p *Platform) SetFranken() {
 
         p.MATHI     =   mathi.New("mathi",       0x100)
         p.SIO       = superio.New("sio",         0x400)
-        p.GPU       =  vicky2.New("gpu0",    0x01_0000 + 0x40_0000 ) // +bitmap area
-        ram0       :=     ram.New("ram0", 1, 0x40_0000)              // single bank
+        p.GPU       =  vicky3.New("gpu0",     0x1_0000)       // should be 0xA000 but there is no support for 0xAF:Exxx
+        //p.GPU     =  vicky3.New("gpu0",       0xA000)
+        ram0       :=     ram.New("ram0", 1, 0x40_0000)       // single bank                                                             
 
-        bus0.Attach(ram0,       0, 0x00_0000, 0x3F_FFFF)
-        bus0.Attach(p.MATHI,    0, 0x00_0100, 0x00_01FF)
-        bus0.Attach(p.GPU,      0, 0xAF_0000, 0xEF_FFFF)
-        bus0.Attach(p.SIO,      0, 0xAF_1000, 0xAF_13FF)
+        bus0.Attach(emu.M_USER, ram0,        ram.F_MAIN, 0x00_0000, 0x3F_FFFF)
+        bus0.Attach(emu.M_USER, p.MATHI,   mathi.F_MAIN, 0x00_0100, 0x00_01FF)
+        bus0.Attach(emu.M_USER, p.GPU,    vicky3.F_MAIN, 0xAF_0000, 0xAF_FFFF)
+        bus0.Attach(emu.M_USER, p.GPU,    vicky3.F_TEXT, 0xAF_A000, 0xAF_BFFF)
+        bus0.Attach(emu.M_USER, p.GPU,  vicky3.F_TEXT_C, 0xAF_C000, 0xAF_DFFF)
+        bus0.Attach(emu.M_USER, p.GPU,    vicky3.F_VRAM, 0xB0_0000, 0xEF_FFFF)  // TODO - parametrize that
+        bus0.Attach(emu.M_USER, p.SIO,   superio.F_MAIN, 0xAF_1000, 0xAF_13FF)
 
-        //bus0.Attach(ram0,       0, 0x00_0000, 0x3F_FFFF)  m68k has RAM attached directly
-        bus1.Attach(p.MATHI,    0, 0x00_0100, 0x00_01FF)
-        bus1.Attach(p.GPU,      0, 0xAF_0000, 0xEF_FFFF)
-        bus1.Attach(p.SIO,      0, 0xAF_1000, 0xAF_13FF)
 
-        //bus0.Attach(ram0,       1, 0x00_0000, 0x3F_FFFF)  m68k has RAM attached directly
-        bus1.Attach(p.MATHI,    1, 0x00_0100, 0x00_01FF)
-        bus1.Attach(p.GPU,      1, 0xAF_0000, 0xEF_FFFF)
-        bus1.Attach(p.SIO,      1, 0xAF_1000, 0xAF_13FF)
+        // m68k has RAM attached directly
+        //bus1.Attach(emu.M_USER, ram0,        ram.F_MAIN, 0x00_0000, 0x3F_FFFF)
+        bus1.Attach(emu.M_USER, p.MATHI,   mathi.F_MAIN, 0x00_0100, 0x00_01FF)
+        bus1.Attach(emu.M_USER, p.GPU,    vicky3.F_MAIN, 0xAF_0000, 0xAF_FFFF)
+        bus1.Attach(emu.M_USER, p.GPU,    vicky3.F_TEXT, 0xAF_A000, 0xAF_BFFF)
+        bus1.Attach(emu.M_USER, p.GPU,  vicky3.F_TEXT_C, 0xAF_C000, 0xAF_DFFF)
+        bus1.Attach(emu.M_USER, p.GPU,    vicky3.F_VRAM, 0xB0_0000, 0xEF_FFFF)  // TODO - parametrize that
+        bus1.Attach(emu.M_USER, p.SIO,   superio.F_MAIN, 0xAF_1000, 0xAF_13FF)
+
+        //bus1.Attach(emu.M_USER, ram0,        ram.F_MAIN, 0x00_0000, 0x3F_FFFF)
+        bus1.Attach(emu.M_SV  , p.MATHI,   mathi.F_MAIN, 0x00_0100, 0x00_01FF)
+        bus1.Attach(emu.M_SV  , p.GPU,    vicky3.F_MAIN, 0xAF_0000, 0xAF_FFFF)
+        bus1.Attach(emu.M_SV  , p.GPU,    vicky3.F_TEXT, 0xAF_A000, 0xAF_BFFF)
+        bus1.Attach(emu.M_SV  , p.GPU,  vicky3.F_TEXT_C, 0xAF_C000, 0xAF_DFFF)
+        bus1.Attach(emu.M_SV  , p.GPU,    vicky3.F_VRAM, 0xB0_0000, 0xEF_FFFF)  // TODO - parametrize that
+        bus1.Attach(emu.M_SV  , p.SIO,   superio.F_MAIN, 0xAF_1000, 0xAF_13FF)
 
 
         p.CPU0     = cpu_65c816.New(bus0, "cpu0")
 	p.CPU1     = cpu_68xxx.New(bus1,  "cpu1")
+
+        p.CPU0.Write_8(  0xFFFC, 0x00)                      // boot vector for 65c816
+        p.CPU0.Write_8(  0xFFFD, 0x10)
+        p.CPU0.Reset()
 
         mylog.Logger.Log("platform: frankenplatform created")
 

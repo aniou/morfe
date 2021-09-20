@@ -1,7 +1,6 @@
 package vicky3
 
-// at this moment this is a vicky2 clone with new
-// layout of memory write/read regions
+// re-implementing Vicky2 at new bus
 
 import (
         "encoding/binary"
@@ -9,9 +8,14 @@ import (
         "log"
         _ "sync"
         _ "github.com/aniou/morfe/lib/mylog"
-        _ "github.com/aniou/morfe/emulator"
+        "github.com/aniou/morfe/emulator"
         _ "github.com/aniou/morfe/emulator/ram"
 )
+
+const F_MAIN   = 0
+const F_TEXT   = 1
+const F_TEXT_C = 2
+const F_VRAM   = 3
 
 const MASTER_CTRL_REG_L  = 0x0000
 const MASTER_CTRL_REG_H  = 0x0001
@@ -64,12 +68,17 @@ type Vicky struct {
         name    string         // id of instance
         Mem     []byte         // general Vicky memory
 
-        text    []uint32       // text memory cache
+        text    []uint32       // text memory
+        vram    []byte         // VRAM
+        tc      []byte         // text color memory
         blut    []uint32       // bitmap LUT cache : 256 colors * 8 banks (lut0 to lut7)
         fg      []uint32       // text foreground LUT cache
         bg      []uint32       // text background LUT cache
         font    []byte         // font cache       : 256 chars  * 8 lines * 8 columns
 
+	c	emu.GPU_common	// common GPU-exported properties and framebuffers
+
+	/*
         TFB     []uint32       // text   framebuffer
         BM0FB   []uint32       // bitmap0 framebuffer
         BM1FB   []uint32       // bitmap1 framebuffer
@@ -89,6 +98,7 @@ type Vicky struct {
         Border_x_size   int32
         Border_y_size   int32
         Background      [3]byte         // r, g, b
+	*/
 
         starting_fb_row_pos uint32
         text_cols       uint32
@@ -108,39 +118,48 @@ type Vicky struct {
 func New(name string, size int) *Vicky {
         v       := Vicky{name: name}
 
-        v.Mem    = make([]byte,   size)
+	v.Mem    = make([]byte,   size)		 // main memory - TODO: shrink it!
+
+        v.text   = make([]uint32,    0x2000)        // text memory  - 0x4000 in GenX
+	v.vram   = make([]byte  , 0x40_0000)        // 4MB - TODO: settable
+	v.tc     = make([]byte,      0x2000)	    // text color memory - 0x4000 in GenX
+        v.fg     = make([]uint32,    0x2000)        // foreground cache -  0x4000 in GenX
+        v.bg     = make([]uint32,    0x2000)        // background color cache - 0x4000 in GenX
+
+
         v.blut   = make([]uint32, 0x0800)        // bitmap LUT cache : 256 colors * 8 banks (lut0 to lut7)
-        v.text   = make([]uint32, 0x2000)        // text memory cache - 0x4000 in GenX
-        v.fg     = make([]uint32, 0x2000)        // foreground cache -  0x4000 in GenX
-        v.bg     = make([]uint32, 0x2000)        // background color cache - 0x4000 in GenX
         v.font   = make([]byte  , 0x100 * 8 * 8) // font cache 256 chars * 8 lines * 8 columns
-        v.TFB    = make([]uint32, 480000)        // for max 800x600
-        v.BM0FB  = make([]uint32,  0x40_0000)    // max bitmap area - XXX - too large, we always write from 0x00
-        v.BM1FB  = make([]uint32,  0x40_0000)    // max bitmap area - XXX - too large, we always write from 0x00
+        //v.c.TFB    = make([]uint32, 480000)        // for max 800x600
+        //v.c.BM0FB  = make([]uint32,  0x40_0000)    // max bitmap area - XXX - too large, we always write from 0x00
+        //v.c.BM1FB  = make([]uint32,  0x40_0000)    // max bitmap area - XXX - too large, we always write from 0x00
+        v.c.TFB    = make([]uint32,  0x0c_0000)    // text framebuffer - 1024x768 max
+        v.c.BM0FB  = make([]uint32,  0x0c_0000)    // bm0  framebuffer - 1024x768 max
+        v.c.BM1FB  = make([]uint32,  0x0c_0000)    // bm1  framebuffer - 1024x768 max
         
 
         v.Mem[ BORDER_CTRL_REG ] = 0x01
 
 	// some tests
-	//fmt.Printf("vicky2: v.TFB    %p\n", &v.TFB  )
-	//fmt.Printf("vicky2: v.BM0FB  %p\n", &v.BM0FB)
-	//fmt.Printf("vicky2: v.BM1FB  %p\n", &v.BM1FB)
+	//fmt.Printf("vicky3: v.TFB    %p\n", &v.TFB  )
+	//fmt.Printf("vicky3: v.BM0FB  %p\n", &v.BM0FB)
+	//fmt.Printf("vicky3: v.BM1FB  %p\n", &v.BM1FB)
 
-        v.Cursor_visible = true
-        v.BM0_visible    = true
-        v.BM1_visible    = true
-        v.Border_color_b = 0x20
-        v.Border_color_g = 0x00
-        v.Border_color_r = 0x20
-        v.Border_x_size  = 0x20
-        v.Border_y_size  = 0x20
+	v.c.Master_H	   = 0x00 // 640x480 no pixel doubling
+        v.c.Cursor_visible = true
+        v.c.BM0_visible    = true
+        v.c.BM1_visible    = true
+        v.c.Border_color_b = 0x20
+        v.c.Border_color_g = 0x00
+        v.c.Border_color_r = 0x20
+        v.c.Border_x_size  = 0x20
+        v.c.Border_y_size  = 0x20
         v.starting_fb_row_pos =  0x00
         v.text_cols = 0x00
         v.text_rows = 0x00
         v.bm0_blut_pos = 0x00
         v.bm1_blut_pos = 0x00
-        v.bm0_start_addr = 0x1_0000	// relative from beginning of vicky segment
-        v.bm1_start_addr = 0x1_0000	// relative from beginning of vicky segment
+        v.bm0_start_addr = 0x00	// relative from beginning of VRAM
+        v.bm1_start_addr = 0x00	// relative from beginning of VRAM
 
         v.x_res         = 640
         v.y_res         = 480
@@ -160,6 +179,10 @@ func New(name string, size int) *Vicky {
         return &v
 }
 
+func (v *Vicky) GetCommon() *emu.GPU_common {
+	return &v.c
+}
+
 // GUI-specific
 // updates font cache by converting bits to bytes
 // position - position of indyvidual byte in font bank
@@ -177,7 +200,7 @@ func (v *Vicky) updateFontCache(pos uint32, val byte) {
 }
 
 func (v *Vicky) recalculateScreen() {
-        v.starting_fb_row_pos = v.x_res * uint32(v.Border_y_size) + uint32(v.Border_x_size)
+        v.starting_fb_row_pos = v.x_res * uint32(v.c.Border_y_size) + uint32(v.c.Border_x_size)
 
         //v.text_cols = (640 - (uint32(v.Border_x_size) * 2)) / 8 // xxx - parametrize screen width
         //v.text_rows = (480 - (uint32(v.Border_y_size) * 2)) / 8 // xxx - parametrize screen height
@@ -234,7 +257,7 @@ func (v *Vicky) RenderBitmapText() {
                         f := v.fg[text_row_pos+text_x] // fg and bg colors
                         b := v.bg[text_row_pos+text_x]
 
-                        if v.Cursor_visible && (cursor_y == text_y) && (cursor_x == text_x) && (cursor_state & 0x01 == 1) {
+                        if v.c.Cursor_visible && (cursor_y == text_y) && (cursor_x == text_x) && (cursor_state & 0x01 == 1) {
                                 f = uint32((v.Mem[ VKY_TXT_CURSOR_COLR_REG ] & 0xf0) >> 4)
                                 b = uint32( v.Mem[ VKY_TXT_CURSOR_COLR_REG ] & 0x0f)
                                 fnttmp[text_x] = uint32(v.Mem[ VKY_TXT_CURSOR_CHAR_REG ]) * 64
@@ -255,9 +278,9 @@ func (v *Vicky) RenderBitmapText() {
 	                        fb_pos   = dsttmp[text_x] + fb_row_pos
                                 for i = 0; i < 8; i += 1 { // for every font iterate over 8 pixels of font
                                         if v.font[font_pos+i] == 0 {
-                                                v.TFB[fb_pos+i] = bgctmp[text_x]
+                                                v.c.TFB[fb_pos+i] = bgctmp[text_x]
                                         } else {
-                                                v.TFB[fb_pos+i] = fgctmp[text_x]
+                                                v.c.TFB[fb_pos+i] = fgctmp[text_x]
                                         }
                                 }
                         }
@@ -267,34 +290,111 @@ func (v *Vicky) RenderBitmapText() {
         // render text - end
 }
 
-
-
 // RAM-interface specific
 func (v *Vicky) Dump(address uint32) []byte {
         log.Panicf("vicky3 Dump is not implemented yet")
         return []byte{}
 }
 
-func (v *Vicky) Name() string {
-        return v.name
+func (v *Vicky) Name(fn byte) string {
+	switch fn {
+	case F_MAIN:
+		return v.name
+	case F_TEXT:
+		return v.name + "-text"
+	case F_TEXT_C:
+		return v.name + "-text_color"
+	case F_VRAM:
+		return v.name + "-vram"
+	}
+	return v.name + "-UNKNOWN"
 }
 
 func (v *Vicky) Clear() { 
         log.Panicf("vicky3 Clear is not implemented yet")
 }
 
-func (v *Vicky) Size() (uint32, uint32) {
-        return uint32(1), uint32(len(v.Mem))
+func (v *Vicky) Size(fn byte) (uint32, uint32) {
+	switch fn {
+	case F_MAIN:
+		return uint32(1), uint32(len(v.Mem))
+	case F_TEXT:
+		return uint32(1), uint32(len(v.text))
+	case F_TEXT_C:
+		return uint32(1), uint32(len(v.tc))
+	case F_VRAM:
+		return uint32(1), uint32(len(v.vram))
+	}
+	return 0, 0
 }
 
-func (v *Vicky) Read(addr uint32) (byte, error) {
-        //fmt.Printf("vicky2: %s Read addr %06x\n", v.name, addr)
+func (v *Vicky) Read(fn byte, addr uint32) (byte, error) {
+	switch fn {
+	case F_MAIN:
+		return v.ReadReg(addr)
+	case F_TEXT:
+		return byte(v.text[addr]), nil
+	case F_TEXT_C:
+		return v.tc[addr], nil
+	case F_VRAM:
+		return v.vram[addr], nil
+	}
+	return 0, fmt.Errorf(" vicky3: %s Read addr %6X fn %d is not implemented", v.name, addr, fn)
+}
+
+func (v *Vicky) Write(fn byte, addr uint32, val byte) (error) {
+	switch fn {
+	case F_MAIN:
+		return v.WriteReg(addr, val)
+	case F_TEXT:
+		v.text[addr] = uint32(val)
+	case F_TEXT_C:
+                bgc   := uint32( val & 0x0F)
+                fgc   := uint32((val & 0xF0)>> 4)
+                v.fg[addr] = fgc
+                v.bg[addr] = bgc
+		v.tc[addr] = val
+	case F_VRAM:
+		v.vram[addr] = val
+		v.UpdateBitmapFB(addr, val)
+	default:
+		return fmt.Errorf(" vicky3: %s Write addr %6X val %2X fn %d is not implemented", v.name, addr, val)
+	}
+	return nil
+
+}
+
+// addr is relative here, ie. $B0:1000 means $1000
+func (v *Vicky) UpdateBitmapFB(addr uint32, val byte) {
+	if addr >= v.bm0_start_addr && addr - v.bm0_start_addr < uint32(len(v.c.BM0FB)) { 
+		dst := addr - v.bm0_start_addr
+		//fmt.Printf("bm0fb addr: %6X dst: %6X val %2X blut %4X\n", addr, dst, val, v.blut[v.bm0_blut_pos + uint32(val)])
+		v.c.BM0FB[dst] = v.blut[v.bm0_blut_pos + uint32(val)]
+	}
+	if addr >= v.bm1_start_addr && addr - v.bm1_start_addr < uint32(len(v.c.BM1FB)) { 
+		dst := addr - v.bm1_start_addr
+		//fmt.Printf("bm1fb addr: %6X dst: %6X val %2X blut %4X\n", addr, dst, val, v.blut[v.bm1_blut_pos + uint32(val)])
+		v.c.BM1FB[dst] = v.blut[v.bm1_blut_pos + uint32(val)]
+	}
+}
+
+func (v *Vicky) ReadVram(addr uint32) (byte, error) {
+	return v.vram[addr], nil
+}
+
+
+func (v *Vicky) ReadReg(addr uint32) (byte, error) {
+        //fmt.Printf("vicky3: %s Read addr %06x\n", v.name, addr)
         switch addr {
-        case 0x0001:
-                return 0x00, nil        // 640x480, no pixel doubling
+        //case 0x0001:
+        //        return 0x00, nil        // 640x480, no pixel doubling
 
         case 0x0002:
-                return 0x10, nil        // 1 = Hi-Res on BOOT OFF
+		if emu.DIP[6] {
+			return 0x10, nil        // 1 = Hi-Res on BOOT OFF
+		} else {
+			return 0x00, nil        // 0 = Hi-Res on BOOT ON
+		}
 
         case 0x070B:			// model major
                 return 0x00, nil
@@ -313,51 +413,59 @@ func (v *Vicky) Read(addr uint32) (byte, error) {
         }
 }
 
-func (v *Vicky) Write(addr uint32, val byte) error {
-        //fmt.Printf("vicky2: %s Write addr %06x val %02x\n", v.name, addr, val)
+func (v *Vicky) WriteReg(addr uint32, val byte) error {
+        //fmt.Printf("vicky3: %s Write addr %06x val %02x\n", v.name, addr, val)
         v.Mem[addr] = val
 
         switch {
         case addr == MASTER_CTRL_REG_L:
-                v.Master_L = val
+                v.c.Master_L = val
 
         case addr == MASTER_CTRL_REG_H:
-                v.Master_H = val
+                v.c.Master_H = val
+		if val & 0x01 == 0 {
+			v.x_res = 640
+			v.y_res = 480
+		} else {
+			v.x_res = 800
+			v.y_res = 600
+		}
+		v.recalculateScreen()
 
         case addr == BORDER_CTRL_REG:
                 if (val & 0x01) == 1 {
-                        v.Border_x_size  = int32(v.Mem[ BORDER_X_SIZE ])
-                        v.Border_y_size  = int32(v.Mem[ BORDER_Y_SIZE ])
-                        v.Border_visible = true
+                        v.c.Border_x_size  = int32(v.Mem[ BORDER_X_SIZE ])
+                        v.c.Border_y_size  = int32(v.Mem[ BORDER_Y_SIZE ])
+                        v.c.Border_visible = true
                         v.recalculateScreen()
                 } else {
-                        v.Border_x_size  = 0
-                        v.Border_y_size  = 0
+                        v.c.Border_x_size  = 0
+                        v.c.Border_y_size  = 0
                         v.recalculateScreen()
-                        v.Border_visible = false
+                        v.c.Border_visible = false
                 }
 
         case addr == BORDER_COLOR_B:
-                v.Border_color_b = val
+                v.c.Border_color_b = val
                 v.recalculateScreen()
 
         case addr == BORDER_COLOR_G:
-                v.Border_color_g = val
+                v.c.Border_color_g = val
                 v.recalculateScreen()
 
         case addr == BORDER_COLOR_R:
-                v.Border_color_r = val
+                v.c.Border_color_r = val
                 v.recalculateScreen()
 
         case addr == BORDER_X_SIZE:
-                v.Border_x_size = int32(val & 0x3F)     // XXX: in spec - 0-32, bitmask allows to 0-63
-                if v.Border_visible {
+                v.c.Border_x_size = int32(val & 0x3F)     // XXX: in spec - 0-32, bitmask allows to 0-63
+                if v.c.Border_visible {
                         v.recalculateScreen()
                 }
 
         case addr == BORDER_Y_SIZE:
-                v.Border_y_size = int32(val & 0x3F)     // XXX: in spec - 0-32, bitmask allows to 0-63
-                if v.Border_visible {
+                v.c.Border_y_size = int32(val & 0x3F)     // XXX: in spec - 0-32, bitmask allows to 0-63
+                if v.c.Border_visible {
                         v.recalculateScreen()
                 }
 
@@ -368,26 +476,26 @@ func (v *Vicky) Write(addr uint32, val byte) error {
 		break					// just write to mem
 
         case addr == BACKGROUND_COLOR_B:
-                v.Background[2] = val
+                v.c.Background[2] = val
 
         case addr == BACKGROUND_COLOR_G:
-                v.Background[1] = val
+                v.c.Background[1] = val
 
         case addr == BACKGROUND_COLOR_R:
-                v.Background[0] = val
+                v.c.Background[0] = val
 
         case addr == VKY_TXT_CURSOR_CTRL_REG:
                 if (val & 0x01) == 0 {
-                        v.Cursor_visible = false
+                        v.c.Cursor_visible = false
                 } else {
-                        v.Cursor_visible = true
+                        v.c.Cursor_visible = true
                 }
                 
         case addr == BM0_CONTROL_REG:
                 if (val & 0x01) == 0 {
-                        v.BM0_visible = false
+                        v.c.BM0_visible = false
                 } else {
-                        v.BM0_visible = true
+                        v.c.BM0_visible = true
                 }
                 val = (val & 0x0E) >> 1                         // extract LUT number
                 v.bm0_blut_pos = uint32(val) * 0x100            // position in Bitmap LUT cache
@@ -397,18 +505,15 @@ func (v *Vicky) Write(addr uint32, val byte) error {
         case addr == BM0_START_ADDY_L:
         case addr == BM0_START_ADDY_M:
         case addr == BM0_START_ADDY_H:
-                v.bm0_start_addr = 0x1_0000 + (uint32(v.Mem[ BM0_START_ADDY_H ]) << 16) +
-                                               (uint32(v.Mem[ BM0_START_ADDY_M ]) << 8 ) +
-                                               (uint32(v.Mem[ BM0_START_ADDY_L ])      )
-                // XXX - todo: recalculate bm0 framebuffer from new slice
-                // XXX - todo: update addr for FMX/GenX
-
+                v.bm0_start_addr = (uint32(v.Mem[ BM0_START_ADDY_H ]) << 16) +
+                                   (uint32(v.Mem[ BM0_START_ADDY_M ]) << 8 ) +
+                                   (uint32(v.Mem[ BM0_START_ADDY_L ])      )
 
         case addr == BM1_CONTROL_REG:
                 if (val & 0x01) == 0 {
-                        v.BM1_visible = false
+                        v.c.BM1_visible = false
                 } else {
-                        v.BM1_visible = true
+                        v.c.BM1_visible = true
                 }
                 val = (val & 0x0E) >> 1                         // extract LUT number
                 v.bm1_blut_pos = uint32(val) * 0x100            // position in Bitmap LUT cache
@@ -418,12 +523,9 @@ func (v *Vicky) Write(addr uint32, val byte) error {
         case addr == BM1_START_ADDY_L:
         case addr == BM1_START_ADDY_M:
         case addr == BM1_START_ADDY_H:
-                v.bm0_start_addr = 0x1_0000 + (uint32(v.Mem[ BM1_START_ADDY_H ]) << 16) +
-                                               (uint32(v.Mem[ BM1_START_ADDY_M ]) << 8 ) +
-                                               (uint32(v.Mem[ BM1_START_ADDY_L ])      )
-                // XXX - todo: recalculate bm0 framebuffer from new slice
-                // XXX - todo: update addr for FMX/GenX
-
+                v.bm0_start_addr = (uint32(v.Mem[ BM1_START_ADDY_H ]) << 16) +
+                                   (uint32(v.Mem[ BM1_START_ADDY_M ]) << 8 ) +
+                                   (uint32(v.Mem[ BM1_START_ADDY_L ])      )
 
         case addr >= FG_CHAR_LUT_PTR && addr < FG_CHAR_LUT_PTR + 64:
                 a := addr - FG_CHAR_LUT_PTR
@@ -460,29 +562,8 @@ func (v *Vicky) Write(addr uint32, val byte) error {
         case addr >= FONT_MEMORY_BANK0 && addr < FONT_MEMORY_BANK0 + 0x800:
                 v.updateFontCache(addr - FONT_MEMORY_BANK0, val)  // every bit in font cache is mapped to byte
 
-        case addr >= CS_TEXT_MEM_PTR   && addr < CS_TEXT_MEM_PTR + 0x2000:
-                v.text[ addr - CS_TEXT_MEM_PTR ] = uint32(val)
-
-        case addr >= CS_COLOR_MEM_PTR && addr < CS_COLOR_MEM_PTR + 0x2000:
-                a     := addr - CS_COLOR_MEM_PTR
-                bgc   := uint32( val & 0x0F)
-                fgc   := uint32((val & 0xF0)>> 4)
-                v.fg[a]  = fgc
-                v.bg[a]  = bgc
-
-        case addr >= VRAM_START && addr < VRAM_START + 0x40_0000:                             // 4MB, xxx: parametrize
-                if addr >= v.bm0_start_addr && addr<v.bm0_start_addr + 0x7_5300 { // max 800x600 bytes
-                        dst := addr - v.bm0_start_addr
-                        //fmt.Printf("bm0fb addr: %6X dst: %6X val %2X blut %4X\n", addr, dst, val, v.blut[v.bm0_blut_pos + uint32(val)])
-                        v.BM0FB[dst] = v.blut[v.bm0_blut_pos + uint32(val)]
-                }
-                if addr >= v.bm1_start_addr && addr<v.bm1_start_addr + 0x7_5300 {  // max 800x600 bytes
-                        dst := addr - v.bm1_start_addr
-                        //fmt.Printf("bm1fb addr: %6X dst: %6X val %2X blut %4X\n", addr, dst, val, v.blut[v.bm1_blut_pos + uint32(val)])
-                        v.BM1FB[dst] = v.blut[v.bm1_blut_pos + uint32(val)]
-                }
         default:
-                return fmt.Errorf(" vicky2: %s Write addr %6X val %2X is not implemented", v.name, addr, val)
+                return fmt.Errorf(" vicky3: %s Write addr %6X val %2X is not implemented", v.name, addr, val)
         }
 	return nil
 }
