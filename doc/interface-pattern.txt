@@ -1,0 +1,11 @@
+
+type common struct { ... }
+type foo    struct { common ; ... }
+type bar    struct { common ; ... }
+
+type interface MyIFace {
+getCommon() *common
+...
+}
+
+func (c *common) getCommon() { return c }

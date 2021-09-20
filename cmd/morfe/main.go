@@ -23,7 +23,16 @@ const CURSOR_BLINK_RATE = 500      // in ms (milliseconds)
 
 type GUI struct {
         p          *platform.Platform
-        fullscreen bool
+
+	renderer    *sdl.Renderer
+	texture_txt *sdl.Texture
+	texture_bm0 *sdl.Texture
+	texture_bm1 *sdl.Texture
+
+        fullscreen  bool
+	master_h    byte		  // master_h that corresponds with current screen size
+	x_size	    int32		  // screen size
+	y_size	    int32
 }
 
 type DEBUG struct {
@@ -108,9 +117,32 @@ func debugRendererInfo(renderer *sdl.Renderer) {
         fmt.Printf("\n")
 }
 
-// xxx - window parametrization
-func newTexture(renderer *sdl.Renderer) *sdl.Texture {
-        texture, err := renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, 640, 480)
+func (gui *GUI) newRendererAndTexture(window *sdl.Window) {
+	var err error
+
+	gui.renderer, err = sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
+        //gui.renderer, err = sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED|sdl.RENDERER_PRESENTVSYNC)
+        if err != nil {
+                log.Fatalf("Failed to create renderer: %s\n", err)
+        }
+        debugRendererInfo(gui.renderer)
+
+        gui.texture_txt = gui.newTexture()
+        gui.texture_txt.SetBlendMode(sdl.BLENDMODE_BLEND)
+
+        gui.texture_bm0 = gui.newTexture()
+        gui.texture_bm0.SetBlendMode(sdl.BLENDMODE_BLEND)
+
+        gui.texture_bm1 = gui.newTexture()
+        gui.texture_bm1.SetBlendMode(sdl.BLENDMODE_BLEND)
+
+
+        // not sure that it should be re-set after every renderer, but at this moment...
+        sdl.SetHint("SDL_HINT_RENDER_BATCHING", "1")
+}
+
+func (gui *GUI) newTexture() *sdl.Texture {
+        texture, err := gui.renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, gui.x_size, gui.y_size)
         if err != nil {
                 log.Fatalf("Failed to create texture font from surface: %s\n", err)
         }
@@ -135,8 +167,8 @@ func newTexture(renderer *sdl.Renderer) *sdl.Texture {
    during return to original mode,  so don't improve following in this way
 */
 
-func setFullscreen(window *sdl.Window) sdl.DisplayMode {
-        var wanted_mode = sdl.DisplayMode{sdl.PIXELFORMAT_ARGB8888, 640, 480, 60, nil}
+func (gui *GUI) setFullscreen(window *sdl.Window) sdl.DisplayMode {
+        var wanted_mode = sdl.DisplayMode{sdl.PIXELFORMAT_ARGB8888, gui.x_size, gui.y_size, 60, nil}
         var result_mode sdl.DisplayMode
         display_index, _ := window.GetDisplayIndex()
         orig_mode, _ := sdl.GetCurrentDisplayMode(display_index)
@@ -165,13 +197,13 @@ func main() {
         var err         error
         var running     bool
         var disasm      bool		// indicator for debug/disasm mode
-        var winWidth    int32 = 640
-        var winHeight   int32 = 480
+        var live_disasm bool		// indicator for debug/disasm mode
         var CPU0_STEP   uint64 = 14318 // 14.318 MHz in milliseconds, apply for 65c816
         var CPU1_STEP   uint64 = 20000 // I'm able to achieve 25Mhz too
 	var ch		chan string
-	var msg	        string
+	var msg		string
 	var pcfg	*platform.Config
+	var gpu		*emu.GPU_common
 
 	// first things first
         if len(os.Args) < 2 {
@@ -193,7 +225,9 @@ func main() {
         //p := platform.New()           // must be global now - but it is still true?
 	gui := new(GUI)
         gui.fullscreen = false
-        gui.p = p                       // xxx - fix that mess
+	gui.x_size      = 640
+	gui.y_size      = 480
+        gui.p          = p              // xxx - fix that mess
 
 	if pcfg, err = p.LoadPlatformConfig(os.Args[1]); err != nil {
 		log.Fatalf("%s", err)
@@ -209,12 +243,16 @@ func main() {
 	default:
 		log.Fatalf("unknown mode %s", pcfg.Mode)
 	}
+	gpu = p.GPU.GetCommon()
 
 	// kernel and others files loading also here
         p.LoadCpuConfig(os.Args[1])
 
 	// platform-specific init function 
 	p.Init()
+
+	// set initial graphics mode
+	gui.master_h = gpu.Master_H
 
         // graphics init ---------------------------------------------------------------
         // step 1: SDL
@@ -227,10 +265,10 @@ func main() {
         // step 2: Window
         var window *sdl.Window
         window, err = sdl.CreateWindow(
-                "go65c816 / c256 emu",
+                "morfe 65c816/m68k emu",
                 sdl.WINDOWPOS_UNDEFINED,
                 sdl.WINDOWPOS_UNDEFINED,
-                winWidth, winHeight,
+                gui.x_size, gui.y_size,
                 sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL,
         )
         if err != nil {
@@ -240,28 +278,8 @@ func main() {
         debugPixelFormat(window)
 
         // step 3: Renderer
-        var renderer *sdl.Renderer
-        renderer, err = sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED)
-        //renderer, err = sdl.CreateRenderer(window, -1, sdl.RENDERER_ACCELERATED|sdl.RENDERER_PRESENTVSYNC)
-        if err != nil {
-                log.Fatalf("Failed to create renderer: %s\n", err)
-        }
-        defer renderer.Destroy()
-        debugRendererInfo(renderer)
+	gui.newRendererAndTexture(window)
 
-        // step 4: textures 
-        texture_txt := newTexture(renderer)
-        texture_txt.SetBlendMode(sdl.BLENDMODE_BLEND)
-
-        texture_bm0 := newTexture(renderer)
-        texture_bm0.SetBlendMode(sdl.BLENDMODE_BLEND)
-
-        texture_bm1 := newTexture(renderer)
-        texture_bm1.SetBlendMode(sdl.BLENDMODE_BLEND)
-
-
-        // -----------------------------------------------------------------------------
-        sdl.SetHint("SDL_HINT_RENDER_BATCHING", "1")
         //sdl.StartTextInput()
 
 
@@ -286,161 +304,76 @@ func main() {
         // main loop -------------------------------------------------------------------
         running = true
         disasm  = false
+        live_disasm  = false
 
 	desired_cycles0 := uint64(CPU0_STEP)
 	desired_cycles1 := uint64(CPU1_STEP)
 
-
-
-	/* 
-	 * first version - adjust loop per 1 second
-
-	go func() {
-		var time_before     time.Time
-		var time_wait       time.Duration = 300 * time.Microsecond
-		var cycles          uint32
-		var cycles_per_sec  uint32
-
-		time_before = time.Now()
-		for {
-			cycles = 0
-			for cycles < 14318 {
-				cycles+=p.CPU0.Execute()
-			}
-			cycles_per_sec+=cycles
-
-			if time.Since(time_before) > 1*time.Second {
-				fmt.Printf("> second %d wait %d\n",  cycles_per_sec, time_wait)
-				if cycles_per_sec < 14318000 {
-					time_wait = time_wait -  4*time.Microsecond
-				}
-				if cycles_per_sec > 14400000 {
-					time_wait = time_wait +  2*time.Microsecond
-				}
-				cycles_per_sec=0
-				time_before = time.Now()
-			}
-			time.Sleep(time_wait)
-
-
-		}
-	}()
-	*/
-
-
-	/*
-	// second version of adaptive speed loop - CPU.Execute is called every 1/5 of second
-	// with two threshold counters - ie sleep timer is changed for every two times,
-	// when cpu is too low or too fast
-	//
-	// if number of cycles is greater than desired number of cycles+4% 
-	//    then trigger counter (thresh_max) is decreased 
-	//    if trigger counter == 0 then wait loop is increased by 2 microseconds
-	//
-	//  the same behaviour is if number of cpu cycles is lower than...
-	//
-	// XXX - just testing, change static values
-	go func() {
-		var time_before     time.Time
-		var time_wait       time.Duration = 300 * time.Microsecond
-		var cycles          uint32
-		var all_cycles      uint32
-		var thresh_min	    byte  = 2
-		var thresh_max      byte  = 2
-		var low_thresh      uint32 = (14318000 - (14318000/25)) / 5
-		var top_thresh      uint32 = (14318000 + (14318000/25)) / 5
-
-		time_before = time.Now()
-		for {
-			cycles = 0
-			for cycles < 14318 {
-				cycles+=p.CPU0.Execute()
-			}
-			all_cycles+=cycles
-
-			if time.Since(time_before) > 200*time.Millisecond {
-				//fmt.Printf("cpu0> low_thresh %d cycles %d top_thresh %d cycles*5 %d wait %d\n", 
-				//               low_thresh, top_thresh, all_cycles, all_cycles*5, time_wait)
-				all_cycles=0
-				time_before = time.Now()
-
-				if all_cycles < low_thresh {
-					thresh_min-=1
-					if thresh_min == 0 {
-						time_wait = time_wait - 4*time.Microsecond
-						thresh_min = 2
-					}
-				} else {
-					thresh_min=2
-				}
-				if all_cycles > top_thresh {
-					thresh_max-=1
-					if thresh_max == 0 {
-						time_wait = time_wait + 2*time.Microsecond
-						thresh_max = 2
-					}
-				} else {
-					thresh_max = 2
-				}
-
-			}
-			time.Sleep(time_wait)
-
-
-		}
-	}()
-	*/
-
-	/*
-	go func() {
-		for {
-			p.CPU1.Execute()
-		}
-	}()
-	*/
-
         for running {
+		// step 0 - handle resolution changes
+
+		// if Master_H was changed, then resolution change may be neccessary
+		if gui.master_h != gpu.Master_H {
+
+			// warning - no double pixel support yet!
+			gui.master_h = gpu.Master_H
+			if gui.master_h & 0x01 == 0 {
+				gui.x_size = 640
+				gui.y_size = 480
+			} else {
+				gui.x_size = 800
+				gui.y_size = 600
+			}
+
+			gui.texture_txt.Destroy()
+			gui.texture_bm0.Destroy()
+			gui.texture_bm1.Destroy()
+			gui.renderer.Destroy()
+
+			window.SetSize(gui.x_size, gui.y_size)
+			gui.newRendererAndTexture(window)
+		}
+
                 // step 1
-                renderer.SetDrawColor(p.GPU.Background[0], p.GPU.Background[1], p.GPU.Background[2], 255)
-                renderer.Clear()
+                gui.renderer.SetDrawColor(gpu.Background[0], gpu.Background[1], gpu.Background[2], 255)
+                gui.renderer.Clear()
 
                 // step 2 - bm0 and bm1 are updated in vicky, when write is made
-                if p.GPU.Master_L & 0x0C == 0x0C {                                      // todo?
-                        if p.GPU.BM0_visible {
-                                texture_bm0.UpdateRGBA(nil, p.GPU.BM0FB, 640)
-                                renderer.Copy(texture_bm0, nil, nil)
+                if gpu.Master_L & 0x0C == 0x0C {                                      // todo?
+                        if gpu.BM0_visible {
+                                gui.texture_bm0.UpdateRGBA(nil, gpu.BM0FB, int(gui.x_size))
+                                gui.renderer.Copy(gui.texture_bm0, nil, nil)
                         }
 
-                        if p.GPU.BM1_visible  {
-                                texture_bm1.UpdateRGBA(nil, p.GPU.BM1FB, 640)
-                                renderer.Copy(texture_bm1, nil, nil)
+                        if gpu.BM1_visible  {
+                                gui.texture_bm1.UpdateRGBA(nil, gpu.BM1FB, int(gui.x_size))
+                                gui.renderer.Copy(gui.texture_bm1, nil, nil)
                         }
                 }
 
                 // step 3, 4
-                if p.GPU.Master_L & 0x01 == 0x01 {                                      // todo ?
+                if gpu.Master_L & 0x01 == 0x01 {                                      // todo ?
                         p.GPU.RenderBitmapText()
-                        texture_txt.UpdateRGBA(nil, p.GPU.TFB, 640)
-                        renderer.Copy(texture_txt, nil, nil)
+                        gui.texture_txt.UpdateRGBA(nil, gpu.TFB, int(gui.x_size))
+                        gui.renderer.Copy(gui.texture_txt, nil, nil)
                 }       
 
                 // stea 5
-                if p.GPU.Border_visible {
-                        renderer.SetDrawColor(p.GPU.Border_color_r, 
-                                              p.GPU.Border_color_g, 
-                                              p.GPU.Border_color_b, 
+                if gpu.Border_visible {
+                        gui.renderer.SetDrawColor(gpu.Border_color_r, 
+                                              gpu.Border_color_g, 
+                                              gpu.Border_color_b, 
                                               255)
-                        renderer.FillRects([]sdl.Rect{
-                                sdl.Rect{0, 0, 640, p.GPU.Border_y_size},
-                                sdl.Rect{0, 480-p.GPU.Border_y_size, 640, p.GPU.Border_y_size},
-                                sdl.Rect{0, p.GPU.Border_y_size,  p.GPU.Border_x_size, 480-p.GPU.Border_y_size},
-                                sdl.Rect{640-p.GPU.Border_x_size, p.GPU.Border_y_size, p.GPU.Border_x_size, 480-p.GPU.Border_y_size},
+                        gui.renderer.FillRects([]sdl.Rect{
+                                sdl.Rect{0, 0, gui.x_size, gpu.Border_y_size},
+                                sdl.Rect{0, gui.y_size-gpu.Border_y_size, gui.x_size, gpu.Border_y_size},
+                                sdl.Rect{0, gpu.Border_y_size,  gpu.Border_x_size, gui.y_size-gpu.Border_y_size},
+                                sdl.Rect{gui.x_size-gpu.Border_x_size, gpu.Border_y_size, gpu.Border_x_size, gui.y_size-gpu.Border_y_size},
                         })
                 }
 
                 // step 6
-                renderer.Present()
-
+                gui.renderer.Present()
 
                 // cpu running routines ---------------------------------------------
 		if ! disasm {
@@ -453,7 +386,7 @@ func main() {
 				cursor_counter = cursor_counter - int32(ms_elapsed)
 				if cursor_counter <= 0 {
 					cursor_counter = CURSOR_BLINK_RATE
-					p.GPU.Cursor_visible = ! p.GPU.Cursor_visible
+					gpu.Cursor_visible = ! gpu.Cursor_visible
 				}
 
 				// WARNING - it has tendency to going in tight loop if
@@ -462,6 +395,10 @@ func main() {
 
 				if p.CPU0.IsEnabled() {
 					for p.CPU0.GetAllCycles() < desired_cycles0 {
+						if live_disasm {
+							fmt.Printf("%s", p.CPU0.DisassembleCurrentPC())	// XXX - change it for CURRENT CPU
+						}
+
 						p.CPU0.Execute()
 					}
 					desired_cycles0 = desired_cycles0 + CPU0_STEP*ms_elapsed
@@ -551,10 +488,14 @@ func main() {
                                                         window.SetFullscreen(0)
                                                 } else {
                                                         gui.fullscreen = true
-                                                        orig_mode = setFullscreen(window)
+                                                        orig_mode = gui.setFullscreen(window)
                                                 }
                                         case sdl.K_F10:
-						//
+						if ! live_disasm {
+							live_disasm = true
+						} else {
+							live_disasm = false
+						}
                                         case sdl.K_F9:
                                                 if ! disasm {
                                                         disasm = true
@@ -589,6 +530,10 @@ func main() {
                 window.SetDisplayMode(&orig_mode)
                 window.SetFullscreen(0)
         }
+	gui.texture_txt.Destroy()
+	gui.texture_bm0.Destroy()
+	gui.texture_bm1.Destroy()
+        gui.renderer.Destroy()
 
         memoryDump(p.CPU0, 0x0c)
         //memoryDump(p.CPU0, 0xAF_8000)

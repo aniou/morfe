@@ -107,6 +107,13 @@ func (p *Platform) LoadPlatformConfig(filename string) (*Config, error) {
 	pcfg      := Config{}
 	pcfg.Mode  = cfg.Section("platform").Key("mode").In("fmx-like", []string{"fmx-like", "frankenmode", "genx-like"})
 
+	// set DIP-switch config in emu
+	for i := 1; i<7; i += 1 {
+		keyname := fmt.Sprintf("DIP%d", i)
+		if cfg.Section("platform").HasKey(keyname) {
+			emu.DIP[i], _ = cfg.Section("platform").Key(keyname).Bool()
+		}
+	}
 	return &pcfg, nil
 
 }

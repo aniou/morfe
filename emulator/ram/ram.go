@@ -5,6 +5,8 @@ import (
 	_ "fmt"
 )
 
+const F_MAIN = 0
+
 type Ram struct {
 	data	[][]byte
 	name    string
@@ -21,20 +23,20 @@ func New(name string, banks int, size uint32) *Ram {
 	return &mem
 }
 
-func (mem *Ram) Write(addr uint32, val byte) error {
+func (mem *Ram) Write(fn byte, addr uint32, val byte) error {
 	mem.data[mem.bank][addr] = val
 	return nil
 }
 
-func (mem *Ram) Read(addr uint32) (byte, error) {
+func (mem *Ram) Read(fn byte, addr uint32) (byte, error) {
 	return mem.data[mem.bank][addr], nil
 }
 
-func (mem *Ram) Name() string {
+func (mem *Ram) Name(fn byte) string {
 	return mem.name
 }
 
-func (mem *Ram) Size() (uint32, uint32) {
+func (mem *Ram) Size(fn byte) (uint32, uint32) {
 	return uint32(len(mem.data)), 
 	       uint32(len(mem.data[0]))
 }

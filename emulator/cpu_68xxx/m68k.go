@@ -252,6 +252,10 @@ func (c *CPU) GetRegisters() map[string]uint32 {
         return register
 }
 
+func (c *CPU) DisassembleCurrentPC() string {
+	return "m68k: DisassembleCurrentPC() is not implemented yet\n"
+}
+
 func (c *CPU) Dissasm() string {
         dpc := C.m68k_get_reg(nil, C.M68K_REG_PC)
         b := make([]C.char, 512)

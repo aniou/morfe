@@ -1,4 +1,91 @@
 
+Go 1.17.1
+=========
+*13-09-2021*
+
+ ::
+
+  frames:  500 ticks 1000 cpu0 cycles   16122069 speed 16 MHz cpu1 cycles          0 speed 0 Hz
+  frames:  565 ticks 1000 cpu0 cycles   30425751 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+  frames:  568 ticks 1000 cpu0 cycles   44743750 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+  frames:  554 ticks 1001 cpu0 cycles   59047433 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+  frames:  558 ticks 1000 cpu0 cycles   73408388 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+  frames:  544 ticks 1002 cpu0 cycles   87697750 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+  frames:  564 ticks 1000 cpu0 cycles  102044389 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+  frames:  564 ticks 1001 cpu0 cycles  116376705 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+  frames:  571 ticks 1001 cpu0 cycles  130709025 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+  frames:  568 ticks 1000 cpu0 cycles  145041340 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+  frames:  568 ticks 1001 cpu0 cycles  159345023 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+  frames:  560 ticks 1001 cpu0 cycles  173677341 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+  frames:  567 ticks 1001 cpu0 cycles  188009660 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+  frames:  559 ticks 1000 cpu0 cycles  202341977 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+  frames:  573 ticks 1001 cpu0 cycles  216659977 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+
+
+Text rendered in Vicky2()
+=========================
+*25-07-2021*
+
+It was after code change that allow using multpiple GPUs (i.e. with data tables
+dereferenced from object)
+
+ ::
+
+    frames:  412 ticks 1001 cpu0 cycles   16522975 speed 16 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  465 ticks 1001 cpu0 cycles   30840972 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  466 ticks 1000 cpu0 cycles   45158974 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  467 ticks 1000 cpu0 cycles   59491290 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  472 ticks 1001 cpu0 cycles   73809291 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  455 ticks 1000 cpu0 cycles   88141608 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  465 ticks 1000 cpu0 cycles  102445290 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  463 ticks 1000 cpu0 cycles  116763293 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  469 ticks 1001 cpu0 cycles  131081291 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  467 ticks 1000 cpu0 cycles  145413611 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  466 ticks 1001 cpu0 cycles  159731611 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  460 ticks 1001 cpu0 cycles  174078244 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  466 ticks 1000 cpu0 cycles  188381929 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  461 ticks 1001 cpu0 cycles  202728565 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  459 ticks 1001 cpu0 cycles  217046567 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  464 ticks 1002 cpu0 cycles  231378881 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  465 ticks 1002 cpu0 cycles  245725517 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  464 ticks 1000 cpu0 cycles  260029198 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  464 ticks 1001 cpu0 cycles  274404475 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  469 ticks 1000 cpu0 cycles  288722470 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  464 ticks 1002 cpu0 cycles  303054788 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  462 ticks 1000 cpu0 cycles  317387107 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  460 ticks 1000 cpu0 cycles  331690788 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  473 ticks 1000 cpu0 cycles  346023106 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  468 ticks 1000 cpu0 cycles  360341108 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  462 ticks 1001 cpu0 cycles  374673424 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  464 ticks 1001 cpu0 cycles  389005744 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  461 ticks 1000 cpu0 cycles  403323744 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  464 ticks 1001 cpu0 cycles  417656061 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  443 ticks 1001 cpu0 cycles  431988379 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+
+Text rendered in Vicky2() with deferred panic (for debug)
+=========================================================
+*25-07-2021*
+
+ ::
+
+    frames:  350 ticks 1001 cpu0 cycles   16021844 speed 16 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  455 ticks 1001 cpu0 cycles   30397115 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  452 ticks 1000 cpu0 cycles   44715117 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  460 ticks 1001 cpu0 cycles   59033115 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  440 ticks 1000 cpu0 cycles   73351117 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  447 ticks 1000 cpu0 cycles   87683434 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  450 ticks 1000 cpu0 cycles  101987116 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  450 ticks 1000 cpu0 cycles  116305114 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  454 ticks 1000 cpu0 cycles  130623115 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  456 ticks 1000 cpu0 cycles  144926799 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  458 ticks 1001 cpu0 cycles  159259116 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  449 ticks 1000 cpu0 cycles  173577114 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  452 ticks 1001 cpu0 cycles  187880797 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  458 ticks 1000 cpu0 cycles  202213116 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+    frames:  453 ticks 1000 cpu0 cycles  216531115 speed 14 MHz cpu1 cycles          0 speed 0 Hz
+
+
+
 
 No vsync, 65c816 in goroutine at max
 ====================================
@@ -157,70 +244,6 @@ bm0.ini test in Vicky2()
     frames:  272 ticks 1000 cpu0 cycles  145943375 speed 14 MHz cpu1 cycles          0 speed 0 Hz
     frames:  271 ticks 1001 cpu0 cycles  160261374 speed 14 MHz cpu1 cycles          0 speed 0 Hz
     frames:  273 ticks 1001 cpu0 cycles  174608010 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-
-
-Text rendered in Vicky2()
-=========================
-*25-07-2021*
-
-It was after code change that allow using multpiple GPUs (i.e. with data tables
-dereferenced from object)
-
- ::
-
-    frames:  412 ticks 1001 cpu0 cycles   16522975 speed 16 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  465 ticks 1001 cpu0 cycles   30840972 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  466 ticks 1000 cpu0 cycles   45158974 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  467 ticks 1000 cpu0 cycles   59491290 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  472 ticks 1001 cpu0 cycles   73809291 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  455 ticks 1000 cpu0 cycles   88141608 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  465 ticks 1000 cpu0 cycles  102445290 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  463 ticks 1000 cpu0 cycles  116763293 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  469 ticks 1001 cpu0 cycles  131081291 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  467 ticks 1000 cpu0 cycles  145413611 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  466 ticks 1001 cpu0 cycles  159731611 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  460 ticks 1001 cpu0 cycles  174078244 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  466 ticks 1000 cpu0 cycles  188381929 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  461 ticks 1001 cpu0 cycles  202728565 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  459 ticks 1001 cpu0 cycles  217046567 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  464 ticks 1002 cpu0 cycles  231378881 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  465 ticks 1002 cpu0 cycles  245725517 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  464 ticks 1000 cpu0 cycles  260029198 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  464 ticks 1001 cpu0 cycles  274404475 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  469 ticks 1000 cpu0 cycles  288722470 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  464 ticks 1002 cpu0 cycles  303054788 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  462 ticks 1000 cpu0 cycles  317387107 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  460 ticks 1000 cpu0 cycles  331690788 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  473 ticks 1000 cpu0 cycles  346023106 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  468 ticks 1000 cpu0 cycles  360341108 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  462 ticks 1001 cpu0 cycles  374673424 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  464 ticks 1001 cpu0 cycles  389005744 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  461 ticks 1000 cpu0 cycles  403323744 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  464 ticks 1001 cpu0 cycles  417656061 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  443 ticks 1001 cpu0 cycles  431988379 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-
-Text rendered in Vicky2() with deferred panic (for debug)
-=========================================================
-*25-07-2021*
-
- ::
-
-    frames:  350 ticks 1001 cpu0 cycles   16021844 speed 16 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  455 ticks 1001 cpu0 cycles   30397115 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  452 ticks 1000 cpu0 cycles   44715117 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  460 ticks 1001 cpu0 cycles   59033115 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  440 ticks 1000 cpu0 cycles   73351117 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  447 ticks 1000 cpu0 cycles   87683434 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  450 ticks 1000 cpu0 cycles  101987116 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  450 ticks 1000 cpu0 cycles  116305114 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  454 ticks 1000 cpu0 cycles  130623115 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  456 ticks 1000 cpu0 cycles  144926799 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  458 ticks 1001 cpu0 cycles  159259116 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  449 ticks 1000 cpu0 cycles  173577114 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  452 ticks 1001 cpu0 cycles  187880797 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  458 ticks 1000 cpu0 cycles  202213116 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-    frames:  453 ticks 1000 cpu0 cycles  216531115 speed 14 MHz cpu1 cycles          0 speed 0 Hz
-
 
 
 Text rendered in main()
