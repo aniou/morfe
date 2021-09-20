@@ -167,14 +167,11 @@ func (gui *GUI) newTexture() *sdl.Texture {
    during return to original mode,  so don't improve following in this way
 */
 
-func (gui *GUI) setFullscreen(window *sdl.Window) sdl.DisplayMode {
+func (gui *GUI) setFullscreen(window *sdl.Window) {
         var wanted_mode = sdl.DisplayMode{sdl.PIXELFORMAT_ARGB8888, gui.x_size, gui.y_size, 60, nil}
         var result_mode sdl.DisplayMode
-        display_index, _ := window.GetDisplayIndex()
-        orig_mode, _ := sdl.GetCurrentDisplayMode(display_index)
-        fmt.Printf("original mode width: %d\n", orig_mode.W)
-        fmt.Printf("original mode heigt: %d\n", orig_mode.H)
 
+        display_index, _ := window.GetDisplayIndex()
         _, err := sdl.GetClosestDisplayMode(display_index, &wanted_mode, &result_mode)
         if err != nil {
                 fmt.Fprintf(os.Stderr, "Failed to get ClosestMode: %s\n", err)
@@ -184,7 +181,6 @@ func (gui *GUI) setFullscreen(window *sdl.Window) sdl.DisplayMode {
         fmt.Printf("wanted mode heigt: %d\n", result_mode.H)
         window.SetDisplayMode(&result_mode)
         window.SetFullscreen(sdl.WINDOW_FULLSCREEN)
-        return orig_mode
 }
 
 
@@ -277,6 +273,13 @@ func main() {
         defer window.Destroy()
         debugPixelFormat(window)
 
+	// step 2.5 - preserve actual mode (we are able to fullscreen too and we want to
+	//            restore original mode on exit)
+        display_index, _ := window.GetDisplayIndex()
+        orig_mode, _	  = sdl.GetCurrentDisplayMode(display_index)
+        fmt.Printf("original mode width: %d\n", orig_mode.W)
+        fmt.Printf("original mode heigt: %d\n", orig_mode.H)
+
         // step 3: Renderer
 	gui.newRendererAndTexture(window)
 
@@ -315,6 +318,12 @@ func main() {
 		// if Master_H was changed, then resolution change may be neccessary
 		if gui.master_h != gpu.Master_H {
 
+			// exit from fullscreen if necessary
+			if gui.fullscreen {
+				window.SetDisplayMode(&orig_mode)
+				window.SetFullscreen(0)
+			}
+
 			// warning - no double pixel support yet!
 			gui.master_h = gpu.Master_H
 			if gui.master_h & 0x01 == 0 {
@@ -332,6 +341,11 @@ func main() {
 
 			window.SetSize(gui.x_size, gui.y_size)
 			gui.newRendererAndTexture(window)
+
+			// return to fullscreen if necessary
+			if gui.fullscreen {
+				gui.setFullscreen(window)
+			}
 		}
 
                 // step 1
@@ -488,7 +502,7 @@ func main() {
                                                         window.SetFullscreen(0)
                                                 } else {
                                                         gui.fullscreen = true
-                                                        orig_mode = gui.setFullscreen(window)
+                                                        gui.setFullscreen(window)
                                                 }
                                         case sdl.K_F10:
 						if ! live_disasm {
