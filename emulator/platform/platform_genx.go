@@ -12,11 +12,70 @@ import (
         "github.com/aniou/morfe/emulator/bus"
         "github.com/aniou/morfe/emulator/cpu_65c816"
         "github.com/aniou/morfe/emulator/cpu_68xxx"
+        "github.com/aniou/morfe/emulator/cpu_dummy"
         "github.com/aniou/morfe/emulator/vicky2"
+        "github.com/aniou/morfe/emulator/vicky3"
         "github.com/aniou/morfe/emulator/superio"
         "github.com/aniou/morfe/emulator/ram"
         "github.com/aniou/morfe/emulator/mathi"
 )
+
+
+
+// Tentative Memory Map for the A2560U - PRELIMINARY
+// MC68SEC000 Memory Map Model
+//1Mx16   (2x 1Mx8) <- $0000_0000 - $001F_FFFF - RAM (U Model)
+//2Mx16   (2x 2Mx8) <- $0000_0000 - $003F_FFFF - RAM (U + Model)
+//                                          $0040_0000 - $00AF_FFFF - FREE SPACE (Future SDRAM Expansion Card?)
+
+//                     $00B0_0000 - $00B1_FFFF - GABE Registers (SuperIO/Math Block/SDCard/IDE/Ethernet/SDMA)
+//                     $00B2_0000 - $00B3_FFFF - BEATRIX Registers (CODEC/ADC/DAC0/DAC1/PSG/SID)
+//                             $00B4_0000 - $00B5_FFFF - VICKY Registers
+//                             $00B6_0000 - $00B6_3FFF - TEXT Memory
+//                             $00B6_4000 - $00B6_7FFF - Color Memory
+
+//                            $00BF_0000 - $00BF_FFFF - EXPANSION Chip Select
+// 512Kx32 (2Mx8) <- $00C0_0000 - $00DF_FFFF - VRAM MEMORY
+// 1Mx16   (2Mx8) <- $00E0_0000 - $00FF_FFFF - FLASH0
+
+// TODO - parametrize this, U has 2megs and U+ - 4
+func (p *Platform) SetA2560U() {
+
+	log.Panic("work in progress, see a2560u branch for latest code for this platform!")
+
+	p.Init     = p.InitA2560U
+
+        bus0       := bus.New("bus0")
+        bus1       := bus.New("bus1") // dummy one
+
+        //p.MATHI     =   mathi.New("mathi",       0x100)  // not implemented yet
+        //p.SIO       = superio.New("sio",         0x400)  // not implemented yet
+        p.GPU       =  vicky3.New("gpu0",       0x2000)    // vram = 0x20_0000, text = 0x4000
+
+
+        // m68k has RAM attached directly
+        //bus0.Attach(emu.M_USER, ram0,        ram.F_MAIN, 0x00_0000, 0x3F_FFFF)
+        bus0.Attach(emu.M_USER, p.GPU,    vicky2.F_MAIN, 0xB4_0000, 0xB5_FFFF)
+        bus0.Attach(emu.M_USER, p.GPU,    vicky2.F_TEXT, 0xB6_0000, 0xB6_3FFF)
+        bus0.Attach(emu.M_USER, p.GPU,  vicky2.F_TEXT_C, 0xB6_4000, 0xB6_7FFF)
+        bus0.Attach(emu.M_USER, p.GPU,    vicky2.F_VRAM, 0xC0_0000, 0xDF_FFFF)
+
+        //bus0.Attach(emu.M_USER, ram0,        ram.F_MAIN, 0x00_0000, 0x3F_FFFF)
+        bus0.Attach(emu.M_SV,   p.GPU,    vicky2.F_MAIN, 0xB4_0000, 0xB5_FFFF)
+        bus0.Attach(emu.M_SV,   p.GPU,    vicky2.F_TEXT, 0xB6_0000, 0xB6_3FFF)
+        bus0.Attach(emu.M_SV,   p.GPU,  vicky2.F_TEXT_C, 0xB6_4000, 0xB6_7FFF)
+        bus0.Attach(emu.M_SV,   p.GPU,    vicky2.F_VRAM, 0xC0_0000, 0xDF_FFFF)
+
+	p.CPU0     = cpu_68xxx.New(bus0,  "cpu0") // TODO - add type? Or another routine for type? And pass RAM size
+        p.CPU1     = cpu_dummy.New(bus1,  "cpu1")
+
+        mylog.Logger.Log("platform: A2560-like created")
+
+}
+
+func (p *Platform) InitA2560U() {
+}
+
 
 // a "frankenmode", not existing machine that starts 65c816
 // but has active m68k
@@ -72,63 +131,6 @@ func (p *Platform) SetFranken() {
 
 
 func (p *Platform) SetGenX() {
-	/*
-        p.Init  = p.InitGenX
-
-        bus0       := bus.New("bus0")
-        bus1       := bus.New("bus1")
-
-        p.MATHI     =   mathi.New("mathi",       0x100)
-        p.SIO       = superio.New("sio",         0x400)
-        p.GPU       =  vicky2.New("gpu0",    0x01_0000 + 0x40_0000 ) // +bitmap area
-        ram0       :=     ram.New("ram0", 1, 0x40_0000)              // single bank
-
-        bus0.Attach(ram0,       0, 0x00_0000, 0x3F_FFFF)
-        bus0.Attach(p.MATHI,    0, 0x00_0100, 0x00_01FF)
-        bus0.Attach(p.GPU,      0, 0xAF_0000, 0xEF_FFFF)
-        bus0.Attach(p.SIO,      0, 0xAF_1000, 0xAF_13FF)
-
-        p.CPU0     = cpu_65c816.New(bus0, "cpu0")
-        p.CPU1     = cpu_dummy.New(bus1,  "cpu1")
-        
-        mylog.Logger.Log("platform: fmx-like created")
-
-
-
-
-	bus0       := bus.New("bus0")
-	bus1       := bus.New("bus1")
-
-        ram0        :=    ram.New("ram0", 1, 0x400000)
-	p.GPU0       =  vicky2.New("gpu0",    0x01_0000 + 0x40_0000 ) // +bitmap area
-
-        bus0.Attach(ram0,       0, 0x00_0000, 0x3F_FFFF)
-        //bus0.Attach(gpu0.VRAM,  0, 0x40_0000, 0x7F_FFFF)
-        bus0.Attach(p.GPU,       0, 0xC4_0000, 0xC5_FFFF)
-        //bus0.Attach(gpu0.TEXT,  0, 0xC6_0000, 0xC6_3FFF)
-        //bus0.Attach(gpu0.COLOR, 0, 0xC6_4000, 0xC6_7FFF)
-
-	/*
-        bus0.Attach(nil,   "gpu0-vram",  0, 0x40_0000, 0x7F_FFFF) //  2 pages
-        bus0.Attach(nil,   "gpu1-vram",  0, 0x80_0000, 0xBF_FFFF) //  2 pages
-        bus0.Attach(nil,   "gabe",       0, 0xC0_0000, 0xC1_FFFF)
-        bus0.Attach(nil,   "beatrix",    0, 0xC2_0000, 0xC3_FFFF)
-        bus0.Attach(nil,   "gpu0-reg",   0, 0xC4_0000, 0xC5_FFFF)
-        bus0.Attach(nil,   "gpu0-text",  0, 0xC6_0000, 0xC6_3FFF)
-        bus0.Attach(nil,   "gpu0-color", 0, 0xC6_4000, 0xC6_7FFF)
-        bus0.Attach(nil,   "reserved0",  0, 0xC6_8000, 0xC7_FFFF) // todo put placeholder for restricted access
-        bus0.Attach(nil,   "gpu1-reg",   0, 0xC8_0000, 0xC9_FFFF)
-        bus0.Attach(nil,   "gpu1-text",  0, 0xCA_0000, 0xCA_3FFF)
-        bus0.Attach(nil,   "gpu1-color", 0, 0xCA_4000, 0xCA_7FFF)
-        bus0.Attach(nil,   "reserved1",  0, 0xCA_8000, 0xCF_FFFF) // todo put placeholder for restricted access
-        bus0.Attach(nil,   "reserved2",  0, 0xD0_0000, 0xDF_FFFF) // todo put placeholder for restricted access
-        bus0.Attach(nil,   "dram0",      0, 0xE0_0000, 0xFF_FFFF) // 32 pages
-	log.Panicln("it is ok to halt here")
-
-        p.CPU0     = cpu_65c816.New(bus0, "cpu0")
-        p.CPU1     = cpu_68xxx.New(bus1,  "cpu1")
-	*/
-
 }
 
 func (p *Platform) InitGenX() {

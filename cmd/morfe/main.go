@@ -236,6 +236,8 @@ func main() {
 		p.SetFranken()
 	case "genx-like":
 		p.SetGenX()
+	case "a2560u-like":
+		p.SetA2560U()
 	default:
 		log.Fatalf("unknown mode %s", pcfg.Mode)
 	}
