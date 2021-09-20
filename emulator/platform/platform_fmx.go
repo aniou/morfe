@@ -11,7 +11,7 @@ import (
         "github.com/aniou/morfe/emulator/cpu_65c816"
         "github.com/aniou/morfe/emulator/cpu_dummy"
         _ "github.com/aniou/morfe/emulator/vicky2"
-        "github.com/aniou/morfe/emulator/vicky3"
+        "github.com/aniou/morfe/emulator/vicky2"
         "github.com/aniou/morfe/emulator/superio"
         _ "github.com/aniou/morfe/emulator/vram"
         "github.com/aniou/morfe/emulator/ram"
@@ -43,16 +43,16 @@ func (p *Platform) SetFMX() {
 
 	p.MATHI     =   mathi.New("mathi",       0x100)
         p.SIO       = superio.New("sio",         0x400)
-	p.GPU       =  vicky3.New("gpu0",       0x1_0000)	// should be 0xA000 but there is no support for 0xAF:Exxx
-	//p.GPU       =  vicky3.New("gpu0",       0xA000)
+	p.GPU       =  vicky2.New("gpu0",       0x1_0000)	// should be 0xA000 but there is no support for 0xAF:Exxx
+	//p.GPU       =  vicky2.New("gpu0",       0xA000)
         ram0       :=     ram.New("ram0", 1, 0x40_0000)         // single bank
 
 	bus0.Attach(emu.M_USER, ram0,        ram.F_MAIN, 0x00_0000, 0x3F_FFFF)
         bus0.Attach(emu.M_USER, p.MATHI,   mathi.F_MAIN, 0x00_0100, 0x00_01FF)
-        bus0.Attach(emu.M_USER, p.GPU,    vicky3.F_MAIN, 0xAF_0000, 0xAF_FFFF)
-        bus0.Attach(emu.M_USER, p.GPU,    vicky3.F_TEXT, 0xAF_A000, 0xAF_BFFF)
-        bus0.Attach(emu.M_USER, p.GPU,  vicky3.F_TEXT_C, 0xAF_C000, 0xAF_DFFF)
-        bus0.Attach(emu.M_USER, p.GPU,    vicky3.F_VRAM, 0xB0_0000, 0xEF_FFFF)	// TODO - parametrize that
+        bus0.Attach(emu.M_USER, p.GPU,    vicky2.F_MAIN, 0xAF_0000, 0xAF_FFFF)
+        bus0.Attach(emu.M_USER, p.GPU,    vicky2.F_TEXT, 0xAF_A000, 0xAF_BFFF)
+        bus0.Attach(emu.M_USER, p.GPU,  vicky2.F_TEXT_C, 0xAF_C000, 0xAF_DFFF)
+        bus0.Attach(emu.M_USER, p.GPU,    vicky2.F_VRAM, 0xB0_0000, 0xEF_FFFF)	// TODO - parametrize that
         bus0.Attach(emu.M_USER, p.SIO,   superio.F_MAIN, 0xAF_1000, 0xAF_13FF)
 
         p.CPU0     = cpu_65c816.New(bus0, "cpu0")
