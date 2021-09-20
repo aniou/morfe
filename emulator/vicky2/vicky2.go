@@ -2,6 +2,9 @@ package vicky2
 
 // re-implementing Vicky2 at new bus
 
+// this is a little-endian module, suitable for 65c816-based emulators
+// for a big-endian one see emulator/vicky3/
+
 import (
         "encoding/binary"
         "fmt"
