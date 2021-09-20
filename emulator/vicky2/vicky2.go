@@ -1,4 +1,4 @@
-package vicky3
+package vicky2
 
 // re-implementing Vicky2 at new bus
 
@@ -140,9 +140,9 @@ func New(name string, size int) *Vicky {
         v.Mem[ BORDER_CTRL_REG ] = 0x01
 
 	// some tests
-	//fmt.Printf("vicky3: v.TFB    %p\n", &v.TFB  )
-	//fmt.Printf("vicky3: v.BM0FB  %p\n", &v.BM0FB)
-	//fmt.Printf("vicky3: v.BM1FB  %p\n", &v.BM1FB)
+	//fmt.Printf("vicky2: v.TFB    %p\n", &v.TFB  )
+	//fmt.Printf("vicky2: v.BM0FB  %p\n", &v.BM0FB)
+	//fmt.Printf("vicky2: v.BM1FB  %p\n", &v.BM1FB)
 
 	v.c.Master_H	   = 0x00 // 640x480 no pixel doubling
         v.c.Cursor_visible = true
@@ -292,7 +292,7 @@ func (v *Vicky) RenderBitmapText() {
 
 // RAM-interface specific
 func (v *Vicky) Dump(address uint32) []byte {
-        log.Panicf("vicky3 Dump is not implemented yet")
+        log.Panicf("vicky2 Dump is not implemented yet")
         return []byte{}
 }
 
@@ -311,7 +311,7 @@ func (v *Vicky) Name(fn byte) string {
 }
 
 func (v *Vicky) Clear() { 
-        log.Panicf("vicky3 Clear is not implemented yet")
+        log.Panicf("vicky2 Clear is not implemented yet")
 }
 
 func (v *Vicky) Size(fn byte) (uint32, uint32) {
@@ -339,7 +339,7 @@ func (v *Vicky) Read(fn byte, addr uint32) (byte, error) {
 	case F_VRAM:
 		return v.vram[addr], nil
 	}
-	return 0, fmt.Errorf(" vicky3: %s Read addr %6X fn %d is not implemented", v.name, addr, fn)
+	return 0, fmt.Errorf(" vicky2: %s Read addr %6X fn %d is not implemented", v.name, addr, fn)
 }
 
 func (v *Vicky) Write(fn byte, addr uint32, val byte) (error) {
@@ -358,7 +358,7 @@ func (v *Vicky) Write(fn byte, addr uint32, val byte) (error) {
 		v.vram[addr] = val
 		v.UpdateBitmapFB(addr, val)
 	default:
-		return fmt.Errorf(" vicky3: %s Write addr %6X val %2X fn %d is not implemented", v.name, addr, val)
+		return fmt.Errorf(" vicky2: %s Write addr %6X val %2X fn %d is not implemented", v.name, addr, val)
 	}
 	return nil
 
@@ -384,7 +384,7 @@ func (v *Vicky) ReadVram(addr uint32) (byte, error) {
 
 
 func (v *Vicky) ReadReg(addr uint32) (byte, error) {
-        //fmt.Printf("vicky3: %s Read addr %06x\n", v.name, addr)
+        //fmt.Printf("vicky2: %s Read addr %06x\n", v.name, addr)
         switch addr {
         //case 0x0001:
         //        return 0x00, nil        // 640x480, no pixel doubling
@@ -414,7 +414,7 @@ func (v *Vicky) ReadReg(addr uint32) (byte, error) {
 }
 
 func (v *Vicky) WriteReg(addr uint32, val byte) error {
-        //fmt.Printf("vicky3: %s Write addr %06x val %02x\n", v.name, addr, val)
+        //fmt.Printf("vicky2: %s Write addr %06x val %02x\n", v.name, addr, val)
         v.Mem[addr] = val
 
         switch {
@@ -563,7 +563,7 @@ func (v *Vicky) WriteReg(addr uint32, val byte) error {
                 v.updateFontCache(addr - FONT_MEMORY_BANK0, val)  // every bit in font cache is mapped to byte
 
         default:
-                return fmt.Errorf(" vicky3: %s Write addr %6X val %2X is not implemented", v.name, addr, val)
+                return fmt.Errorf(" vicky2: %s Write addr %6X val %2X is not implemented", v.name, addr, val)
         }
 	return nil
 }
