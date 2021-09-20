@@ -105,7 +105,7 @@ func (p *Platform) LoadPlatformConfig(filename string) (*Config, error) {
         }
 
 	pcfg      := Config{}
-	pcfg.Mode  = cfg.Section("platform").Key("mode").In("fmx-like", []string{"fmx-like", "frankenmode", "genx-like"})
+	pcfg.Mode  = cfg.Section("platform").Key("mode").In("unknown", []string{"fmx-like", "frankenmode", "genx-like", "a2560u-like"})
 
 	// set DIP-switch config in emu
 	for i := 1; i<7; i += 1 {
