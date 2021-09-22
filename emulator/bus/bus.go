@@ -4,8 +4,8 @@ package bus
 import (
 	"fmt"
 	"log"
-	_ "os"
-	_ "runtime/debug"
+	"os"
+	"runtime/debug"
 
 	_ "github.com/aniou/morfe/lib/mylog"
 	"github.com/aniou/morfe/emulator"
@@ -74,7 +74,6 @@ func (b *Bus) Write_8(mode byte, addr uint32, val byte) {
 	offset := b.segment[mode][s].start
 	fn     := b.segment[mode][s].fn
 
-	/*
         defer func() {
         	if err := recover(); err != nil {
             		log.Println("panic occurred:", err)
@@ -83,7 +82,6 @@ func (b *Bus) Write_8(mode byte, addr uint32, val byte) {
 			os.Exit(1)
         	}
     	}()
-	*/
 
 	if err := b.segment[mode][s].mem.Write(fn, addr - offset, val); err != nil {
 		fmt.Printf("bus: %4s Write_8 mode %d addr %06x : %s\n", b.name, mode, addr, err)
@@ -95,7 +93,6 @@ func (b *Bus) Read_8(mode byte, addr uint32) byte {
 	offset      := b.segment[mode][s].start
 	fn          := b.segment[mode][s].fn
 
-	/*
         defer func() {
         	if err := recover(); err != nil {
             		log.Println("panic occurred:", err)
@@ -104,7 +101,6 @@ func (b *Bus) Read_8(mode byte, addr uint32) byte {
 			os.Exit(1)
         	}
     	}()
-	*/
 
 	val, err    := b.segment[mode][s].mem.Read(fn, addr - offset)
 	if err != nil {

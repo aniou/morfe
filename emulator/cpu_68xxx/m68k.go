@@ -116,7 +116,7 @@ func go_m68k_write_memory_8(mode C.uchar, addr, val C.uint) {
 
 //export go_m68k_write_memory_16
 func go_m68k_write_memory_16(mode C.uchar, addr, val C.uint) {
-        //fmt.Printf("m68k write16 %8x val  %8x %d\n", addr, val, val)
+        fmt.Printf("m68k write16 %8x val  %8x %d\n", addr, val, val)
 
         a   := uint32(addr)
 	m   := byte(mode)
@@ -190,8 +190,8 @@ func (c *CPU) Read_8(addr uint32) byte {
 func (c *CPU) Reset() {
 
         // just for test
-        C.m68k_write_memory_32(0,           0x08_0000)    // stack
-        C.m68k_write_memory_32(4,           0x20_0000)    // instruction pointer
+        // C.m68k_write_memory_32(0,           0x08_0000)    // stack
+        // C.m68k_write_memory_32(4,           0x20_0000)    // instruction pointer
         // C.m68k_write_memory_16(0x20_0000,      0x7042)    // moveq  #41, D0
         // C.m68k_write_memory_16(0x20_0002,      0x13C0)    // move.b D0, $AFA000
         // C.m68k_write_memory_32(0x20_0004, 0x00AF_A000)    // ...
@@ -253,7 +253,8 @@ func (c *CPU) GetRegisters() map[string]uint32 {
 }
 
 func (c *CPU) DisassembleCurrentPC() string {
-	return "m68k: DisassembleCurrentPC() is not implemented yet\n"
+	//return "m68k: DisassembleCurrentPC() is not implemented yet\n"
+	return c.Dissasm() 
 }
 
 func (c *CPU) Dissasm() string {

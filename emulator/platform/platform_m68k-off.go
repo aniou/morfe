@@ -18,3 +18,7 @@ func (p *Platform) SetFranken() {
 func (p *Platform) SetA2560U() {
 	log.Panic("Emulator was built without m68k support")
 }
+
+func (p *Platform) SetA2560K() {
+	log.Panic("Emulator was built without m68k support")
+}

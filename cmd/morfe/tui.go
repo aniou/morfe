@@ -898,8 +898,8 @@ func mainTUI(ch chan string, cpu emu.Processor) {
         ui     := NewTUI(ch, cpu)
         ui.Init(g)
 
-        ui.addWatch(0x10_0000)
-        ui.addWatch(0xaf_a000)
+        //ui.addWatch(0x10_0000)
+        //ui.addWatch(0xaf_a000)
 
         ui.Run(g)
         g.Close()

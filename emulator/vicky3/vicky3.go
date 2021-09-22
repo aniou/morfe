@@ -126,11 +126,11 @@ func New(name string, size int) *Vicky {
 
 	v.Mem    = make([]byte,   size)		 // main memory - TODO: shrink it!
 
-        v.text   = make([]uint32,    0x2000)        // text memory  - 0x4000 in GenX
+        v.text   = make([]uint32,    0x4000)        // text memory  - 0x4000 in GenX
 	v.vram   = make([]byte  , 0x40_0000)        // 4MB - TODO: settable
-	v.tc     = make([]byte,      0x2000)	    // text color memory - 0x4000 in GenX
-        v.fg     = make([]uint32,    0x2000)        // foreground cache -  0x4000 in GenX
-        v.bg     = make([]uint32,    0x2000)        // background color cache - 0x4000 in GenX
+	v.tc     = make([]byte,      0x4000)	    // text color memory - 0x4000 in GenX
+        v.fg     = make([]uint32,    0x4000)        // foreground cache -  0x4000 in GenX
+        v.bg     = make([]uint32,    0x4000)        // background color cache - 0x4000 in GenX
 
 
         v.blut   = make([]uint32, 0x0800)        // bitmap LUT cache : 256 colors * 8 banks (lut0 to lut7)

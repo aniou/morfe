@@ -4,7 +4,7 @@
 package platform
 
 import (
-	//"log"
+	"log"
 
 	"github.com/aniou/morfe/lib/mylog"
 
@@ -55,16 +55,16 @@ func (p *Platform) SetA2560U() {
 
         // m68k has RAM attached directly
         //bus0.Attach(emu.M_USER, ram0,        ram.F_MAIN, 0x00_0000, 0x3F_FFFF)
-        bus0.Attach(emu.M_USER, p.GPU,    vicky2.F_MAIN, 0xB4_0000, 0xB5_FFFF)
-        bus0.Attach(emu.M_USER, p.GPU,    vicky2.F_TEXT, 0xB6_0000, 0xB6_3FFF)
-        bus0.Attach(emu.M_USER, p.GPU,  vicky2.F_TEXT_C, 0xB6_4000, 0xB6_7FFF)
-        bus0.Attach(emu.M_USER, p.GPU,    vicky2.F_VRAM, 0xC0_0000, 0xDF_FFFF)
+        bus0.Attach(emu.M_USER, p.GPU,    vicky3.F_MAIN, 0xB4_0000, 0xB5_FFFF)
+        bus0.Attach(emu.M_USER, p.GPU,    vicky3.F_TEXT, 0xB6_0000, 0xB6_3FFF)
+        bus0.Attach(emu.M_USER, p.GPU,  vicky3.F_TEXT_C, 0xB6_4000, 0xB6_7FFF)
+        bus0.Attach(emu.M_USER, p.GPU,    vicky3.F_VRAM, 0xC0_0000, 0xDF_FFFF)
 
         //bus0.Attach(emu.M_USER, ram0,        ram.F_MAIN, 0x00_0000, 0x3F_FFFF)
-        bus0.Attach(emu.M_SV,   p.GPU,    vicky2.F_MAIN, 0xB4_0000, 0xB5_FFFF)
-        bus0.Attach(emu.M_SV,   p.GPU,    vicky2.F_TEXT, 0xB6_0000, 0xB6_3FFF)
-        bus0.Attach(emu.M_SV,   p.GPU,  vicky2.F_TEXT_C, 0xB6_4000, 0xB6_7FFF)
-        bus0.Attach(emu.M_SV,   p.GPU,    vicky2.F_VRAM, 0xC0_0000, 0xDF_FFFF)
+        bus0.Attach(emu.M_SV,   p.GPU,    vicky3.F_MAIN, 0xB4_0000, 0xB5_FFFF)
+        bus0.Attach(emu.M_SV,   p.GPU,    vicky3.F_TEXT, 0xB6_0000, 0xB6_3FFF)
+        bus0.Attach(emu.M_SV,   p.GPU,  vicky3.F_TEXT_C, 0xB6_4000, 0xB6_7FFF)
+        bus0.Attach(emu.M_SV,   p.GPU,    vicky3.F_VRAM, 0xC0_0000, 0xDF_FFFF)
 
 	p.CPU0     = cpu_68xxx.New(bus0,  "cpu0") // TODO - add type? Or another routine for type? And pass RAM size
         p.CPU1     = cpu_dummy.New(bus1,  "cpu1")
@@ -74,6 +74,7 @@ func (p *Platform) SetA2560U() {
 }
 
 func (p *Platform) InitA2560U() {
+        p.CPU0.Reset()
 }
 
 
@@ -134,4 +135,40 @@ func (p *Platform) SetGenX() {
 }
 
 func (p *Platform) InitGenX() {
+}
+
+// an A2560K may have a memory layout similar to GenX-one
+func (p *Platform) SetA2560K() {
+
+	p.Init     = p.InitA2560K
+
+        bus0       := bus.New("bus0")
+        bus1       := bus.New("bus1") // dummy one
+
+        //p.MATHI     =   mathi.New("mathi",       0x100)  // not implemented yet
+        //p.SIO       = superio.New("sio",         0x400)  // not implemented yet
+        p.GPU       =  vicky3.New("gpu0",       0x20000)    // vram = 0x20_0000, text = 0x4000
+        flash0    :=     ram.New("flash0", 1, 0x10_0000)       // 1MB of "flash"
+
+
+        // m68k has RAM attached directly
+        //bus0.Attach(emu.M_USER, ram0,        ram.F_MAIN, 0x00_0000, 0x3F_FFFF)
+        bus0.Attach(emu.M_USER, p.GPU,    vicky3.F_VRAM, 0x40_0000, 0x7F_FFFF)   
+        bus0.Attach(emu.M_USER, p.GPU,    vicky3.F_MAIN, 0xC4_0000, 0xC5_FFFF)
+        bus0.Attach(emu.M_USER, p.GPU,    vicky3.F_TEXT, 0xC6_0000, 0xC6_3FFF)
+	bus0.Attach(emu.M_USER, p.GPU,  vicky3.F_TEXT_C, 0xC6_4000, 0xC6_7FFF)
+
+        //bus0.Attach(emu.M_USER, ram0,        ram.F_MAIN, 0x00_0000, 0x3F_FFFF)
+        bus0.Attach(emu.M_SV,   p.GPU,    vicky3.F_VRAM, 0x40_0000, 0x7F_FFFF)   
+        bus0.Attach(emu.M_SV,   flash0,  ram.F_MAIN, 0xC0_0000, 0xCF_FFFF)
+
+	p.CPU0     = cpu_68xxx.New(bus0,  "cpu0") // TODO - add type? Or another routine for type? And pass RAM size
+        p.CPU1     = cpu_dummy.New(bus1,  "cpu1")
+
+        mylog.Logger.Log("platform: A2560k-like created")
+
+}
+
+func (p *Platform) InitA2560K() {
+        p.CPU0.Reset()
 }

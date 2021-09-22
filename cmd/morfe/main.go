@@ -238,6 +238,8 @@ func main() {
 		p.SetGenX()
 	case "a2560u-like":
 		p.SetA2560U()
+	case "a2560k-like":
+		p.SetA2560K()
 	default:
 		log.Fatalf("unknown mode %s", pcfg.Mode)
 	}
@@ -309,7 +311,19 @@ func main() {
         // main loop -------------------------------------------------------------------
         running = true
         disasm  = false
-        live_disasm  = false
+        live_disasm  = true
+
+        memoryDump(p.CPU0, 0x0)
+	// XXX - temporary
+	if disasm == true {
+		ch = make(chan string, 1)
+		p.CPU0.ResetCycles()
+		go func() {
+			mainTUI(ch, p.CPU0)		// XXX - parametrize that!
+		}()
+	}
+	// XXX - temporary
+
 
 	desired_cycles0 := uint64(CPU0_STEP)
 	desired_cycles1 := uint64(CPU1_STEP)
@@ -412,10 +426,11 @@ func main() {
 				if p.CPU0.IsEnabled() {
 					for p.CPU0.GetAllCycles() < desired_cycles0 {
 						if live_disasm {
-							fmt.Printf("%s", p.CPU0.DisassembleCurrentPC())	// XXX - change it for CURRENT CPU
+							fmt.Printf("%s\n", p.CPU0.DisassembleCurrentPC())	// XXX - change it for CURRENT CPU
+							p.CPU0.Step()
+						} else {
+							p.CPU0.Execute()
 						}
-
-						p.CPU0.Execute()
 					}
 					desired_cycles0 = desired_cycles0 + CPU0_STEP*ms_elapsed
 				}
@@ -518,7 +533,7 @@ func main() {
 							ch = make(chan string, 1)
 							p.CPU1.ResetCycles()
 							go func() {
-								mainTUI(ch, p.CPU1)		// XXX - parametrize that!
+								mainTUI(ch, p.CPU0)		// XXX - parametrize that!
 							}()
                                                 }
                                         default:
