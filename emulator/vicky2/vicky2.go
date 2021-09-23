@@ -422,7 +422,12 @@ func (v *Vicky) WriteReg(addr uint32, val byte) error {
 
         switch {
         case addr == MASTER_CTRL_REG_L:
-                v.c.Master_L = val
+                //v.c.Master_L = val
+		v.c.Text_enabled    = (val & 0x01) != 0
+                // overlay 0x02
+		v.c.Graphic_enabled = (val & 0x04) != 0
+		v.c.Bitmap_enabled  = (val & 0x08) != 0
+
 
         case addr == MASTER_CTRL_REG_H:
                 v.c.Master_H = val

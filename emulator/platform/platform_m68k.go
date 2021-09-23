@@ -161,6 +161,9 @@ func (p *Platform) SetA2560K() {
         //bus0.Attach(emu.M_USER, ram0,        ram.F_MAIN, 0x00_0000, 0x3F_FFFF)
         bus0.Attach(emu.M_SV,   p.GPU,    vicky3.F_VRAM, 0x40_0000, 0x7F_FFFF)   
         bus0.Attach(emu.M_SV,   flash0,  ram.F_MAIN, 0xC0_0000, 0xCF_FFFF)
+        bus0.Attach(emu.M_SV,   p.GPU,    vicky3.F_MAIN, 0xC4_0000, 0xC5_FFFF)
+        bus0.Attach(emu.M_SV,   p.GPU,    vicky3.F_TEXT, 0xC6_0000, 0xC6_3FFF)
+	bus0.Attach(emu.M_SV,   p.GPU,  vicky3.F_TEXT_C, 0xC6_4000, 0xC6_7FFF)
 
 	p.CPU0     = cpu_68xxx.New(bus0,  "cpu0") // TODO - add type? Or another routine for type? And pass RAM size
         p.CPU1     = cpu_dummy.New(bus1,  "cpu1")

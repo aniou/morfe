@@ -76,9 +76,14 @@ type GPU_common struct {
         BM0FB   []uint32       // bitmap0 framebuffer
         BM1FB   []uint32       // bitmap1 framebuffer
 
+	// 'new' identifiers
+	Text_enabled       bool
+	Graphic_enabled    bool
+	Bitmap_enabled     bool
+
         // some convinient registers that should be converted
         // into some kind of memory indexes...
-        Master_L        byte    // MASTER_CTRL_REG_L
+        // Master_L        byte    // MASTER_CTRL_REG_L
         Master_H        byte    // MASTER_CTRL_REG_H
         Cursor_visible  bool
         Border_visible  bool

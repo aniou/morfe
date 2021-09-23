@@ -311,7 +311,7 @@ func main() {
         // main loop -------------------------------------------------------------------
         running = true
         disasm  = false
-        live_disasm  = true
+        live_disasm  = false
 
         memoryDump(p.CPU0, 0x0)
 	// XXX - temporary
@@ -369,7 +369,8 @@ func main() {
                 gui.renderer.Clear()
 
                 // step 2 - bm0 and bm1 are updated in vicky, when write is made
-                if gpu.Master_L & 0x0C == 0x0C {                                      // todo?
+                //if gpu.Master_L & 0x0C == 0x0C {                                      // todo?
+		if gpu.Bitmap_enabled && gpu.Graphic_enabled {
                         if gpu.BM0_visible {
                                 gui.texture_bm0.UpdateRGBA(nil, gpu.BM0FB, int(gui.x_size))
                                 gui.renderer.Copy(gui.texture_bm0, nil, nil)
@@ -382,7 +383,7 @@ func main() {
                 }
 
                 // step 3, 4
-                if gpu.Master_L & 0x01 == 0x01 {                                      // todo ?
+                if gpu.Text_enabled { 
                         p.GPU.RenderBitmapText()
                         gui.texture_txt.UpdateRGBA(nil, gpu.TFB, int(gui.x_size))
                         gui.renderer.Copy(gui.texture_txt, nil, nil)
