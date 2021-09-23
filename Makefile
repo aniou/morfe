@@ -27,7 +27,7 @@ $(shim_objects): lib/musashi-c-wrapper/shim.c
 morfe-m68k: $(musashi_dir) $(musashi_objects) $(shim_objects)
 	CGO_LDFLAGS_ALLOW=".+/(Musashi|musashi-c-wrapper)/.+\.o" \
 	go build --tags m68k -o $@ cmd/morfe/*.go
-	@echo "type ./$(@) conf/m68k.ini to run"
+	@echo "type ./$(@) conf/a2560k.ini to run"
 
 morfe:
 	go build             -o $@ cmd/morfe/*.go
