@@ -20,6 +20,7 @@ import (
 // some general consts
 const CPU_CLOCK         = 14318000 // 14.381Mhz (not used)
 const CURSOR_BLINK_RATE = 500      // in ms (milliseconds)
+const WINDOW_NAME       = "morfe 65c816/m68k emu"
 
 type GUI struct {
         p          *platform.Platform
@@ -266,7 +267,7 @@ func main() {
         // step 2: Window
         var window *sdl.Window
         window, err = sdl.CreateWindow(
-                "morfe 65c816/m68k emu",
+                WINDOW_NAME + " - head0",
                 sdl.WINDOWPOS_UNDEFINED,
                 sdl.WINDOWPOS_UNDEFINED,
                 gui.x_size, gui.y_size,
@@ -535,10 +536,12 @@ func main() {
 							gui.active_gpu = 1
 							gpu = p.GPU1.GetCommon()
 							p.GPU = p.GPU1
+							window.SetTitle(WINDOW_NAME + " - head1")
 						} else {
 							gui.active_gpu = 0
 							gpu = p.GPU0.GetCommon()
 							p.GPU = p.GPU0
+							window.SetTitle(WINDOW_NAME + " - head0")
 						}
                                         default:
                                                 gui.sendKey(t.Keysym.Scancode, t.State)
