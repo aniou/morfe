@@ -32,6 +32,8 @@ type GUI struct {
         fullscreen  bool
 	x_size	    int32		  // screen size
 	y_size	    int32
+
+	active_gpu  byte		  // GPU number
 }
 
 type DEBUG struct {
@@ -240,7 +242,8 @@ func main() {
 	default:
 		log.Fatalf("unknown mode %s", pcfg.Mode)
 	}
-	gpu = p.GPU.GetCommon()
+	gui.active_gpu = 0
+	gpu = p.GPU0.GetCommon()
 
 	// kernel and others files loading also here
         p.LoadCpuConfig(os.Args[1])
@@ -527,6 +530,16 @@ func main() {
 								mainTUI(ch, p.CPU0)		// XXX - parametrize that!
 							}()
                                                 }
+                                        case sdl.K_F8:
+						if gui.active_gpu == 0 {
+							gui.active_gpu = 1
+							gpu = p.GPU1.GetCommon()
+							p.GPU = p.GPU1
+						} else {
+							gui.active_gpu = 0
+							gpu = p.GPU0.GetCommon()
+							p.GPU = p.GPU0
+						}
                                         default:
                                                 gui.sendKey(t.Keysym.Scancode, t.State)
                                         }
@@ -537,6 +550,7 @@ func main() {
                                         case sdl.K_F12,
                                              sdl.K_F11,
                                              sdl.K_F10,
+                                             sdl.K_F8,
                                              sdl.K_F9:
                                         default:
                                                 gui.sendKey(t.Keysym.Scancode, t.State)
