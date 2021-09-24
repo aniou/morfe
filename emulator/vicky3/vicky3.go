@@ -214,7 +214,11 @@ func (v *Vicky) updateFontCache(pos uint32, val byte) {
 }
 
 func (v *Vicky) recalculateScreen() {
-        v.starting_fb_row_pos = uint32(v.c.Screen_x_size) * uint32(v.c.Border_y_size) + uint32(v.c.Border_x_size)
+	if v.c.Border_enabled {
+		v.starting_fb_row_pos = uint32(v.c.Screen_x_size) * uint32(v.c.Border_y_size) + uint32(v.c.Border_x_size)
+	} else {
+		v.starting_fb_row_pos = 0
+	}
 
         //v.text_cols = (640 - (uint32(v.Border_x_size) * 2)) / 8 // xxx - parametrize screen width
         //v.text_rows = (480 - (uint32(v.Border_y_size) * 2)) / 8 // xxx - parametrize screen height
@@ -253,13 +257,6 @@ func (v *Vicky) RenderBitmapText() {
         cursor_x       = uint32(v.mem[ CURSOR_X_H ]) << 16 | uint32(v.mem[ CURSOR_X_L ])
         cursor_y       = uint32(v.mem[ CURSOR_Y_H ]) << 16 | uint32(v.mem[ CURSOR_Y_L ])
         
-	// XXX: the same
-        //if (v.mem[ MasterControlReg_A ] & 0x02) == 0x02 {
-        //        is_overlay = true
-        //} else {
-        //        is_overlay = false
-        //}
-
         // render text - start
         // I prefer to keep it because it allow to simply re-drawing single line in future,
         // by manupipulating starting point (now 0) and end clause (now <v.text_rows)
