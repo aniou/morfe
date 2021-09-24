@@ -80,21 +80,26 @@ type GPU_common struct {
 	Text_enabled       bool
 	Graphic_enabled    bool
 	Bitmap_enabled     bool
+        Border_enabled     bool
+
+        Border_color_b     byte
+        Border_color_g     byte
+        Border_color_r     byte
+        Border_x_size      int32
+        Border_y_size      int32
+
+	Screen_resized     bool
+	Screen_x_size	   int32
+	Screen_y_size	   int32
 
         // some convinient registers that should be converted
         // into some kind of memory indexes...
         // Master_L        byte    // MASTER_CTRL_REG_L
-        Master_H        byte    // MASTER_CTRL_REG_H
+        // Master_H        byte    // MASTER_CTRL_REG_H
         Cursor_visible  bool
-        Border_visible  bool
         BM0_visible     bool
         BM1_visible     bool
 
-        Border_color_b  byte
-        Border_color_g  byte
-        Border_color_r  byte
-        Border_x_size   int32
-        Border_y_size   int32
         Background      [3]byte         // r, g, b
 }
 

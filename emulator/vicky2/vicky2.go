@@ -81,28 +81,6 @@ type Vicky struct {
 
 	c	emu.GPU_common	// common GPU-exported properties and framebuffers
 
-	/*
-        TFB     []uint32       // text   framebuffer
-        BM0FB   []uint32       // bitmap0 framebuffer
-        BM1FB   []uint32       // bitmap1 framebuffer
-
-        // some convinient registers that should be converted
-        // into some kind of memory indexes...
-        Master_L        byte    // MASTER_CTRL_REG_L
-        Master_H        byte    // MASTER_CTRL_REG_H
-        Cursor_visible  bool
-        Border_visible  bool
-        BM0_visible     bool
-        BM1_visible     bool
-
-        Border_color_b  byte
-        Border_color_g  byte
-        Border_color_r  byte
-        Border_x_size   int32
-        Border_y_size   int32
-        Background      [3]byte         // r, g, b
-	*/
-
         starting_fb_row_pos uint32
         text_cols       uint32
         text_rows       uint32
@@ -115,6 +93,7 @@ type Vicky struct {
         x_res           uint32          // preliminary, not fully supported
         y_res           uint32
         pixel_size      uint32          // 1 for normal, 2 for double
+	resolution      byte		// track resolution do determine that was real change
 
 }
 
@@ -147,7 +126,6 @@ func New(name string, size int) *Vicky {
 	//fmt.Printf("vicky2: v.BM0FB  %p\n", &v.BM0FB)
 	//fmt.Printf("vicky2: v.BM1FB  %p\n", &v.BM1FB)
 
-	v.c.Master_H	   = 0x00 // 640x480 no pixel doubling
         v.c.Cursor_visible = true
         v.c.BM0_visible    = true
         v.c.BM1_visible    = true
@@ -164,9 +142,11 @@ func New(name string, size int) *Vicky {
         v.bm0_start_addr = 0x00	// relative from beginning of VRAM
         v.bm1_start_addr = 0x00	// relative from beginning of VRAM
 
-        v.x_res         = 640
-        v.y_res         = 480
-        v.pixel_size    = 1
+        v.c.Screen_x_size         = 640
+        v.c.Screen_y_size         = 480
+	v.c.Screen_resized	  = false
+        v.pixel_size		  = 1
+	v.resolution              = 0
 
         // XXX - just for test
         /*
@@ -203,14 +183,14 @@ func (v *Vicky) updateFontCache(pos uint32, val byte) {
 }
 
 func (v *Vicky) recalculateScreen() {
-        v.starting_fb_row_pos = v.x_res * uint32(v.c.Border_y_size) + uint32(v.c.Border_x_size)
+        v.starting_fb_row_pos = uint32(v.c.Screen_x_size) * uint32(v.c.Border_y_size) + uint32(v.c.Border_x_size)
 
         //v.text_cols = (640 - (uint32(v.Border_x_size) * 2)) / 8 // xxx - parametrize screen width
         //v.text_rows = (480 - (uint32(v.Border_y_size) * 2)) / 8 // xxx - parametrize screen height
-        //v.text_cols = (v.x_res - (uint32(v.Border_x_size) * 2)) / (v.pixel_size * 8)
-        //v.text_rows = (v.y_res - (uint32(v.Border_y_size) * 2)) / (v.pixel_size * 8)
-        v.text_cols = uint32(v.x_res / 8)
-        v.text_rows = uint32(v.y_res / 8)
+        //v.text_cols = (v.c.Screen_x_size - (uint32(v.Border_x_size) * 2)) / (v.pixel_size * 8)
+        //v.text_rows = (v.c.Screen_y_size - (uint32(v.Border_y_size) * 2)) / (v.pixel_size * 8)
+        v.text_cols = uint32(v.c.Screen_x_size / 8)
+        v.text_rows = uint32(v.c.Screen_y_size / 8)
 
         fmt.Printf("text_rows: %d\n", v.text_rows)
         fmt.Printf("text_cols: %d\n", v.text_cols)
@@ -287,7 +267,7 @@ func (v *Vicky) RenderBitmapText() {
                                         }
                                 }
                         }
-                        fb_row_pos += v.x_res
+                        fb_row_pos += uint32(v.c.Screen_x_size)
                 }
         }
         // render text - end
@@ -430,27 +410,31 @@ func (v *Vicky) WriteReg(addr uint32, val byte) error {
 
 
         case addr == MASTER_CTRL_REG_H:
-                v.c.Master_H = val
 		if val & 0x01 == 0 {
-			v.x_res = 640
-			v.y_res = 480
+			v.c.Screen_x_size = 640
+			v.c.Screen_y_size = 480
 		} else {
-			v.x_res = 800
-			v.y_res = 600
+			v.c.Screen_x_size = 800
+			v.c.Screen_y_size = 600
 		}
-		v.recalculateScreen()
+
+		if v.resolution != val {
+			v.resolution       = val & 0x01
+			v.c.Screen_resized = true
+			v.recalculateScreen()
+		}
 
         case addr == BORDER_CTRL_REG:
                 if (val & 0x01) == 1 {
                         v.c.Border_x_size  = int32(v.Mem[ BORDER_X_SIZE ])
                         v.c.Border_y_size  = int32(v.Mem[ BORDER_Y_SIZE ])
-                        v.c.Border_visible = true
+                        v.c.Border_enabled = true
                         v.recalculateScreen()
                 } else {
                         v.c.Border_x_size  = 0
                         v.c.Border_y_size  = 0
                         v.recalculateScreen()
-                        v.c.Border_visible = false
+                        v.c.Border_enabled = false
                 }
 
         case addr == BORDER_COLOR_B:
@@ -467,13 +451,13 @@ func (v *Vicky) WriteReg(addr uint32, val byte) error {
 
         case addr == BORDER_X_SIZE:
                 v.c.Border_x_size = int32(val & 0x3F)     // XXX: in spec - 0-32, bitmask allows to 0-63
-                if v.c.Border_visible {
+                if v.c.Border_enabled {
                         v.recalculateScreen()
                 }
 
         case addr == BORDER_Y_SIZE:
                 v.c.Border_y_size = int32(val & 0x3F)     // XXX: in spec - 0-32, bitmask allows to 0-63
-                if v.c.Border_visible {
+                if v.c.Border_enabled {
                         v.recalculateScreen()
                 }
 

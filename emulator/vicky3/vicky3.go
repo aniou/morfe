@@ -25,30 +25,39 @@ const F_VRAM   = 3
 
 const MasterControlReg_A          = 0x0000              // uint32_t 0x00C40000 
 
-const MasterControlReg_A_b1       = 0x0003
+const MasterControlReg_A_b4       = 0x0003
 const VKY3_MCR_TEXT_EN            = 0x00_00_00_01       /* Text Mode Enable */
 const VKY3_MCR_TEXT_OVRLY         = 0x00_00_00_02       /* Text Mode overlay */
 const VKY3_MCR_GRAPH_EN           = 0x00_00_00_04       /* Graphic Mode Enable */
 
-const MasterControlReg_A_b2       = 0x0002
+const MasterControlReg_A_b3       = 0x0002
 const VKY3_MCR_RESOLUTION_MASK    = 0x00_00_03_00 >> 8  /* Resolution - 00: 640x480, 01:800x600, 10: 1024x768, 11: 640x400 */
 const VKY3_MCR_DOUBLE_EN          = 0x00_00_04_00 >> 8  /* Doubling Pixel */
 
-const MasterControlReg_A_b3       = 0x0001
+const MasterControlReg_A_b2       = 0x0001
 const VKY3_MCR_GAMMA_EN           = 0x00_01_00_00 >> 16 /* GAMMA Enable */
 const VKY3_MCR_MANUAL_GAMMA_EN    = 0x00_02_00_00 >> 16 /* Enable Manual GAMMA Enable */
 const VKY3_MCR_BLANK_EN           = 0x00_04_00_00 >> 16 /* Turn OFF sync (to monitor in sleep mode) */
 
-const MasterControlReg_A_b4       = 0x0000
+const MasterControlReg_A_b1       = 0x0000
 
 
 const BorderControlReg_L_A        = 0x0004         // uint32_t 0x00C40004
-const VKY3_BRDR_EN                = 0x00_00_00_01  /* Border Enable */
-const VKY3_X_SCROLL_MASK          = 0x00_00_00_70  /* X Scroll */
-const VKY3_X_SIZE_MASK            = 0x00_00_3f_00  /* X Size */
-const VKY3_Y_SIZE_MASK            = 0x00_3f_00_00  /* Y Size */
+const BORDER_CONTROL		  = 0x0007
+const BORDER_X_SIZE               = 0x0006
+const BORDER_Y_SIZE               = 0x0005
+
+const VKY3_BRDR_EN                = 0x00_00_00_01       /* Border Enable */
+const VKY3_X_SCROLL_MASK          = 0x00_00_00_70       /* X Scroll */
+const VKY3_X_SIZE_MASK            = 0x00_00_3f_00 >> 8  /* X Size */
+const VKY3_Y_SIZE_MASK            = 0x00_3f_00_00 >> 16 /* Y Size */
 
 const BorderControlReg_H_A        = 0x0008	// uint32_t 0x00C40008
+                              //  = 0x0008      // ?? alpha?
+const BORDER_COLOR_R              = 0x0009      // guessing
+const BORDER_COLOR_G              = 0x000a      // guessing
+const BORDER_COLOR_B              = 0x000b      // guessing
+
 const BackGroundControlReg_A      = 0x000c	// uint32_t 0x00C4000C
 
 const CursorControlReg_L_A        = 0x0010	// uint32_t 0x00C40010  - cursor settings : co_ca_ra_en
@@ -83,7 +92,7 @@ const FONT_MEMORY_BANK0           = 0x8000
 
 /* implemented as separate "functions" in Vicky3 module, see F_* const */
 
-//const ScreenText_A                       	  // char 0x00C60000       /* Text matrix */
+//const ScreenText_A				  // char 0x00C60000       /* Text matrix */
 //const ColorText_A                               // uint8_t 0x00C68000    /* Color matrix */
 //const FG_CLUT_A                                 // uint16_t 0x00C6C400   /* Foreground LUT */
 //const BG_CLUT_A                                 // uint16_t 0x00C6C440   /* Background LUT */
@@ -113,9 +122,8 @@ type Vicky struct {
         bm0_start_addr  uint32
         bm1_start_addr  uint32
 
-        x_res           uint32
-        y_res           uint32
-        pixel_size      uint32          // 1 for normal, 2 for double
+	pixel_size      uint32          // 1 for normal, 2 for double - XXX: not used yet
+	resolution      byte            // for tracking resolution changes
 
 }
 
@@ -136,6 +144,14 @@ func New(name string, size int) *Vicky {
         v.c.BM0FB  = make([]uint32,  0x0c_0000)     // bm0  framebuffer - 1024x768 max
         v.c.BM1FB  = make([]uint32,  0x0c_0000)     // bm1  framebuffer - 1024x768 max
         
+	//
+	v.c.Screen_x_size  = 640
+	v.c.Screen_y_size  = 480
+	v.c.Screen_resized = false
+
+	v.resolution    = 0
+        v.pixel_size    = 1
+
 	// 'verified' knobs
 	v.c.Bitmap_enabled = true // XXX: there is no way to change it in vicky3?
 
@@ -144,7 +160,6 @@ func New(name string, size int) *Vicky {
 
         //v.mem[ BORDER_CTRL_REG ] = 0x01 - XXX - initial state?
 
-        v.c.Master_H       = 0x00 // 640x480 no pixel doubling
         v.c.Cursor_visible = true
         v.c.BM0_visible    = true
         v.c.BM1_visible    = true
@@ -161,9 +176,6 @@ func New(name string, size int) *Vicky {
         v.bm0_start_addr = 0x00 // relative from beginning of VRAM
         v.bm1_start_addr = 0x00 // relative from beginning of VRAM
 
-        v.x_res         = 640
-        v.y_res         = 480
-        v.pixel_size    = 1
 
         // XXX - just for test
         for i := range v.text { // file text memory areas
@@ -198,14 +210,14 @@ func (v *Vicky) updateFontCache(pos uint32, val byte) {
 }
 
 func (v *Vicky) recalculateScreen() {
-        v.starting_fb_row_pos = v.x_res * uint32(v.c.Border_y_size) + uint32(v.c.Border_x_size)
+        v.starting_fb_row_pos = uint32(v.c.Screen_x_size) * uint32(v.c.Border_y_size) + uint32(v.c.Border_x_size)
 
         //v.text_cols = (640 - (uint32(v.Border_x_size) * 2)) / 8 // xxx - parametrize screen width
         //v.text_rows = (480 - (uint32(v.Border_y_size) * 2)) / 8 // xxx - parametrize screen height
-        //v.text_cols = (v.x_res - (uint32(v.Border_x_size) * 2)) / (v.pixel_size * 8)
-        //v.text_rows = (v.y_res - (uint32(v.Border_y_size) * 2)) / (v.pixel_size * 8)
-        v.text_cols = uint32(v.x_res / 8)
-        v.text_rows = uint32(v.y_res / 8)
+        //v.text_cols = (v.c.Screen_x_size - (uint32(v.Border_x_size) * 2)) / (v.pixel_size * 8)
+        //v.text_rows = (v.c.Screen_y_size - (uint32(v.Border_y_size) * 2)) / (v.pixel_size * 8)
+        v.text_cols = uint32(v.c.Screen_x_size / 8)
+        v.text_rows = uint32(v.c.Screen_y_size / 8)
 
         fmt.Printf("text_rows: %d\n", v.text_rows)
         fmt.Printf("text_cols: %d\n", v.text_cols)
@@ -284,7 +296,7 @@ func (v *Vicky) RenderBitmapText() {
                                         }
                                 }
                         }
-                        fb_row_pos += v.x_res
+                        fb_row_pos += uint32(v.c.Screen_x_size)
                 }
         }
         // render text - end
@@ -415,58 +427,90 @@ func (v *Vicky) WriteReg(addr uint32, val byte) error {
         v.mem[addr] = val
 
         switch {
-	case addr == MasterControlReg_A_b1:		  // text mode, overlay and graphic mode 
+        case addr == MasterControlReg_A_b1:
+		return nil			// no functions, so do nothing
+
+        //case addr == MasterControlReg_A_b2:
+	//	return nil			// XXX: GAMMA and sync OFF not supported yet
+
+        case addr == MasterControlReg_A_b3:		  // XXX: screen resolution and pixel doubling
+                switch (val & VKY3_MCR_RESOLUTION_MASK) {
+		case 0b_00:
+			v.c.Screen_x_size  = 640
+			v.c.Screen_y_size  = 480
+		case 0b_01:
+			v.c.Screen_x_size  = 800
+			v.c.Screen_y_size  = 600
+		case 0b_10:
+			v.c.Screen_x_size  = 1024
+			v.c.Screen_y_size  = 768
+		case 0b_11:
+			v.c.Screen_x_size  = 640
+			v.c.Screen_y_size  = 400
+		}
+
+		if (val & VKY3_MCR_DOUBLE_EN) != 0 {
+			v.pixel_size = 2
+		} else {
+			v.pixel_size = 1
+		}
+
+		if v.resolution != val {
+			v.resolution = val & VKY3_MCR_RESOLUTION_MASK
+			v.c.Screen_resized = true
+		}
+
+                v.recalculateScreen()
+		return nil
+
+	case addr == MasterControlReg_A_b4:		  // text mode, overlay and graphic mode 
 		v.c.Text_enabled    = (val & 0x01) != 0
 		v.overlay_enabled   = (val & 0x02) != 0
 		v.c.Graphic_enabled = (val & 0x04) != 0
 		return nil
 
-        //case addr == MasterControlReg_A_b2:
-	//	return nil			// XXX: screen resolution and pixel doubling
+        case addr == BORDER_CONTROL:
+                v.c.Border_enabled  = (val & 0x01) != 0
+                v.recalculateScreen()
 
-        //case addr == MasterControlReg_A_b3:
-	//	return nil			// XXX: GAMMA and sync OFF not supported yet
+		if (val & 0x70) != 0 {
+			return fmt.Errorf(" vicky3: %s Write addr %6X val %2X is not implemented", v.name, addr, val)
+		}
 
-        case addr == MasterControlReg_A_b4:
-		return nil			// no functions, so do nothing
+        case addr == BORDER_X_SIZE:
+                v.c.Border_x_size  = int32( val & 0x3f )
+		if v.c.Border_enabled {
+                        v.recalculateScreen()
+                }
+
+        case addr == BORDER_Y_SIZE:
+                v.c.Border_y_size  = int32( val & 0x3f )
+		if v.c.Border_enabled {
+                        v.recalculateScreen()
+                }
+
+        case addr == BORDER_COLOR_R:
+                v.c.Border_color_r = val
+
+        case addr == BORDER_COLOR_G:
+                v.c.Border_color_g = val
+
+        case addr == BORDER_COLOR_B:
+                v.c.Border_color_b = val
 
         case addr >= FONT_MEMORY_BANK0 && addr < FONT_MEMORY_BANK0 + 0x800:
                 v.updateFontCache(addr - FONT_MEMORY_BANK0, val)  // every bit in font cache is mapped to byte
+
 	/*
         case addr == MASTER_CTRL_REG_H:
                 v.c.Master_H = val
                 if val & 0x01 == 0 {
-                        v.x_res = 640
-                        v.y_res = 480
+                        v.c.Screen_x_size = 640
+                        v.c.Screen_y_size = 480
                 } else {
-                        v.x_res = 800
-                        v.y_res = 600
+                        v.c.Screen_x_size = 800
+                        v.c.Screen_y_size = 600
                 }
-                v.recalculateScreen()
-
-        case addr == BORDER_CTRL_REG:
-                if (val & 0x01) == 1 {
-                        v.c.Border_x_size  = int32(v.mem[ BORDER_X_SIZE ])
-                        v.c.Border_y_size  = int32(v.mem[ BORDER_Y_SIZE ])
-                        v.c.Border_visible = true
-                        v.recalculateScreen()
-                } else {
-                        v.c.Border_x_size  = 0
-                        v.c.Border_y_size  = 0
-                        v.recalculateScreen()
-                        v.c.Border_visible = false
-                }
-
-        case addr == BORDER_COLOR_B:
-                v.c.Border_color_b = val
-                v.recalculateScreen()
-
-        case addr == BORDER_COLOR_G:
-                v.c.Border_color_g = val
-                v.recalculateScreen()
-
-        case addr == BORDER_COLOR_R:
-                v.c.Border_color_r = val
                 v.recalculateScreen()
 
         case addr == BORDER_X_SIZE:

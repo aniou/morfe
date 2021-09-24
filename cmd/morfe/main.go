@@ -30,7 +30,6 @@ type GUI struct {
 	texture_bm1 *sdl.Texture
 
         fullscreen  bool
-	master_h    byte		  // master_h that corresponds with current screen size
 	x_size	    int32		  // screen size
 	y_size	    int32
 }
@@ -221,8 +220,6 @@ func main() {
         //p := platform.New()           // must be global now - but it is still true?
 	gui := new(GUI)
         gui.fullscreen = false
-	gui.x_size      = 640
-	gui.y_size      = 480
         gui.p          = p              // xxx - fix that mess
 
 	if pcfg, err = p.LoadPlatformConfig(os.Args[1]); err != nil {
@@ -252,7 +249,8 @@ func main() {
 	p.Init()
 
 	// set initial graphics mode
-	gui.master_h = gpu.Master_H
+	gui.x_size      = gpu.Screen_x_size
+	gui.y_size      = gpu.Screen_y_size
 
         // graphics init ---------------------------------------------------------------
         // step 1: SDL
@@ -331,37 +329,29 @@ func main() {
         for running {
 		// step 0 - handle resolution changes
 
-		// if Master_H was changed, then resolution change may be neccessary
-		if gui.master_h != gpu.Master_H {
+		if gpu.Screen_resized {
+			gui.x_size = gpu.Screen_x_size
+			gui.y_size = gpu.Screen_y_size
 
-			// exit from fullscreen if necessary
-			if gui.fullscreen {
-				window.SetDisplayMode(&orig_mode)
-				window.SetFullscreen(0)
-			}
+			gpu.Screen_resized = false
+				// exit from fullscreen if necessary
+				if gui.fullscreen {
+					window.SetDisplayMode(&orig_mode)
+					window.SetFullscreen(0)
+				}
 
-			// warning - no double pixel support yet!
-			gui.master_h = gpu.Master_H
-			if gui.master_h & 0x01 == 0 {
-				gui.x_size = 640
-				gui.y_size = 480
-			} else {
-				gui.x_size = 800
-				gui.y_size = 600
-			}
+				gui.texture_txt.Destroy()
+				gui.texture_bm0.Destroy()
+				gui.texture_bm1.Destroy()
+				gui.renderer.Destroy()
 
-			gui.texture_txt.Destroy()
-			gui.texture_bm0.Destroy()
-			gui.texture_bm1.Destroy()
-			gui.renderer.Destroy()
+				window.SetSize(gui.x_size, gui.y_size)
+				gui.newRendererAndTexture(window)
 
-			window.SetSize(gui.x_size, gui.y_size)
-			gui.newRendererAndTexture(window)
-
-			// return to fullscreen if necessary
-			if gui.fullscreen {
-				gui.setFullscreen(window)
-			}
+				// return to fullscreen if necessary
+				if gui.fullscreen {
+					gui.setFullscreen(window)
+				}
 		}
 
                 // step 1
@@ -390,7 +380,7 @@ func main() {
                 }       
 
                 // stea 5
-                if gpu.Border_visible {
+                if gpu.Border_enabled {
                         gui.renderer.SetDrawColor(gpu.Border_color_r, 
                                               gpu.Border_color_g, 
                                               gpu.Border_color_b, 
