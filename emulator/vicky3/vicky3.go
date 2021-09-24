@@ -18,10 +18,14 @@ import (
         _ "github.com/aniou/morfe/emulator/ram"
 )
 
-const F_MAIN   = 0
-const F_TEXT   = 1
-const F_TEXT_C = 2
-const F_VRAM   = 3
+const (
+	_ = iota
+	F_MAIN
+	F_TEXT
+	F_TEXT_C
+	F_VRAM
+	F_CRAM
+)
 
 const MasterControlReg_A          = 0x0000              // uint32_t 0x00C40000 
 
@@ -86,9 +90,7 @@ const MousePtr_A_Mouse0           = 0x0c0a      // uint16_t 0x00C40C0A
 const MousePtr_A_Mouse1           = 0x0c0c      // uint16_t 0x00C40C0C
 const MousePtr_A_Mouse2           = 0x0c0e      // uint16_t 0x00C40C0E
 
-// XXX - workaround
 const FONT_MEMORY_BANK0           = 0x8000
-
 
 /* implemented as separate "functions" in Vicky3 module, see F_* const */
 
@@ -108,6 +110,7 @@ type Vicky struct {
         fg      []uint32       // text foreground LUT cache
         bg      []uint32       // text background LUT cache
         font    []byte         // font cache       : 256 chars  * 8 lines * 8 columns
+	cram    []byte	       // XXX - temporary ram for FG clut/BG clut and others
 
 	overlay_enabled bool
 
@@ -137,6 +140,7 @@ func New(name string, size int) *Vicky {
         v.tc     = make([]byte,      0x4000)        // text color memory - 0x4000 in GenX
         v.fg     = make([]uint32,    0x4000)        // foreground cache -  0x4000 in GenX
         v.bg     = make([]uint32,    0x4000)        // background color cache - 0x4000 in GenX
+	v.cram   = make([]byte,        0x100)       // 'misc' color ram
 
         v.blut   = make([]uint32, 0x0800)           // bitmap LUT cache : 256 colors * 8 banks (lut0 to lut7)
         v.font   = make([]byte  , 0x100 * 8 * 8)    // font cache 256 chars * 8 lines * 8 columns
@@ -318,6 +322,8 @@ func (v *Vicky) Name(fn byte) string {
                 return v.name + "-text_color"
         case F_VRAM:
                 return v.name + "-vram"
+        case F_CRAM:
+                return v.name + "-cram"
         }
         return v.name + "-UNKNOWN"
 }
@@ -336,6 +342,8 @@ func (v *Vicky) Size(fn byte) (uint32, uint32) {
                 return uint32(1), uint32(len(v.tc))
         case F_VRAM:
                 return uint32(1), uint32(len(v.vram))
+        case F_CRAM:
+                return uint32(1), uint32(len(v.cram))
         }
         return 0, 0
 }
@@ -350,6 +358,8 @@ func (v *Vicky) Read(fn byte, addr uint32) (byte, error) {
                 return v.tc[addr], nil
         case F_VRAM:
                 return v.vram[addr], nil
+        case F_CRAM:
+                return v.cram[addr], nil
         }
         return 0, fmt.Errorf(" vicky3: %s Read addr %6X fn %d is not implemented", v.name, addr, fn)
 }
@@ -370,6 +380,25 @@ func (v *Vicky) Write(fn byte, addr uint32, val byte) (error) {
         case F_VRAM:
                 v.vram[addr] = val
                 v.UpdateBitmapFB(addr, val)
+	case F_CRAM:
+		v.cram[addr] = val
+
+		switch {
+		case addr >= 0x00 && addr < 0x40:
+			//a           := addr 
+			//byte_in_lut := byte(a & 0x03)
+			//num         := byte(a >> 2)
+			// XXX - fix byte order
+			//f_color_lut[num][byte_in_lut] = val // XXX - global one!
+
+		case addr >= 0x40 && addr < 0x80:
+			//a           := addr - 0x40
+			//byte_in_lut := byte(a & 0x03)
+			//num         := byte(a >> 2)
+			// XXX - fix byte order
+			//b_color_lut[num][byte_in_lut] = val // XXX - global one!
+		}
+
         default:
                 return fmt.Errorf(" vicky3: %s Write addr %6X val %2X fn %d is not implemented", v.name, addr, val)
         }
@@ -467,6 +496,9 @@ func (v *Vicky) WriteReg(addr uint32, val byte) error {
 		v.c.Text_enabled    = (val & 0x01) != 0
 		v.overlay_enabled   = (val & 0x02) != 0
 		v.c.Graphic_enabled = (val & 0x04) != 0
+		return nil
+
+	case addr == BorderControlReg_H_A:		// probably no meaning, do nothing
 		return nil
 
         case addr == BORDER_CONTROL:
@@ -583,18 +615,6 @@ func (v *Vicky) WriteReg(addr uint32, val byte) error {
                                    (uint32(v.mem[ BM1_START_ADDY_M ]) << 8 ) +
                                    (uint32(v.mem[ BM1_START_ADDY_L ])      )
 
-        case addr >= FG_CHAR_LUT_PTR && addr < FG_CHAR_LUT_PTR + 64:
-                a := addr - FG_CHAR_LUT_PTR
-                byte_in_lut := byte(a & 0x03)
-                num := byte(a >> 2)
-                f_color_lut[num][byte_in_lut] = val // XXX - global one!
-
-
-        case addr >= BG_CHAR_LUT_PTR && addr < BG_CHAR_LUT_PTR + 64:
-                a := addr - BG_CHAR_LUT_PTR
-                byte_in_lut := byte(a & 0x03)
-                num := byte(a >> 2)
-                b_color_lut[num][byte_in_lut] = val // XXX - global one!
 
         // XXX - probably this needs correction with different
         //       bitmap format than ARGB

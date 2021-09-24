@@ -148,8 +148,11 @@ func (p *Platform) SetA2560K() {
         //p.MATHI     =   mathi.New("mathi",       0x100)  // not implemented yet
         //p.SIO       = superio.New("sio",         0x400)  // not implemented yet
         p.GPU       =  vicky3.New("gpu0",       0x20000)    // vram = 0x20_0000, text = 0x4000
-        flash0    :=     ram.New("flash0", 1, 0x10_0000)       // 1MB of "flash"
+        p.GPU1      =  vicky3.New("gpu1",       0x20000)    // vram = 0x20_0000, text = 0x4000
+        //flash0    :=     ram.New("flash0", 1, 0x10_0000)       // 1MB of "flash"
 
+	gabe0 := ram.New("gabe-placeholder0", 1, 0x20000)
+	beat0 := ram.New("beatrix-placeholder0", 1, 0x20000)
 
         // m68k has RAM attached directly
         //bus0.Attach(emu.M_USER, ram0,        ram.F_MAIN, 0x00_0000, 0x3F_FFFF)
@@ -160,11 +163,20 @@ func (p *Platform) SetA2560K() {
 
         //bus0.Attach(emu.M_USER, ram0,        ram.F_MAIN, 0x00_0000, 0x3F_FFFF)
         bus0.Attach(emu.M_SV,   p.GPU,    vicky3.F_VRAM, 0x40_0000, 0x7F_FFFF)   
-        bus0.Attach(emu.M_SV,   flash0,  ram.F_MAIN, 0xC0_0000, 0xCF_FFFF)
+
+
+        bus0.Attach(emu.M_SV,   gabe0,    ram.F_MAIN, 0xC0_0000, 0xC1_FFFF)
+        bus0.Attach(emu.M_SV,   beat0,    ram.F_MAIN, 0xC2_0000, 0xC3_FFFF)
         bus0.Attach(emu.M_SV,   p.GPU,    vicky3.F_MAIN, 0xC4_0000, 0xC5_FFFF)
         bus0.Attach(emu.M_SV,   p.GPU,    vicky3.F_TEXT, 0xC6_0000, 0xC6_3FFF)
-	bus0.Attach(emu.M_SV,   p.GPU,  vicky3.F_TEXT_C, 0xC6_4000, 0xC6_7FFF)
+	bus0.Attach(emu.M_SV,   p.GPU,  vicky3.F_TEXT_C, 0xC6_8000, 0xC6_BFFF)
+	bus0.Attach(emu.M_SV,   p.GPU,    vicky3.F_CRAM, 0xC6_C400, 0xC6_C4FF)
 
+        bus0.Attach(emu.M_SV,   p.GPU1,    vicky3.F_MAIN, 0xC8_0000, 0xC9_FFFF)
+        bus0.Attach(emu.M_SV,   p.GPU1,    vicky3.F_TEXT, 0xCA_0000, 0xCA_3FFF)
+	bus0.Attach(emu.M_SV,   p.GPU1,  vicky3.F_TEXT_C, 0xCA_8000, 0xCA_BFFF)
+	bus0.Attach(emu.M_SV,   p.GPU1,   vicky3.F_CRAM, 0xCA_C400, 0xCA_C4FF)  // second channel
+	
 	p.CPU0     = cpu_68xxx.New(bus0,  "cpu0") // TODO - add type? Or another routine for type? And pass RAM size
         p.CPU1     = cpu_dummy.New(bus1,  "cpu1")
 
