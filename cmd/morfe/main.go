@@ -25,6 +25,7 @@ const WINDOW_NAME       = "morfe 65c816/m68k emu"
 type GUI struct {
         p          *platform.Platform
 
+        window      *sdl.Window
 	renderer    *sdl.Renderer
 	texture_txt *sdl.Texture
 	texture_bm0 *sdl.Texture
@@ -265,29 +266,28 @@ func main() {
         defer sdl.Quit()
 
         // step 2: Window
-        var window *sdl.Window
-        window, err = sdl.CreateWindow(
-                WINDOW_NAME + " - head0",
-                sdl.WINDOWPOS_UNDEFINED,
-                sdl.WINDOWPOS_UNDEFINED,
-                gui.x_size, gui.y_size,
-                sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL,
+        gui.window, err = sdl.CreateWindow(
+                    WINDOW_NAME + " - head0",
+                    sdl.WINDOWPOS_UNDEFINED,
+                    sdl.WINDOWPOS_UNDEFINED,
+                    gui.x_size, gui.y_size,
+                    sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL,
         )
         if err != nil {
                 log.Fatalf("Failed to create window: %s\n", err)
         }
-        defer window.Destroy()
-        debugPixelFormat(window)
+        defer gui.window.Destroy()
+        debugPixelFormat(gui.window)
 
 	// step 2.5 - preserve actual mode (we are able to fullscreen too and we want to
 	//            restore original mode on exit)
-        display_index, _ := window.GetDisplayIndex()
+        display_index, _ := gui.window.GetDisplayIndex()
         orig_mode, _	  = sdl.GetCurrentDisplayMode(display_index)
         fmt.Printf("original mode width: %d\n", orig_mode.W)
         fmt.Printf("original mode heigt: %d\n", orig_mode.H)
 
         // step 3: Renderer
-	gui.newRendererAndTexture(window)
+	gui.newRendererAndTexture(gui.window)
 
         //sdl.StartTextInput()
 
@@ -340,8 +340,8 @@ func main() {
 			gpu.Screen_resized = false
 				// exit from fullscreen if necessary
 				if gui.fullscreen {
-					window.SetDisplayMode(&orig_mode)
-					window.SetFullscreen(0)
+					gui.window.SetDisplayMode(&orig_mode)
+					gui.window.SetFullscreen(0)
 				}
 
 				gui.texture_txt.Destroy()
@@ -349,12 +349,12 @@ func main() {
 				gui.texture_bm1.Destroy()
 				gui.renderer.Destroy()
 
-				window.SetSize(gui.x_size, gui.y_size)
-				gui.newRendererAndTexture(window)
+				gui.window.SetSize(gui.x_size, gui.y_size)
+				gui.newRendererAndTexture(gui.window)
 
 				// return to fullscreen if necessary
 				if gui.fullscreen {
-					gui.setFullscreen(window)
+					gui.setFullscreen(gui.window)
 				}
 		}
 
@@ -510,11 +510,11 @@ func main() {
                                         case sdl.K_F11:
                                                 if gui.fullscreen {
                                                         gui.fullscreen = false
-                                                        window.SetDisplayMode(&orig_mode)
-                                                        window.SetFullscreen(0)
+                                                        gui.window.SetDisplayMode(&orig_mode)
+                                                        gui.window.SetFullscreen(0)
                                                 } else {
                                                         gui.fullscreen = true
-                                                        gui.setFullscreen(window)
+                                                        gui.setFullscreen(gui.window)
                                                 }
                                         case sdl.K_F10:
 						if ! live_disasm {
@@ -536,12 +536,12 @@ func main() {
 							gui.active_gpu = 1
 							gpu = p.GPU1.GetCommon()
 							p.GPU = p.GPU1
-							window.SetTitle(WINDOW_NAME + " - head1")
+							gui.window.SetTitle(WINDOW_NAME + " - head1")
 						} else {
 							gui.active_gpu = 0
 							gpu = p.GPU0.GetCommon()
 							p.GPU = p.GPU0
-							window.SetTitle(WINDOW_NAME + " - head0")
+							gui.window.SetTitle(WINDOW_NAME + " - head0")
 						}
                                         default:
                                                 gui.sendKey(t.Keysym.Scancode, t.State)
@@ -566,8 +566,8 @@ func main() {
 
         // return from FULLSCREEN
         if gui.fullscreen {
-                window.SetDisplayMode(&orig_mode)
-                window.SetFullscreen(0)
+                gui.window.SetDisplayMode(&orig_mode)
+                gui.window.SetFullscreen(0)
         }
 	gui.texture_txt.Destroy()
 	gui.texture_bm0.Destroy()

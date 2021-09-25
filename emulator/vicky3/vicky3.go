@@ -336,6 +336,7 @@ func (v *Vicky) Write(fn byte, addr uint32, val byte) (error) {
 
 			tmp := append(v.cram[a+2:a+4], v.cram[a:a+2]...)
 			v.bg_clut[color] = binary.BigEndian.Uint32( tmp )
+			//fmt.Printf(" vicky3: BG color %2d %8x %v\n", color, v.bg_clut[color], v.cram[a:a+4] )
 		}
 
         default:
