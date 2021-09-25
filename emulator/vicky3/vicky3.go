@@ -441,6 +441,7 @@ func (v *Vicky) WriteReg(addr uint32, val byte) error {
 		return nil
 
 	case addr == BorderControlReg_H_A:		// probably no meaning, do nothing
+        case addr == BorderControlReg_L_A:              // highest byte has no meaning, rest - see below
 		return nil
 
         case addr == BORDER_CONTROL:
@@ -481,6 +482,12 @@ func (v *Vicky) WriteReg(addr uint32, val byte) error {
 
 	case addr == CURSOR_ENABLE:
 		v.cursor_enabled = (val & 0x01) != 0
+
+	case addr == CURSOR_Y_H:
+	case addr == CURSOR_Y_L:
+	case addr == CURSOR_X_H:
+	case addr == CURSOR_X_L:
+		return nil			// data is taken directly from memory
 
         case addr >= FONT_MEMORY_BANK0 && addr < FONT_MEMORY_BANK0 + 0x800:
                 v.updateFontCache(addr - FONT_MEMORY_BANK0, val)  // every bit in font cache is mapped to byte
