@@ -244,7 +244,7 @@ func main() {
 		log.Fatalf("unknown mode %s", pcfg.Mode)
 	}
 	gui.active_gpu = 0
-	gpu = p.GPU0.GetCommon()
+	gpu = p.GPU.GetCommon()
 
 	// kernel and others files loading also here
         p.LoadCpuConfig(os.Args[1])
