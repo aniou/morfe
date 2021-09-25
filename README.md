@@ -1,7 +1,7 @@
 # go65c816
 65c816 emulator in Go
 
-**WARNING:** this branch was created at very early stage of process and serves only for historic and reference purposes for a TUI-only version.**
+**WARNING: this branch was created at very early stage of process and serves only for historic and reference purposes for a TUI-only version.**
 
 [![asciicast](https://asciinema.org/a/270744.svg)](https://asciinema.org/a/270744)
 
