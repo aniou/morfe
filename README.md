@@ -1,5 +1,10 @@
 # MORFE - Meyer's Own Re-combinable FrankenEmulator
 
+**NOTE: this is a archive branch for parallel executed CPUs,
+i.e. CPU0 and CPU1 in the same time. Because that model doesn't
+corresponds with real machines it remains as kind of experiment
+and - probably - will be retired in my version.**
+
 A kind-of-emulator software, created for my experiments and 
 development for [Foenix](https://c256foenix.com/) machines.
 
