@@ -112,6 +112,9 @@ type Vicky struct {
         font    []byte         // font cache       : 256 chars  * 8 lines * 8 columns
 	cram    []byte	       // XXX - temporary ram for FG clut/BG clut and others
 
+	fg_clut [16]uint32     // 16 pre-calculated RGBA colors for text fore- 
+	bg_clut [16]uint32     // ...and background
+
 	overlay_enabled bool
 
         c       emu.GPU_common  // common GPU-exported properties and framebuffers
@@ -227,80 +230,9 @@ func (v *Vicky) recalculateScreen() {
         v.text_cols = uint32(v.c.Screen_x_size / 8)
         v.text_rows = uint32(v.c.Screen_y_size / 8)
 
-        fmt.Printf("text_rows: %d\n", v.text_rows)
-        fmt.Printf("text_cols: %d\n", v.text_cols)
+	fmt.Printf("vicky3: text_rows: %d\n", v.text_rows)
+	fmt.Printf("vicky3: text_cols: %d\n", v.text_cols)
 
-}
-
-func (v *Vicky) RenderBitmapText() {
-        var cursor_x, cursor_y uint32 // row and column of cursor
-        var cursor_enabled bool     // cursor register, various states
-        var text_x, text_y uint32 // row and column of text
-        var text_row_pos uint32   // beginning of current text row in text memory
-        var fb_row_pos uint32     // beginning of current FB   row in memory
-        var font_pos uint32       // position in font array (char * 64 + char_line * 8)
-        var   fb_pos uint32       // position in destination framebuffer
-        var font_line uint32      // line in current font
-        var font_row_pos uint32   // position of line in current font (=font_line*8 because every line has 8 bytes)
-        var i uint32              // counter
-        //var is_overlay bool       // is overlay text over bm0 enabled?
-
-        // placeholders recalculated per row of text, holds values for text_cols loop
-        // current max size is 100 columns (800/8)
-        var fnttmp [128]uint32    // position in font array, from char value
-        var fgctmp [128]uint32    // foreground color cache (rgba) for one line
-        var bgctmp [128]uint32    // background color cache (rgba) for one line
-        var dsttmp [128]uint32    // position in destination memory array
-
-	// XXX: it should be rather updated on register write
-        cursor_enabled =       (v.mem[ CURSOR_ENABLE ] & 0x01) == 0x01
-        cursor_x       = uint32(v.mem[ CURSOR_X_H ]) << 16 | uint32(v.mem[ CURSOR_X_L ])
-        cursor_y       = uint32(v.mem[ CURSOR_Y_H ]) << 16 | uint32(v.mem[ CURSOR_Y_L ])
-        
-        // render text - start
-        // I prefer to keep it because it allow to simply re-drawing single line in future,
-        // by manupipulating starting point (now 0) and end clause (now <v.text_rows)
-        fb_row_pos = v.starting_fb_row_pos
-        for text_y = 0; text_y < v.text_rows; text_y += 1 { // over lines of text
-                text_row_pos = text_y * v.text_cols
-                for text_x = 0; text_x < v.text_cols; text_x += 1 { // pre-calculate data for x-axis
-                        fnttmp[text_x] = v.text[text_row_pos+text_x] * 64 // position in font array
-                        dsttmp[text_x] = text_x * 8                     // position of char in dest FB
-
-                        f := v.fg[text_row_pos+text_x] // fg and bg colors
-                        b := v.bg[text_row_pos+text_x]
-
-                        if v.c.Cursor_visible && cursor_enabled && (cursor_y == text_y) && (cursor_x == text_x) {
-                                f = uint32((v.mem[ CURSOR_COLOR ] & 0xf0) >> 4)
-                                b = uint32( v.mem[ CURSOR_COLOR ] & 0x0f)
-                                fnttmp[text_x] = uint32(v.mem[ CURSOR_CHARACTER ]) * 64
-                        }
-
-                        fgctmp[text_x] = binary.LittleEndian.Uint32(f_color_lut[f][:]) // text LUT - xxx: change name
-                        if v.overlay_enabled == false {
-                                bgctmp[text_x] = binary.LittleEndian.Uint32(b_color_lut[b][:]) // text LUT
-                        } else {
-                                bgctmp[text_x] = 0x00FFFFFF                     // full alpha
-                        }
-                }
-
-                for font_line = 0; font_line < 8; font_line += 1 { // for every line of text - over 8 lines of font
-                        font_row_pos = font_line * 8
-                        for text_x = 0; text_x < v.text_cols; text_x += 1 { // for each line iterate over columns of text
-                                font_pos = fnttmp[text_x] + font_row_pos
-                                fb_pos   = dsttmp[text_x] + fb_row_pos
-                                for i = 0; i < 8; i += 1 { // for every font iterate over 8 pixels of font
-                                        if v.font[font_pos+i] == 0 {
-                                                v.c.TFB[fb_pos+i] = bgctmp[text_x]
-                                        } else {
-                                                v.c.TFB[fb_pos+i] = fgctmp[text_x]
-                                        }
-                                }
-                        }
-                        fb_row_pos += uint32(v.c.Screen_x_size)
-                }
-        }
-        // render text - end
 }
 
 // RAM-interface specific
@@ -362,7 +294,7 @@ func (v *Vicky) Read(fn byte, addr uint32) (byte, error) {
 }
 
 func (v *Vicky) Write(fn byte, addr uint32, val byte) (error) {
-        fmt.Printf("vicky3: %s Write func %02x addr %06x val %02x\n", v.name, fn, addr, val)
+        //fmt.Printf("vicky3: %s Write func %02x addr %06x val %02x\n", v.name, fn, addr, val)
         switch fn {
         case F_MAIN:
                 return v.WriteReg(addr, val)
@@ -380,20 +312,30 @@ func (v *Vicky) Write(fn byte, addr uint32, val byte) (error) {
 	case F_CRAM:
 		v.cram[addr] = val
 
+		// it is something strange here, like a mix of little and big endian:
+		//  0xHHLL, 0xHHLL
+		//  0xGGBB, 0xAARR
+		//  const unsigned short fg_color_lut [32] = {
+		//        0x0000, 0xFF00, // Black (transparent)
+		//        0x0000, 0xFF80, // Mid-Tone Red
+		//  ...
+		//  - it looks like "middle-endian"
+
 		switch {
 		case addr >= 0x00 && addr < 0x40:
-			//a           := addr 
-			//byte_in_lut := byte(a & 0x03)
-			//num         := byte(a >> 2)
-			// XXX - fix byte order
-			//f_color_lut[num][byte_in_lut] = val // XXX - global one!
+			color   := addr >> 2
+			a       := addr & 0b_1111_1100
+
+			tmp := append(v.cram[a+2:a+4], v.cram[a:a+2]...)
+			v.fg_clut[color] = binary.BigEndian.Uint32( tmp )
+			//fmt.Printf(" vicky3: FG color %2d %8x %v\n", color, v.fg_clut[color], v.cram[a:a+4] )
 
 		case addr >= 0x40 && addr < 0x80:
-			//a           := addr - 0x40
-			//byte_in_lut := byte(a & 0x03)
-			//num         := byte(a >> 2)
-			// XXX - fix byte order
-			//b_color_lut[num][byte_in_lut] = val // XXX - global one!
+			color   := (addr - 0x40) >> 2
+			a       := addr & 0b_1111_1100
+
+			tmp := append(v.cram[a+2:a+4], v.cram[a:a+2]...)
+			v.bg_clut[color] = binary.BigEndian.Uint32( tmp )
 		}
 
         default:
@@ -642,3 +584,75 @@ func (v *Vicky) WriteReg(addr uint32, val byte) error {
         return nil
 }
 
+func (v *Vicky) RenderBitmapText() {
+        var cursor_x, cursor_y uint32 // row and column of cursor
+        var cursor_enabled bool     // cursor register, various states
+        var text_x, text_y uint32 // row and column of text
+        var text_row_pos uint32   // beginning of current text row in text memory
+        var fb_row_pos uint32     // beginning of current FB   row in memory
+        var font_pos uint32       // position in font array (char * 64 + char_line * 8)
+        var   fb_pos uint32       // position in destination framebuffer
+        var font_line uint32      // line in current font
+        var font_row_pos uint32   // position of line in current font (=font_line*8 because every line has 8 bytes)
+        var i uint32              // counter
+        //var is_overlay bool       // is overlay text over bm0 enabled?
+
+        // placeholders recalculated per row of text, holds values for text_cols loop
+        // current max size is 100 columns (800/8)
+        var fnttmp [128]uint32    // position in font array, from char value
+        var fgctmp [128]uint32    // foreground color cache (rgba) for one line
+        var bgctmp [128]uint32    // background color cache (rgba) for one line
+        var dsttmp [128]uint32    // position in destination memory array
+
+	// XXX: it should be rather updated on register write
+        cursor_enabled =       (v.mem[ CURSOR_ENABLE ] & 0x01) == 0x01
+        cursor_x       = uint32(v.mem[ CURSOR_X_H ]) << 16 | uint32(v.mem[ CURSOR_X_L ])
+        cursor_y       = uint32(v.mem[ CURSOR_Y_H ]) << 16 | uint32(v.mem[ CURSOR_Y_L ])
+        
+        // render text - start
+        // I prefer to keep it because it allow to simply re-drawing single line in future,
+        // by manupipulating starting point (now 0) and end clause (now <v.text_rows)
+        fb_row_pos = v.starting_fb_row_pos
+        for text_y = 0; text_y < v.text_rows; text_y += 1 { // over lines of text
+                text_row_pos = text_y * v.text_cols
+                for text_x = 0; text_x < v.text_cols; text_x += 1 { // pre-calculate data for x-axis
+                        fnttmp[text_x] = v.text[text_row_pos+text_x] * 64 // position in font array
+                        dsttmp[text_x] = text_x * 8                     // position of char in dest FB
+
+                        f := v.fg[text_row_pos+text_x] // fg and bg colors
+                        b := v.bg[text_row_pos+text_x]
+
+                        if v.c.Cursor_visible && cursor_enabled && (cursor_y == text_y) && (cursor_x == text_x) {
+                                f = uint32((v.mem[ CURSOR_COLOR ] & 0xf0) >> 4)
+                                b = uint32( v.mem[ CURSOR_COLOR ] & 0x0f)
+                                fnttmp[text_x] = uint32(v.mem[ CURSOR_CHARACTER ]) * 64
+                        }
+
+                        fgctmp[text_x] = v.fg_clut[f]
+                        if v.overlay_enabled == false {
+                                bgctmp[text_x] = v.bg_clut[b]
+                        } else {
+                                bgctmp[text_x] = 0x00FFFFFF                     // full alpha
+                        }
+                }
+
+                for font_line = 0; font_line < 8; font_line += 1 { // for every line of text - over 8 lines of font
+                        font_row_pos = font_line * 8
+                        for text_x = 0; text_x < v.text_cols; text_x += 1 { // for each line iterate over columns of text
+                                font_pos = fnttmp[text_x] + font_row_pos
+                                fb_pos   = dsttmp[text_x] + fb_row_pos
+                                for i = 0; i < 8; i += 1 { // for every font iterate over 8 pixels of font
+                                        if v.font[font_pos+i] == 0 {
+                                                v.c.TFB[fb_pos+i] = bgctmp[text_x]
+                                        } else {
+                                                v.c.TFB[fb_pos+i] = fgctmp[text_x]
+                                        }
+                                }
+                        }
+                        fb_row_pos += uint32(v.c.Screen_x_size)
+                }
+        }
+        // render text - end
+}
+
+// eof
