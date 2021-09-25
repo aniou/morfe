@@ -12,12 +12,10 @@ import (
 )
 
 type Platform struct {
-        CPU0     emu.Processor           // on-board one (65c816 by default)
+        CPU      emu.Processor           // active processor
+        CPU0     emu.Processor           // on-board one
         CPU1     emu.Processor           // add-on
-	//GPU      *vicky2.Vicky
-	//GPU0     *vicky2.Vicky
-	//GPU1     *vicky2.Vicky
-	GPU      emu.GPU
+	GPU      emu.GPU		 // active head on two-display nodes
 	GPU0     emu.GPU
 	GPU1     emu.GPU
         SIO      *superio.SIO

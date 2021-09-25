@@ -138,6 +138,7 @@ func (p *Platform) InitGenX() {
 }
 
 // an A2560K may have a memory layout similar to GenX-one
+//
 func (p *Platform) SetA2560K() {
 
 	p.Init     = p.InitA2560K
@@ -187,6 +188,7 @@ func (p *Platform) SetA2560K() {
 	
 	p.CPU0     = cpu_68xxx.New(bus0,  "cpu0") // TODO - add type? Or another routine for type? And pass RAM size
         p.CPU1     = cpu_dummy.New(bus1,  "cpu1")
+	p.CPU      = p.CPU0
 
         mylog.Logger.Log("platform: A2560k-like created")
 
