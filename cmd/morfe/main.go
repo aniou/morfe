@@ -46,6 +46,8 @@ var debug = DEBUG{true, false}
 
 var p = platform.New()          // must be global now
 
+var orig_mode   sdl.DisplayMode
+
 // some support routines
 // xxx - move it
 func showCPUSpeed(cycles uint64) (uint64, string) {
@@ -144,6 +146,7 @@ func (gui *GUI) newRendererAndTexture(window *sdl.Window) {
         sdl.SetHint("SDL_HINT_RENDER_BATCHING", "1")
 }
 
+
 func (gui *GUI) newTexture() *sdl.Texture {
         texture, err := gui.renderer.CreateTexture(sdl.PIXELFORMAT_ARGB8888, sdl.TEXTUREACCESS_STREAMING, gui.x_size, gui.y_size)
         if err != nil {
@@ -156,11 +159,33 @@ func (gui *GUI) newTexture() *sdl.Texture {
                         log.Fatalf("Failed to query texture: %s\n", err)
                 }
                 fmt.Printf("texture format: %s\n", sdl.GetPixelFormatName(uint(format)))
-                fmt.Printf("texture width: %d\n", w)
-                fmt.Printf("texture heigtt: %d\n", h)
+                fmt.Printf("texture  width: %d\n", w)
+                fmt.Printf("texture height: %d\n", h)
         }
 
         return texture
+}
+
+
+func (gui *GUI) updateWindowSize() {
+	// exit from fullscreen if necessary
+	if gui.fullscreen {
+		gui.window.SetDisplayMode(&orig_mode)
+		gui.window.SetFullscreen(0)
+	}
+
+	gui.texture_txt.Destroy()
+	gui.texture_bm0.Destroy()
+	gui.texture_bm1.Destroy()
+	gui.renderer.Destroy()
+
+	gui.window.SetSize(gui.x_size, gui.y_size)
+	gui.newRendererAndTexture(gui.window)
+
+	// return to fullscreen if necessary
+	if gui.fullscreen {
+		gui.setFullscreen(gui.window)
+	}
 }
 
 /*
@@ -191,13 +216,12 @@ func (gui *GUI) setFullscreen(window *sdl.Window) {
 // MAIN HERE
 // -----------------------------------------------------------------------------
 func main() {
-        var orig_mode   sdl.DisplayMode
         var event       sdl.Event
         var err         error
         var running     bool
         var disasm      bool		// indicator for debug/disasm mode
         var live_disasm bool		// indicator for debug/disasm mode
-        var CPU0_STEP   uint64 = 14318 // 14.318 MHz in milliseconds, apply for 65c816
+	var CPU0_STEP   uint64 = 14318 // 14.318 MHz in milliseconds, apply for 65c816  - XXX: it shoult be taken from cpu properties
         var CPU1_STEP   uint64 = 20000 // I'm able to achieve 25Mhz too
 	var ch		chan string
 	var msg		string
@@ -336,26 +360,8 @@ func main() {
 		if gpu.Screen_resized {
 			gui.x_size = gpu.Screen_x_size
 			gui.y_size = gpu.Screen_y_size
-
 			gpu.Screen_resized = false
-				// exit from fullscreen if necessary
-				if gui.fullscreen {
-					gui.window.SetDisplayMode(&orig_mode)
-					gui.window.SetFullscreen(0)
-				}
-
-				gui.texture_txt.Destroy()
-				gui.texture_bm0.Destroy()
-				gui.texture_bm1.Destroy()
-				gui.renderer.Destroy()
-
-				gui.window.SetSize(gui.x_size, gui.y_size)
-				gui.newRendererAndTexture(gui.window)
-
-				// return to fullscreen if necessary
-				if gui.fullscreen {
-					gui.setFullscreen(gui.window)
-				}
+			gui.updateWindowSize()
 		}
 
                 // step 1
@@ -532,6 +538,9 @@ func main() {
 							}()
                                                 }
                                         case sdl.K_F8:
+						if p.GPU1 == nil {
+							continue
+						}
 						if gui.active_gpu == 0 {
 							gui.active_gpu = 1
 							gpu = p.GPU1.GetCommon()
@@ -543,6 +552,11 @@ func main() {
 							p.GPU = p.GPU0
 							gui.window.SetTitle(WINDOW_NAME + " - head0")
 						}
+						if (gui.x_size != gpu.Screen_x_size) || (gui.y_size != gpu.Screen_y_size) {
+							gui.x_size = gpu.Screen_x_size
+							gui.y_size = gpu.Screen_y_size
+							gui.updateWindowSize()
+						   }
                                         default:
                                                 gui.sendKey(t.Keysym.Scancode, t.State)
                                         }
