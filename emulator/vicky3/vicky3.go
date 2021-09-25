@@ -4,10 +4,6 @@ package vicky3
 // a big-endian implementation, suitable for A2560* platforms 
 // and - probably - GenX ones
 
-// XXX big warning XXX
-// at this moment this is a verbatim copy of little-endian vicky2 code
-// i.e. a little-endian one. converting to new register layout is on way
-
 import (
         "encoding/binary"
         "fmt"
@@ -187,11 +183,13 @@ func New(name string, size int) *Vicky {
 
 
         // XXX - just for test
+	/*
         for i := range v.text { // file text memory areas
               v.fg[i] = 0x0d
               v.bg[i] = 0x02
               v.text[i] = 0x20
         } 
+	*/
 
         v.recalculateScreen()
 
@@ -493,51 +491,6 @@ func (v *Vicky) WriteReg(addr uint32, val byte) error {
                 v.updateFontCache(addr - FONT_MEMORY_BANK0, val)  // every bit in font cache is mapped to byte
 
 	/*
-        case addr == MASTER_CTRL_REG_H:
-                v.c.Master_H = val
-                if val & 0x01 == 0 {
-                        v.c.Screen_x_size = 640
-                        v.c.Screen_y_size = 480
-                } else {
-                        v.c.Screen_x_size = 800
-                        v.c.Screen_y_size = 600
-                }
-                v.recalculateScreen()
-
-        case addr == BORDER_X_SIZE:
-                v.c.Border_x_size = int32(val & 0x3F)     // XXX: in spec - 0-32, bitmask allows to 0-63
-                if v.c.Border_visible {
-                        v.recalculateScreen()
-                }
-
-        case addr == BORDER_Y_SIZE:
-                v.c.Border_y_size = int32(val & 0x3F)     // XXX: in spec - 0-32, bitmask allows to 0-63
-                if v.c.Border_visible {
-                        v.recalculateScreen()
-                }
-
-        case addr == VKY_TXT_CURSOR_X_REG_L:
-        case addr == VKY_TXT_CURSOR_X_REG_H:
-        case addr == VKY_TXT_CURSOR_Y_REG_L:
-        case addr == VKY_TXT_CURSOR_Y_REG_H:
-                break                                   // just write to mem
-
-        case addr == BACKGROUND_COLOR_B:
-                v.c.Background[2] = val
-
-        case addr == BACKGROUND_COLOR_G:
-                v.c.Background[1] = val
-
-        case addr == BACKGROUND_COLOR_R:
-                v.c.Background[0] = val
-
-        case addr == VKY_TXT_CURSOR_CTRL_REG:
-                if (val & 0x01) == 0 {
-                        v.c.Cursor_visible = false
-                } else {
-                        v.c.Cursor_visible = true
-                }
-                
         case addr == BM0_CONTROL_REG:
                 if (val & 0x01) == 0 {
                         v.c.BM0_visible = false
@@ -606,7 +559,6 @@ func (v *Vicky) WriteReg(addr uint32, val byte) error {
 
 func (v *Vicky) RenderBitmapText() {
         var cursor_x, cursor_y uint32 // row and column of cursor
-        //var cursor_enabled bool     // cursor register, various states
         var text_x, text_y uint32 // row and column of text
         var text_row_pos uint32   // beginning of current text row in text memory
         var fb_row_pos uint32     // beginning of current FB   row in memory
@@ -615,17 +567,15 @@ func (v *Vicky) RenderBitmapText() {
         var font_line uint32      // line in current font
         var font_row_pos uint32   // position of line in current font (=font_line*8 because every line has 8 bytes)
         var i uint32              // counter
-        //var is_overlay bool       // is overlay text over bm0 enabled?
 
         // placeholders recalculated per row of text, holds values for text_cols loop
-        // current max size is 100 columns (800/8)
+        // current max size is 128 columns for 1024x768
         var fnttmp [128]uint32    // position in font array, from char value
         var fgctmp [128]uint32    // foreground color cache (rgba) for one line
         var bgctmp [128]uint32    // background color cache (rgba) for one line
         var dsttmp [128]uint32    // position in destination memory array
 
-	// XXX: it should be rather updated on register write
-        //cursor_enabled =       (v.mem[ CURSOR_ENABLE ] & 0x01) == 0x01
+	// XXX: it should be rather updated on register write?
         cursor_x       = uint32(v.mem[ CURSOR_X_H ]) << 16 | uint32(v.mem[ CURSOR_X_L ])
         cursor_y       = uint32(v.mem[ CURSOR_Y_H ]) << 16 | uint32(v.mem[ CURSOR_Y_L ])
         
