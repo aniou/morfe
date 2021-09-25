@@ -92,11 +92,13 @@ type GPU_common struct {
 	Screen_x_size	   int32
 	Screen_y_size	   int32
 
+	Cursor_rate        int32
+        Cursor_visible	   bool    // set by timer in main GUI, for blinking
+
         // some convinient registers that should be converted
         // into some kind of memory indexes...
         // Master_L        byte    // MASTER_CTRL_REG_L
         // Master_H        byte    // MASTER_CTRL_REG_H
-        Cursor_visible  bool
         BM0_visible     bool
         BM1_visible     bool
 

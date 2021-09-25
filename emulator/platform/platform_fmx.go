@@ -57,6 +57,7 @@ func (p *Platform) SetFMX() {
 
         p.CPU0     = cpu_65c816.New(bus0, "cpu0")
         p.CPU1     = cpu_dummy.New(bus1,  "cpu1")
+	p.CPU      = p.CPU0
         
         p.CPU0.Write_8(  0xFFFC, 0x00)                      // boot vector for 65c816
         p.CPU0.Write_8(  0xFFFD, 0x10)

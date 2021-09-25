@@ -126,6 +126,7 @@ func New(name string, size int) *Vicky {
 	//fmt.Printf("vicky2: v.BM0FB  %p\n", &v.BM0FB)
 	//fmt.Printf("vicky2: v.BM1FB  %p\n", &v.BM1FB)
 
+	v.c.Cursor_rate    = 500    // in milliseconds, XXX: fixed now
         v.c.Cursor_visible = true
         v.c.BM0_visible    = true
         v.c.BM1_visible    = true

@@ -130,6 +130,7 @@ type Vicky struct {
 
 	pixel_size      uint32          // 1 for normal, 2 for double - XXX: not used yet
 	resolution      byte            // for tracking resolution changes
+	cursor_enabled  bool
 
 }
 
@@ -156,8 +157,10 @@ func New(name string, size int) *Vicky {
 	v.c.Screen_y_size  = 480
 	v.c.Screen_resized = false
 
-	v.resolution    = 0
-        v.pixel_size    = 1
+	v.resolution     = 0
+        v.pixel_size     = 1
+	v.cursor_enabled = true
+        v.c.Cursor_visible = true
 
 	// 'verified' knobs
 	v.c.Bitmap_enabled = true // XXX: there is no way to change it in vicky3?
@@ -167,7 +170,6 @@ func New(name string, size int) *Vicky {
 
         //v.mem[ BORDER_CTRL_REG ] = 0x01 - XXX - initial state?
 
-        v.c.Cursor_visible = true
         v.c.BM0_visible    = true
         v.c.BM1_visible    = true
         v.c.Border_color_b = 0x20
@@ -470,6 +472,16 @@ func (v *Vicky) WriteReg(addr uint32, val byte) error {
         case addr == BORDER_COLOR_B:
                 v.c.Border_color_b = val
 
+	case addr == CURSOR_COLOR:		// data is taken directly from memory
+	case addr == CURSOR_CHARACTER:
+		return nil
+
+	case addr == CURSOR_RATE:
+		v.c.Cursor_rate = [4]int32{1000, 500, 250, 200}[val & 0x02]
+
+	case addr == CURSOR_ENABLE:
+		v.cursor_enabled = (val & 0x01) != 0
+
         case addr >= FONT_MEMORY_BANK0 && addr < FONT_MEMORY_BANK0 + 0x800:
                 v.updateFontCache(addr - FONT_MEMORY_BANK0, val)  // every bit in font cache is mapped to byte
 
@@ -587,7 +599,7 @@ func (v *Vicky) WriteReg(addr uint32, val byte) error {
 
 func (v *Vicky) RenderBitmapText() {
         var cursor_x, cursor_y uint32 // row and column of cursor
-        var cursor_enabled bool     // cursor register, various states
+        //var cursor_enabled bool     // cursor register, various states
         var text_x, text_y uint32 // row and column of text
         var text_row_pos uint32   // beginning of current text row in text memory
         var fb_row_pos uint32     // beginning of current FB   row in memory
@@ -606,7 +618,7 @@ func (v *Vicky) RenderBitmapText() {
         var dsttmp [128]uint32    // position in destination memory array
 
 	// XXX: it should be rather updated on register write
-        cursor_enabled =       (v.mem[ CURSOR_ENABLE ] & 0x01) == 0x01
+        //cursor_enabled =       (v.mem[ CURSOR_ENABLE ] & 0x01) == 0x01
         cursor_x       = uint32(v.mem[ CURSOR_X_H ]) << 16 | uint32(v.mem[ CURSOR_X_L ])
         cursor_y       = uint32(v.mem[ CURSOR_Y_H ]) << 16 | uint32(v.mem[ CURSOR_Y_L ])
         
@@ -623,7 +635,7 @@ func (v *Vicky) RenderBitmapText() {
                         f := v.fg[text_row_pos+text_x] // fg and bg colors
                         b := v.bg[text_row_pos+text_x]
 
-                        if v.c.Cursor_visible && cursor_enabled && (cursor_y == text_y) && (cursor_x == text_x) {
+                        if v.c.Cursor_visible && v.cursor_enabled && (cursor_y == text_y) && (cursor_x == text_x) {
                                 f = uint32((v.mem[ CURSOR_COLOR ] & 0xf0) >> 4)
                                 b = uint32( v.mem[ CURSOR_COLOR ] & 0x0f)
                                 fnttmp[text_x] = uint32(v.mem[ CURSOR_CHARACTER ]) * 64

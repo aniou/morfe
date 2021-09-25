@@ -19,7 +19,6 @@ import (
 
 // some general consts
 const CPU_CLOCK         = 14318000 // 14.381Mhz (not used)
-const CURSOR_BLINK_RATE = 500      // in ms (milliseconds)
 const WINDOW_NAME       = "morfe 65c816/m68k emu"
 
 type GUI struct {
@@ -413,10 +412,10 @@ func main() {
 				ms_elapsed = uint64(sdl.GetTicks() - ticks_now)
 				ticks_now = sdl.GetTicks()
 
-				// cursor calculation - flip every CURSOR_BLINK_RATE ticks ----------
+				// cursor calculation - flip every Cursor_rate ticks ----------
 				cursor_counter = cursor_counter - int32(ms_elapsed)
 				if cursor_counter <= 0 {
-					cursor_counter = CURSOR_BLINK_RATE
+					cursor_counter = gpu.Cursor_rate
 					gpu.Cursor_visible = ! gpu.Cursor_visible
 				}
 
@@ -588,7 +587,7 @@ func main() {
 	gui.texture_bm1.Destroy()
         gui.renderer.Destroy()
 
-        memoryDump(p.CPU0, 0x0c)
+        memoryDump(p.CPU, 0x00)
         //memoryDump(p.CPU0, 0xAF_8000)
         //memoryDump(p.CPU0, 0xAF_1f40)
 
