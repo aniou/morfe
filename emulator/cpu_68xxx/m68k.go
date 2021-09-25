@@ -116,7 +116,7 @@ func go_m68k_write_memory_8(mode C.uchar, addr, val C.uint) {
 
 //export go_m68k_write_memory_16
 func go_m68k_write_memory_16(mode C.uchar, addr, val C.uint) {
-        fmt.Printf("m68k write16 %8x val  %8x %d\n", addr, val, val)
+        //fmt.Printf("m68k write16 %8x val  %8x %d\n", addr, val, val)
 
         a   := uint32(addr)
 	m   := byte(mode)
