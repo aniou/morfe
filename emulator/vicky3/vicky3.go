@@ -10,7 +10,7 @@ import (
         "log"
         _ "sync"
         _ "github.com/aniou/morfe/lib/mylog"
-        "github.com/aniou/morfe/emulator"
+        "github.com/aniou/morfe/emulator/emu"
         _ "github.com/aniou/morfe/emulator/ram"
 )
 

@@ -223,6 +223,21 @@ func PS2ScanCode(code sdl.Scancode) byte {
 }
 
 func (g *GUI) sendKey(code sdl.Scancode, state byte) {
+	ps2code := PS2ScanCode(code)
+	//fmt.Printf("\nKEY pressed?:%v, mask %2X %2X %2X\n", state, mask, ^mask, byte(r1_FNX1_INT00_KBD))
+
+	if ps2code == sc_null {
+		fmt.Printf("unknown scancode\n")
+	} else {
+		if state == sdl.RELEASED {
+			p.SendKey(ps2code + 0x80)
+		} else {
+			p.SendKey(ps2code)
+		}
+	}
+}
+/*
+func (g *GUI) sendKey(code sdl.Scancode, state byte) {
 	mask := g.p.CPU0.Read_8(INT_MASK_REG1)
 	if (^mask & byte(r1_FNX1_INT00_KBD)) == byte(r1_FNX1_INT00_KBD) {
 		code := PS2ScanCode(code)
@@ -243,3 +258,4 @@ func (g *GUI) sendKey(code sdl.Scancode, state byte) {
 		}
 	}
 }
+*/

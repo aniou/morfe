@@ -8,7 +8,7 @@ package cpu_65c816
 
 import (
 	"log"
-	"github.com/aniou/morfe/emulator"
+	"github.com/aniou/morfe/emulator/emu"
 	"fmt"
 )
 

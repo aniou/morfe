@@ -11,7 +11,7 @@ import "C"
 import (
         _ "encoding/binary"
         "fmt"
-        "github.com/aniou/morfe/emulator"
+        "github.com/aniou/morfe/emulator/emu"
 )
 
 // cpu modes 

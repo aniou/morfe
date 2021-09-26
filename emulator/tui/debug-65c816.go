@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/aniou/morfe/lib/mylog"
-	"github.com/aniou/morfe/emulator"
+	"github.com/aniou/morfe/emulator/emu"
 	"github.com/aniou/morfe/emulator/platform"
 
 	"github.com/awesome-gocui/gocui"

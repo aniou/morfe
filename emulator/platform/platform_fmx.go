@@ -6,7 +6,7 @@ import (
 
         "github.com/aniou/morfe/lib/mylog"
 
-        "github.com/aniou/morfe/emulator"
+        "github.com/aniou/morfe/emulator/emu"
         "github.com/aniou/morfe/emulator/bus"
         "github.com/aniou/morfe/emulator/cpu_65c816"
         "github.com/aniou/morfe/emulator/cpu_dummy"
@@ -36,7 +36,8 @@ import (
 
 // something like FMX
 func (p *Platform) SetFMX() {
-	p.Init  = p.InitFMX
+	p.Init   = p.InitFMX
+	p.System = emu.SYS_FOENIX_FMX
 
 	bus0       := bus.New("bus0")
 	bus1       := bus.New("bus1")

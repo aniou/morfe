@@ -8,7 +8,7 @@ import (
 
 	"github.com/aniou/morfe/lib/mylog"
 
-        "github.com/aniou/morfe/emulator"
+        "github.com/aniou/morfe/emulator/emu"
         "github.com/aniou/morfe/emulator/bus"
         "github.com/aniou/morfe/emulator/cpu_65c816"
         "github.com/aniou/morfe/emulator/cpu_68xxx"

@@ -12,7 +12,7 @@ import (
 	"gopkg.in/ini.v1"
 	"github.com/marcinbor85/gohex"
 	"github.com/aniou/morfe/lib/mylog"
-	"github.com/aniou/morfe/emulator"
+	"github.com/aniou/morfe/emulator/emu"
 )
 
 type Config struct {

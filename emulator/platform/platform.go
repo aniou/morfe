@@ -6,7 +6,7 @@ package platform
 import (
 	//"log"
 
-        "github.com/aniou/morfe/emulator"
+        "github.com/aniou/morfe/emulator/emu"
         "github.com/aniou/morfe/emulator/mathi"
         "github.com/aniou/morfe/emulator/superio"
 )
@@ -20,6 +20,9 @@ type Platform struct {
 	GPU1     emu.GPU
         SIO      *superio.SIO
 	MATHI    *mathi.MathInt
+	
+	System   byte			 // system type, const emu.SYS_*
+
 	Init	 func()
 }
 

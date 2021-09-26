@@ -11,7 +11,7 @@ import (
 	_ "runtime/pprof"
         _ "time"
         // "github.com/aniou/morfe/emulator/cpu"
-        "github.com/aniou/morfe/emulator"
+        "github.com/aniou/morfe/emulator/emu"
 
         "github.com/aniou/morfe/emulator/platform"
         "github.com/aniou/morfe/lib/mylog"
