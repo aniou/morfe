@@ -9,6 +9,28 @@ var (
 	                                   // thus DIP[0] is never used
 )
 
+const (
+        CPU_65c816 = 0
+        CPU_68000  = 1
+        CPU_68030  = 2
+)
+
+// CPU modes - at this moment only for Motorola
+const (
+	M_USER  = 0	// user mode
+	M_SV    = 1	// supervisor mode
+)
+
+// a different platforms with different layouts 
+// of memory map and registers
+const (
+	SYS_FOENIX_U		= iota
+	SYS_FOENIX_U_PLUS
+	SYS_FOENIX_FMX
+	SYS_FOENIX_A2560K
+	SYS_FOENIX_GENX
+)
+
 type Processor interface {
         Reset()
         Execute() uint32	           // execute one or more steps and returns used cycles
@@ -58,17 +80,6 @@ type GPU interface {
 	GetCommon() *GPU_common
 	RenderBitmapText()
 }
-
-const (
-        CPU_65c816 = 0
-        CPU_68000  = 1
-        CPU_68030  = 2
-)
-
-const (
-	M_USER  = 0
-	M_SV    = 1
-)
 
 // a 'common' set of Vicky's data
 type GPU_common struct {
