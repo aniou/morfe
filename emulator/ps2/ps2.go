@@ -89,7 +89,7 @@ func (s *PS2) Write(fn byte, addr uint32, val byte) error {
                 switch val {
                 case 0xf4: // mouse/keyboard enable
                         s.status = s.status | PS2_STAT_OBF 
-                        //s.debug_status = false
+                        s.debug_status = false	// to get rid console messages in case of pooling
 		case 0xf5: // mouse/keyboard disable
                         s.status = s.status | PS2_STAT_OBF 
 		case 0xf6: // mouse - reset without self-test
