@@ -138,6 +138,17 @@ func go_m68k_write_memory_32(mode C.uchar, addr, val C.uint) {
         return
 }
 
+//export go_m68k_irq_ack
+func go_m68k_irq_ack(level C.uint) C.uint {
+	fmt.Printf("m68k got an irq ack for level %d\n", level)
+	switch level {
+	case 3:			// a random one, XXX - should be in pair with real HW
+				// here clear for emu.irqPending and rest of infrastructure
+		return 0x10	// SuperIO keyboard
+	default:
+		return C.M68K_INT_ACK_AUTOVECTOR
+	}
+}
 
 func New(b emu.Bus, name string) *CPU {
 	cpu := CPU{name: name, enabled: true}
@@ -223,8 +234,8 @@ func (c *CPU) Step() uint32 {
         return uint32(cycles)
 }
 
-
-func (c *CPU) TriggerIRQ() {
+func (c *CPU) TriggerIRQ(level byte) {
+	C.m68k_set_irq(C.uint(level))
         return
 }
 

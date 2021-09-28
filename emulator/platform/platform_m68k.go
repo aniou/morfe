@@ -13,20 +13,19 @@ import (
         "github.com/aniou/morfe/emulator/cpu_65c816"
         "github.com/aniou/morfe/emulator/cpu_68xxx"
         "github.com/aniou/morfe/emulator/cpu_dummy"
+        "github.com/aniou/morfe/emulator/ps2"
         "github.com/aniou/morfe/emulator/vicky2"
         "github.com/aniou/morfe/emulator/vicky3"
-        "github.com/aniou/morfe/emulator/superio"
         "github.com/aniou/morfe/emulator/ram"
         "github.com/aniou/morfe/emulator/mathi"
 )
-
 
 
 // Tentative Memory Map for the A2560U - PRELIMINARY
 // MC68SEC000 Memory Map Model
 //1Mx16   (2x 1Mx8) <- $0000_0000 - $001F_FFFF - RAM (U Model)
 //2Mx16   (2x 2Mx8) <- $0000_0000 - $003F_FFFF - RAM (U + Model)
-//                                          $0040_0000 - $00AF_FFFF - FREE SPACE (Future SDRAM Expansion Card?)
+//                                          $0040_0000 - $00AF_FFFF - FREE SPACE (Future SDRAM Expanps2n Card?)
 
 //                     $00B0_0000 - $00B1_FFFF - GABE Registers (SuperIO/Math Block/SDCard/IDE/Ethernet/SDMA)
 //                     $00B2_0000 - $00B3_FFFF - BEATRIX Registers (CODEC/ADC/DAC0/DAC1/PSG/SID)
@@ -34,7 +33,7 @@ import (
 //                             $00B6_0000 - $00B6_3FFF - TEXT Memory
 //                             $00B6_4000 - $00B6_7FFF - Color Memory
 
-//                            $00BF_0000 - $00BF_FFFF - EXPANSION Chip Select
+//                            $00BF_0000 - $00BF_FFFF - EXPANPS2N Chip Select
 // 512Kx32 (2Mx8) <- $00C0_0000 - $00DF_FFFF - VRAM MEMORY
 // 1Mx16   (2Mx8) <- $00E0_0000 - $00FF_FFFF - FLASH0
 
@@ -49,7 +48,7 @@ func (p *Platform) SetA2560U() {
         bus1       := bus.New("bus1") // dummy one
 
         //p.MATHI     =   mathi.New("mathi",       0x100)  // not implemented yet
-        //p.SIO       = superio.New("sio",         0x400)  // not implemented yet
+        //p.PS2       = superio.New("ps2",         0x400)  // not implemented yet
         p.GPU       =  vicky3.New("gpu0",       0x2000)    // vram = 0x20_0000, text = 0x4000
 
 
@@ -87,9 +86,8 @@ func (p *Platform) SetFranken() {
         bus1       := bus.New("bus1")
 
         p.MATHI     =   mathi.New("mathi",       0x100)
-        p.SIO       = superio.New("sio",         0x400)
+        p.PS2       =     ps2.New("ps2",          0x10)
         p.GPU       =  vicky2.New("gpu0",     0x1_0000)       // should be 0xA000 but there is no support for 0xAF:Exxx
-        //p.GPU     =  vicky2.New("gpu0",       0xA000)
         ram0       :=     ram.New("ram0", 1, 0x40_0000)       // single bank                                                             
 
         bus0.Attach(emu.M_USER, ram0,        ram.F_MAIN, 0x00_0000, 0x3F_FFFF)
@@ -98,7 +96,7 @@ func (p *Platform) SetFranken() {
         bus0.Attach(emu.M_USER, p.GPU,    vicky2.F_TEXT, 0xAF_A000, 0xAF_BFFF)
         bus0.Attach(emu.M_USER, p.GPU,  vicky2.F_TEXT_C, 0xAF_C000, 0xAF_DFFF)
         bus0.Attach(emu.M_USER, p.GPU,    vicky2.F_VRAM, 0xB0_0000, 0xEF_FFFF)  // TODO - parametrize that
-        bus0.Attach(emu.M_USER, p.SIO,   superio.F_MAIN, 0xAF_1000, 0xAF_13FF)
+        bus0.Attach(emu.M_USER, p.PS2,  emu.F_NONE, 0xAF_1000, 0xAF_13FF)
 
 
         // m68k has RAM attached directly
@@ -108,7 +106,7 @@ func (p *Platform) SetFranken() {
         bus1.Attach(emu.M_USER, p.GPU,    vicky2.F_TEXT, 0xAF_A000, 0xAF_BFFF)
         bus1.Attach(emu.M_USER, p.GPU,  vicky2.F_TEXT_C, 0xAF_C000, 0xAF_DFFF)
         bus1.Attach(emu.M_USER, p.GPU,    vicky2.F_VRAM, 0xB0_0000, 0xEF_FFFF)  // TODO - parametrize that
-        bus1.Attach(emu.M_USER, p.SIO,   superio.F_MAIN, 0xAF_1000, 0xAF_13FF)
+        bus1.Attach(emu.M_USER, p.PS2,   emu.F_NONE, 0xAF_1060, 0xAF_106f)
 
         //bus1.Attach(emu.M_USER, ram0,        ram.F_MAIN, 0x00_0000, 0x3F_FFFF)
         bus1.Attach(emu.M_SV  , p.MATHI,   mathi.F_MAIN, 0x00_0100, 0x00_01FF)
@@ -116,7 +114,7 @@ func (p *Platform) SetFranken() {
         bus1.Attach(emu.M_SV  , p.GPU,    vicky2.F_TEXT, 0xAF_A000, 0xAF_BFFF)
         bus1.Attach(emu.M_SV  , p.GPU,  vicky2.F_TEXT_C, 0xAF_C000, 0xAF_DFFF)
         bus1.Attach(emu.M_SV  , p.GPU,    vicky2.F_VRAM, 0xB0_0000, 0xEF_FFFF)  // TODO - parametrize that
-        bus1.Attach(emu.M_SV  , p.SIO,   superio.F_MAIN, 0xAF_1000, 0xAF_13FF)
+	bus1.Attach(emu.M_SV  , p.PS2,  emu.F_NONE, 0xAF_1000, 0xAF_13FF)
 
 
         p.CPU0     = cpu_65c816.New(bus0, "cpu0")
@@ -140,14 +138,14 @@ func (p *Platform) InitGenX() {
 // an A2560K may have a memory layout similar to GenX-one
 //
 func (p *Platform) SetA2560K() {
-
 	p.Init     = p.InitA2560K
+	p.System   = emu.SYS_FOENIX_A2560K
 
         bus0       := bus.New("bus0")
         bus1       := bus.New("bus1") // dummy one
 
         //p.MATHI     =   mathi.New("mathi",       0x100)  // not implemented yet
-        //p.SIO       = superio.New("sio",         0x400)  // not implemented yet
+        p.PS2           =  ps2.New("ps2",           0x10)
         p.GPU0       =  vicky3.New("gpu0",       0x20000)    // vram = 0x20_0000, text = 0x4000
         p.GPU1       =  vicky3.New("gpu1",       0x20000)    // vram = 0x20_0000, text = 0x4000
 	p.GPU = p.GPU0
@@ -174,6 +172,7 @@ func (p *Platform) SetA2560K() {
         //bus0.Attach(emu.M_SV,   p.GPU0,    vicky3.F_VRAM, 0x40_0000, 0x7F_FFFF)   
 
         bus0.Attach(emu.M_SV,   gabe0,    ram.F_MAIN, 0xC0_0000, 0xC1_FFFF)
+        bus0.Attach(emu.M_SV,   p.PS2,    emu.F_NONE, 0xC0_2060, 0xC0_206F)
         bus0.Attach(emu.M_SV,   beat0,    ram.F_MAIN, 0xC2_0000, 0xC3_FFFF)
 
         bus0.Attach(emu.M_SV,   p.GPU0,    vicky3.F_MAIN, 0xC4_0000, 0xC5_FFFF)

@@ -44,7 +44,7 @@ type Processor interface {
 	GetAllCycles() uint64	           // cumulative number of cycles used
 	StatusString() string		   // string that represents status flags
 	ResetCycles()
-	TriggerIRQ()
+	TriggerIRQ(byte)		   // irq number as parameter - may be ignored on some CPUs
 	SetRegister(string, uint32) error  // set selected register
 	SetPC(uint32)			   // redundant to SetRegister but convinient
 

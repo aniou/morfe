@@ -844,7 +844,7 @@ func (cpu *CPU) triggerNMI() {
 }
 
 // triggerIRQ causes an IRQ interrupt to occur on the next cycle
-func (cpu *CPU) TriggerIRQ() {
+func (cpu *CPU) TriggerIRQ(level byte) {
 	if cpu.I == 0 {
 		cpu.interrupt = interruptIRQ
 	}

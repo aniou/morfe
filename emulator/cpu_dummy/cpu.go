@@ -35,7 +35,7 @@ func (cpu *CPU) Step() (uint32) {
         return 0x00
 }
 
-func (cpu *CPU) TriggerIRQ() {
+func (cpu *CPU) TriggerIRQ(level byte) {
 	return
 }
 

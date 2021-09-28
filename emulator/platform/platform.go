@@ -8,7 +8,7 @@ import (
 
         "github.com/aniou/morfe/emulator/emu"
         "github.com/aniou/morfe/emulator/mathi"
-        "github.com/aniou/morfe/emulator/superio"
+        "github.com/aniou/morfe/emulator/ps2"
 )
 
 type Platform struct {
@@ -18,7 +18,7 @@ type Platform struct {
 	GPU      emu.GPU		 // active head on two-display nodes
 	GPU0     emu.GPU
 	GPU1     emu.GPU
-        SIO      *superio.SIO
+	PS2	 *ps2.PS2
 	MATHI    *mathi.MathInt
 	
 	System   byte			 // system type, const emu.SYS_*

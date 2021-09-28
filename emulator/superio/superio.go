@@ -1,5 +1,8 @@
 package superio
 
+// this is old implementation of part of superio
+// now, it is replaced by ps2 module
+
 import (
         "fmt"
 
@@ -58,7 +61,7 @@ func (s *SIO) Read(fn byte, addr uint32) (byte, error) {
         case KBD_INPT_BUF:
                 return s.Data, nil			// XXX something gone wrong
                 if s.InBuf.Len() > 0 {
-                        return *s.InBuf.Dequeue(), nil
+                        return s.InBuf.Dequeue(), nil
                 } else {
                         return 0, nil
                 }

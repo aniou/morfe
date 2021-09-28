@@ -12,7 +12,7 @@ import (
 )
 
 const MAX_MEM_SIZE = 0xff_ffff + 1
-const PAGE_BITS    = 8   // 8 - 0x100 bytes, 10 - 0x400 bytes, 14 - 0x4000
+const PAGE_BITS    = 4   // 4 - 0x10 bytes, 8 - 0x100 bytes, 10 - 0x400 bytes, 14 - 0x4000
 const PAGE_SIZE    = 1 << PAGE_BITS
 const PAGE_MASK    = PAGE_SIZE-1
 const SEGMENTS     = MAX_MEM_SIZE >> PAGE_BITS
