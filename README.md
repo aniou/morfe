@@ -61,8 +61,12 @@ to top-directory of project), i.e.:
 
 ```shell
 ./morfe conf/c256.ini
-./morfe-m68k conf/m68-debug.ini
+./morfe-m68k conf/a2560k.ini
 ```
+
+**Use ``F8`` to change active screen! By default [FoenixMCP](https://github.com/pweingar/FoenixMCP)
+shows debug on head0 and console on head1**
+
 
 ## Built-in debugger
 
@@ -84,12 +88,13 @@ List of supported commands will be displayed in log frame.
 At this moment a sort-of FMX memory map is available, but GenX is on the horizont:
 it is fast moving target, so stay tuned!
 
-### Vicky II
+### Vicky II/III
 
 See [here](https://wiki.c256foenix.com/index.php?title=VICKY_II) for VICKY II spec
 
 - [x] 640x480 mode
 - [x] 800x600 mode (from 19.09.2021)
+- [x] 1024x768, 640x400 - only for m68k-based machines
 - [ ] double pixel mode
 - [x] fullscreen mode
 - [x] border support (partial, no scroll)
@@ -111,7 +116,7 @@ See [here](https://wiki.c256foenix.com/index.php?title=VICKY_II) for VICKY II sp
 See [here](https://wiki.c256foenix.com/index.php?title=GABE) for GABE spec
 
 - [x] math coprocessor
-- [x] keyboard input (GABE) - FMX style at this moment!
+- [x] PS/2 keyboard input 
 - [ ] mouse
 - [ ] all other
 
@@ -128,6 +133,7 @@ There are few keybindings now.
 
 |Key     |Effect
 ---------|---------------------------
+F8       |Change active head in multi-head setups
 F9       |Enter m68k debugger
 F10      |- (nothing)
 F11      |Toggle full-screen
