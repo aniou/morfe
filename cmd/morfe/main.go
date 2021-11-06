@@ -464,7 +464,7 @@ func main() {
 			msg = <-ch
 			switch msg {
 			case "step":
-				p.CPU1.Step()
+				p.CPU.Step()
 				ch<-"done"
 			case "disable_cpu0":
 				p.CPU0.Enable(false)
