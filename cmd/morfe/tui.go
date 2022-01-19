@@ -566,8 +566,8 @@ func (ui *Ui) updateStackView(g *gocui.Gui) error {
 		fmt.Fprintf(v, "%02x", ui.cpu.Read_8(addr  ))
 		fmt.Fprintf(v, "%02x", ui.cpu.Read_8(addr+1))
 		fmt.Fprintf(v, " ")
+		fmt.Fprintf(v, "%02x", ui.cpu.Read_8(addr+2))
 		fmt.Fprintf(v, "%02x", ui.cpu.Read_8(addr+3))
-		fmt.Fprintf(v, "%02x", ui.cpu.Read_8(addr+4))
 
 		if addr == sp {
 			fmt.Fprintf(v, ansi_reset)
