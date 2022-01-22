@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"gopkg.in/ini.v1"
+	"gopkg.in/ini.v1"			// https://pkg.go.dev/gopkg.in/ini.v1
 	"github.com/marcinbor85/gohex"
 	"github.com/aniou/morfe/lib/mylog"
 	"github.com/aniou/morfe/emulator/emu"
@@ -17,6 +17,7 @@ import (
 
 type Config struct {
 	Mode	string
+	Scale   int32   // scaling factor in windowed mode
 }
 
 // xxx - duplicate in TUI, go to lib
@@ -106,6 +107,15 @@ func (p *Platform) LoadPlatformConfig(filename string) (*Config, error) {
 
 	pcfg      := Config{}
 	pcfg.Mode  = cfg.Section("platform").Key("mode").In("unknown", []string{"fmx-like", "frankenmode", "genx-like", "a2560u-like", "a2560k-like"})
+
+	tmp, err := cfg.Section("platform").Key("scale").Uint()
+	if err != nil {
+		mylog.Logger.Log(fmt.Sprintf("window scale set to 1: %s", err))
+		pcfg.Scale = 1
+	} else {
+		mylog.Logger.Log(fmt.Sprintf("window scale set to %i", tmp))
+		pcfg.Scale = int32(tmp)
+	}
 
 	// set DIP-switch config in emu
 	for i := 1; i<7; i += 1 {

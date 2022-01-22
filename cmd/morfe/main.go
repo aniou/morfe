@@ -31,6 +31,7 @@ type GUI struct {
 	texture_bm1 *sdl.Texture
 
         fullscreen  bool
+	scale_mult  int32                 // scale factor, 1 or 2
 	x_size	    int32		  // screen size
 	y_size	    int32
 
@@ -167,10 +168,14 @@ func (gui *GUI) newTexture() *sdl.Texture {
 
 
 func (gui *GUI) updateWindowSize() {
+	var scale int32
 	// exit from fullscreen if necessary
 	if gui.fullscreen {
 		gui.window.SetDisplayMode(&orig_mode)
 		gui.window.SetFullscreen(0)
+		scale = 1			// we do not scale in fullscreen
+	} else {
+		scale = gui.scale_mult
 	}
 
 	gui.texture_txt.Destroy()
@@ -178,7 +183,7 @@ func (gui *GUI) updateWindowSize() {
 	gui.texture_bm1.Destroy()
 	gui.renderer.Destroy()
 
-	gui.window.SetSize(gui.x_size, gui.y_size)
+	gui.window.SetSize(gui.x_size * scale, gui.y_size * scale)
 	gui.newRendererAndTexture(gui.window)
 
 	// return to fullscreen if necessary
@@ -267,6 +272,7 @@ func main() {
 	default:
 		log.Fatalf("unknown mode %s", pcfg.Mode)
 	}
+	gui.scale_mult = pcfg.Scale
 	gui.active_gpu = 0
 	gpu = p.GPU.GetCommon()
 
@@ -293,7 +299,7 @@ func main() {
                     WINDOW_NAME + " - head0",
                     sdl.WINDOWPOS_UNDEFINED,
                     sdl.WINDOWPOS_UNDEFINED,
-                    gui.x_size, gui.y_size,
+                    gui.x_size * gui.scale_mult, gui.y_size * gui.scale_mult,
                     sdl.WINDOW_SHOWN|sdl.WINDOW_OPENGL,
         )
         if err != nil {
@@ -388,18 +394,28 @@ func main() {
                         gui.renderer.Copy(gui.texture_txt, nil, nil)
                 }       
 
-                // stea 5
+		// stea 5 - xxx: make texsture?
                 if gpu.Border_enabled {
                         gui.renderer.SetDrawColor(gpu.Border_color_r, 
                                               gpu.Border_color_g, 
                                               gpu.Border_color_b, 
                                               255)
-                        gui.renderer.FillRects([]sdl.Rect{
-                                sdl.Rect{0, 0, gui.x_size, gpu.Border_y_size},
-                                sdl.Rect{0, gui.y_size-gpu.Border_y_size, gui.x_size, gpu.Border_y_size},
-                                sdl.Rect{0, gpu.Border_y_size,  gpu.Border_x_size, gui.y_size-gpu.Border_y_size},
-                                sdl.Rect{gui.x_size-gpu.Border_x_size, gpu.Border_y_size, gpu.Border_x_size, gui.y_size-gpu.Border_y_size},
-                        })
+			if gui.fullscreen {	// we do not scale in fullscreen
+				gui.renderer.FillRects([]sdl.Rect{
+					sdl.Rect{0, 0, gui.x_size, gpu.Border_y_size},
+					sdl.Rect{0, gui.y_size-gpu.Border_y_size, gui.x_size, gpu.Border_y_size},
+					sdl.Rect{0, gpu.Border_y_size,  gpu.Border_x_size, gui.y_size-gpu.Border_y_size},
+					sdl.Rect{gui.x_size-gpu.Border_x_size, gpu.Border_y_size, gpu.Border_x_size, gui.y_size-gpu.Border_y_size},
+				})
+			} else { // xxx - move scaling code into gpu to avoid unneccessary multiplication
+				gui.renderer.FillRects([]sdl.Rect{
+					sdl.Rect{0, 0, gui.x_size * gui.scale_mult, gpu.Border_y_size * gui.scale_mult},
+					sdl.Rect{0, (gui.y_size-gpu.Border_y_size) * gui.scale_mult, gui.x_size * gui.scale_mult, gpu.Border_y_size * gui.scale_mult},
+ 					sdl.Rect{0, gpu.Border_y_size * gui.scale_mult,  gpu.Border_x_size * gui.scale_mult, (gui.y_size-gpu.Border_y_size) * gui.scale_mult},
+					sdl.Rect{(gui.x_size-gpu.Border_x_size) * gui.scale_mult, gpu.Border_y_size * gui.scale_mult, gpu.Border_x_size * gui.scale_mult, (gui.y_size-gpu.Border_y_size)* gui.scale_mult},
+				})
+
+			}
                 }
 
                 // step 6
