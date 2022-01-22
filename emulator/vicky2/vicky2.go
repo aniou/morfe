@@ -56,7 +56,7 @@ const BM1_START_ADDY_M        = 0x010a
 const BM1_START_ADDY_H        = 0x010b
 
 const FG_CHAR_LUT_PTR         = 0x1f40
-const BG_CHAR_LUT_PTR         = 0x1f40
+const BG_CHAR_LUT_PTR         = 0x1f80
 
 const GRPH_LUT0_PTR           = 0x2000
 const GRPH_LUT7_PTR           = 0x3c00
