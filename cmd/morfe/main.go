@@ -32,8 +32,8 @@ type GUI struct {
 
         fullscreen  bool
 	scale_mult  int32                 // scale factor, 1 or 2
-	x_size	    int32		  // screen size
-	y_size	    int32
+	x_size	    int32		  // emulated x screen size
+	y_size	    int32                 // emulated y screen size
 
 	active_gpu  byte		  // GPU number
 }
@@ -46,7 +46,7 @@ var debug = DEBUG{true, false}
 
 var p = platform.New()          // must be global now
 
-var orig_mode   sdl.DisplayMode
+var orig_mode   *sdl.DisplayMode
 
 // some support routines
 // xxx - move it
@@ -171,7 +171,7 @@ func (gui *GUI) updateWindowSize() {
 	var scale int32
 	// exit from fullscreen if necessary
 	if gui.fullscreen {
-		gui.window.SetDisplayMode(&orig_mode)
+		gui.window.SetDisplayMode(orig_mode)
 		gui.window.SetFullscreen(0)
 		scale = 1			// we do not scale in fullscreen
 	} else {
@@ -214,7 +214,6 @@ func (gui *GUI) setFullscreen(window *sdl.Window) {
         window.SetDisplayMode(&result_mode)
         window.SetFullscreen(sdl.WINDOW_FULLSCREEN)
 }
-
 
 // -----------------------------------------------------------------------------
 // MAIN HERE
@@ -311,7 +310,9 @@ func main() {
 	// step 2.5 - preserve actual mode (we are able to fullscreen too and we want to
 	//            restore original mode on exit)
         display_index, _ := gui.window.GetDisplayIndex()
-        orig_mode, _	  = sdl.GetCurrentDisplayMode(display_index)
+	tmp_mode, _	 := sdl.GetCurrentDisplayMode(display_index)
+	orig_mode         = &tmp_mode
+
         fmt.Printf("original mode width: %d\n", orig_mode.W)
         fmt.Printf("original mode heigt: %d\n", orig_mode.H)
 
@@ -531,7 +532,7 @@ func main() {
                                         case sdl.K_F11:
                                                 if gui.fullscreen {
                                                         gui.fullscreen = false
-                                                        gui.window.SetDisplayMode(&orig_mode)
+                                                        gui.window.SetDisplayMode(orig_mode)
                                                         gui.window.SetFullscreen(0)
                                                 } else {
                                                         gui.fullscreen = true
@@ -595,7 +596,8 @@ func main() {
 
         // return from FULLSCREEN
         if gui.fullscreen {
-                gui.window.SetDisplayMode(&orig_mode)
+                fmt.Printf("leaving full-screen mode\n")
+                gui.window.SetDisplayMode(orig_mode)
                 gui.window.SetFullscreen(0)
         }
 	gui.texture_txt.Destroy()
@@ -603,7 +605,7 @@ func main() {
 	gui.texture_bm1.Destroy()
         gui.renderer.Destroy()
 
-        memoryDump(p.CPU, 0x00)
+        //memoryDump(p.CPU, 0x00)
         //memoryDump(p.CPU0, 0xAF_8000)
         //memoryDump(p.CPU0, 0xAF_1f40)
 
