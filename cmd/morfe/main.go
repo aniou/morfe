@@ -503,6 +503,12 @@ func main() {
 
                 // keyboard ----------------------------------------------------------
                 // https://github.com/veandco/go-sdl2-examples/blob/master/examples/keyboard-input/keyboard-input.go
+		// previous events
+		if p.PS2_queue.Len() > 0 {
+			p.SendKeyFromQueue()
+		}
+
+		// current events
                 for event = sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
 
                         switch t := event.(type) {
