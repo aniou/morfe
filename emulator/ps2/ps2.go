@@ -42,7 +42,8 @@ func New(name string, size int) *PS2 {
           debug_status: true,
                    CCB: 0,
                   name: name,
-                   mem:  make([]byte, size)}
+                   mem: make([]byte, size),
+           }
 
         return &s
 }
@@ -89,16 +90,16 @@ func (s *PS2) Write(fn byte, addr uint32, val byte) error {
                 switch val {
                 case 0xf4: // mouse/keyboard enable
                         s.status = s.status | PS2_STAT_OBF 
-                        s.debug_status = false	// to get rid console messages in case of pooling
-		case 0xf5: // mouse/keyboard disable
+                        s.debug_status = false  // to get rid console messages in case of pooling
+                case 0xf5: // mouse/keyboard disable
                         s.status = s.status | PS2_STAT_OBF 
-		case 0xf6: // mouse - reset without self-test
+                case 0xf6: // mouse - reset without self-test
                 case 0xff: // mouse/keyboard reset
                         s.status = s.status | PS2_STAT_OBF 
 
                 default:
                         fmt.Printf("ps2: %6s write    KBD_DATA: val %02x - data UNKNOWN\n", s.name, val)
-			return nil
+                        return nil
                 }
 
                 fmt.Printf("ps2: %6s write    KBD_DATA: val %02x\n", s.name, val)
@@ -126,20 +127,20 @@ func (s *PS2) Write(fn byte, addr uint32, val byte) error {
                 switch val {
                 case 0x60:
                         s.ccb_write_mode    = true
-		case 0xd4: // write next byte to second PS/2 port
+                case 0xd4: // write next byte to second PS/2 port
                         s.status = s.status | PS2_STAT_OBF 
                 case 0xa7: // disable second PS/2 port
                         s.status = s.status | PS2_STAT_OBF 
                         s.Second_enabled = false
                 case 0xa8: // enable second PS/2 port
                         s.Second_enabled = true
-		case 0xa9: // test second PS/2 port
-			s.data = 0x00
+                case 0xa9: // test second PS/2 port
+                        s.data = 0x00
                         s.status = s.status | PS2_STAT_OBF 
-		case 0xaa: // test PS/2 controller
+                case 0xaa: // test PS/2 controller
                         s.data = 0x55
                         s.status = s.status | PS2_STAT_OBF 
-		case 0xab: // test first PS/2 port
+                case 0xab: // test first PS/2 port
                         s.data = 0x00
                         s.status = s.status | PS2_STAT_OBF 
                 case 0xad: // disable first PS/2 port
@@ -180,7 +181,7 @@ func (s *PS2) Write(fn byte, addr uint32, val byte) error {
 }
 
 func (s *PS2) AddKeyCode(val byte) {
-        fmt.Printf("ps2: AddKeyCode: %02x\n", val)
+        fmt.Printf("ps2: AddKeyCode: %02x current status %02x\n", val, s.status)
         s.data = val
         s.status = s.status | PS2_STAT_OBF 
 }

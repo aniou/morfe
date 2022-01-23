@@ -3,6 +3,7 @@ package platform
 
 import (
 	//"log"
+	"container/list"
 
         "github.com/aniou/morfe/lib/mylog"
 
@@ -63,6 +64,8 @@ func (p *Platform) SetFMX() {
         p.CPU0.Write_8(  0xFFFC, 0x00)                      // boot vector for 65c816
         p.CPU0.Write_8(  0xFFFD, 0x10)
         p.CPU0.Reset()
+
+	p.PS2_queue = list.New()
 
 	mylog.Logger.Log("platform: fmx-like created")
 }

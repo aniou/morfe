@@ -4,6 +4,7 @@
 package platform
 
 import (
+	"container/list"
 	//"log"
 
         "github.com/aniou/morfe/emulator/emu"
@@ -22,6 +23,8 @@ type Platform struct {
 	MATHI    *mathi.MathInt
 	
 	System   byte			 // system type, const emu.SYS_*
+
+	PS2_queue *list.List             // queue for ps2 scancodes
 
 	Init	 func()
 }
