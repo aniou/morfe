@@ -6,6 +6,8 @@ package platform
 import (
 	"log"
 
+	"container/list"
+
 	"github.com/aniou/morfe/lib/mylog"
 
         "github.com/aniou/morfe/emulator/emu"
@@ -67,6 +69,8 @@ func (p *Platform) SetA2560U() {
 
 	p.CPU0     = cpu_68xxx.New(bus0,  "cpu0") // TODO - add type? Or another routine for type? And pass RAM size
         p.CPU1     = cpu_dummy.New(bus1,  "cpu1")
+
+	p.PS2_queue = list.New()
 
         mylog.Logger.Log("platform: A2560-like created")
 
@@ -188,6 +192,8 @@ func (p *Platform) SetA2560K() {
 	p.CPU0     = cpu_68xxx.New(bus0,  "cpu0") // TODO - add type? Or another routine for type? And pass RAM size
         p.CPU1     = cpu_dummy.New(bus1,  "cpu1")
 	p.CPU      = p.CPU0
+
+	p.PS2_queue = list.New()
 
         mylog.Logger.Log("platform: A2560k-like created")
 
