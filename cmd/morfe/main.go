@@ -230,6 +230,7 @@ func main() {
 	var msg		string
 	var pcfg	*platform.Config
 	var gpu		*emu.GPU_common
+	var prevCycles  uint64
 
 	// first things first
         if len(os.Args) < 2 {
@@ -441,12 +442,14 @@ func main() {
 				//           cycles per ms when *ms is used
 
 				if p.CPU0.IsEnabled() {
-					for p.CPU0.GetAllCycles() < desired_cycles0 {
+					for p.CPU.GetAllCycles() < desired_cycles0 {
 						if live_disasm {
-							fmt.Printf("%s\n", p.CPU0.DisassembleCurrentPC())	// XXX - change it for CURRENT CPU
-							p.CPU0.Step()
+							prevCycles = p.CPU.GetAllCycles()
+							fmt.Printf("%s", p.CPU.DisassembleCurrentPC())
+							p.CPU.Step()
+							fmt.Printf(" : %d\n", p.CPU.GetAllCycles() - prevCycles)
 						} else {
-							p.CPU0.Execute()
+							p.CPU.Execute()
 						}
 					}
 					desired_cycles0 = desired_cycles0 + CPU0_STEP*ms_elapsed
@@ -610,6 +613,8 @@ func main() {
 	gui.texture_bm0.Destroy()
 	gui.texture_bm1.Destroy()
         gui.renderer.Destroy()
+
+	fmt.Fprintf(os.Stdout, "total cpu cycles %d\n", p.CPU.GetAllCycles())
 
         //memoryDump(p.CPU, 0x00)
         //memoryDump(p.CPU0, 0xAF_8000)

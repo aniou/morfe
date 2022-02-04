@@ -152,10 +152,11 @@ func (c *CPU) Disassemble(myPC uint16) string {
 	//if c.Cycles > 9 {
 	//	fmt.Fprintf(logView, "warning: instruction cycles > 10\n")
 	//}
-	output = fmt.Sprintf("%d\n%02x:%04x│%-11v│%3s %-13v│",
-					c.Cycles, c.RK, myPC, numeric, name, arg)
+	//output = fmt.Sprintf("%d\n%02x:%04x│%-11v│%3s %-13v│",
+	//				c.Cycles, c.RK, myPC, numeric, name, arg)
 
 	//fmt.Fprintf(v, "%-38v",   "3│00:000c│02 02      │BEQ 02 ($04fa +)")
+	output = fmt.Sprintf("%02x %04x: %-11v : %3s %-13v", c.RK, myPC, numeric, name, arg)
 
 	return output
 }
