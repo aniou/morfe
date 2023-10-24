@@ -282,6 +282,17 @@ func main() {
 	// platform-specific init function 
 	p.Init()
 
+	// initialize disk - XXX parametrize that!
+	err = p.PATA0.AttachDisk(0, pcfg.Disk0) 
+	if err != nil {
+	        log.Panic(err)
+	}
+
+	err = p.PATA0.AttachDisk(0, pcfg.Disk1) 
+	if err != nil {
+	        log.Panic(err)
+	}
+
 	// set initial graphics mode
 	gui.x_size      = gpu.Screen_x_size
 	gui.y_size      = gpu.Screen_y_size
@@ -602,6 +613,10 @@ func main() {
                         } // SDL event switch/case
                 } // SDL event loop
         } // main loop
+
+	// close opened files, if any
+	p.PATA0.DetachDisk(0)
+	p.PATA0.DetachDisk(1)
 
         // return from FULLSCREEN
         if gui.fullscreen {

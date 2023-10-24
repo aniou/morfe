@@ -9,6 +9,7 @@ import (
 
         "github.com/aniou/morfe/emulator/emu"
         "github.com/aniou/morfe/emulator/mathi"
+        "github.com/aniou/morfe/emulator/pata"
         "github.com/aniou/morfe/emulator/ps2"
 )
 
@@ -19,6 +20,7 @@ type Platform struct {
 	GPU      emu.GPU		 // active head on two-display nodes
 	GPU0     emu.GPU
 	GPU1     emu.GPU
+	PATA0    *pata.PATA
 	PS2	 *ps2.PS2
 	MATHI    *mathi.MathInt
 	

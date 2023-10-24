@@ -17,6 +17,8 @@ import (
 
 type Config struct {
 	Mode	string
+	Disk0	string  // path for disk0 image
+	Disk1	string  // path for disk1 image
 	Scale   int32   // scaling factor in windowed mode
 }
 
@@ -124,6 +126,11 @@ func (p *Platform) LoadPlatformConfig(filename string) (*Config, error) {
 			emu.DIP[i], _ = cfg.Section("platform").Key(keyname).Bool()
 		}
 	}
+
+	// disk images
+	pcfg.Disk0 = cfg.Section("platform").Key("disk0").MustString("")
+	pcfg.Disk1 = cfg.Section("platform").Key("disk1").MustString("")
+	
 	return &pcfg, nil
 
 }

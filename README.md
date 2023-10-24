@@ -92,6 +92,7 @@ it is fast moving target, so stay tuned!
 
 See [here](https://wiki.c256foenix.com/index.php?title=VICKY_II) for VICKY II spec
 
+- [x] preliminary PATA HDD support (r/o, only for a2560k, very rudimentary)
 - [x] 640x480 mode
 - [x] 800x600 mode (from 19.09.2021)
 - [x] 1024x768, 640x400 - only for m68k-based machines
