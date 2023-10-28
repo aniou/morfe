@@ -1,5 +1,5 @@
 
-// +build m68k
+// +build musashi
 
 package platform
 
