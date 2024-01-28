@@ -3,15 +3,9 @@
 A kind-of-emulator software, created for my experiments and 
 development for [Foenix](https://c256foenix.com/) machines.
 
-**Warning:** this is an fast-evolving project in pre-alpha
-state, that changes almost every day. Stay tuned and look 
-for updates! I need it for my personal experiments, so 
-features should pop-up and mutate without warning! :):
-
-Second warning: because of heavy re-factoring GenX
-features are not available yet. So far I was able to
-restore FMX-like behaviour with new code - but GenX-like
-memory map is on the way!
+**Warning:** m68k mode is slow and memory map *doesn't fit*
+current specifications! See [MORFE/O](https://github.com/aniou/morfeo)
+for better m68k emulator!
 
 At this moment You should also consider following factors:
 
@@ -31,7 +25,8 @@ At this moment You should also consider following factors:
 First, clone repo by ``git clone https://github.com/aniou/morfe``
 
 Type ``make morfe`` for a 65c816-only version or ``make morfe-m68k`` 
-for dual, 65c816/m68k one.
+for dual, 65c816/m68k one (but You should stick with 65c816 and use
+[MORFE/O](https://github.com/aniou/morfeo) for m68k).
 
 There is also ``make help`` that shows actual targets.
 
