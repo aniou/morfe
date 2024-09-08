@@ -686,7 +686,7 @@ func (cpu *CPU) push(value byte) {
 
 	if cpu.E == 1 {
 		cpu.SP = cpu.SP & 0x00FF
-		cpu.SP = cpu.SP | 0x1000
+		cpu.SP = cpu.SP | 0x0100
 	}
 }
 
@@ -696,7 +696,7 @@ func (cpu *CPU) pull() byte {
 
 	if cpu.E == 1 {
 		cpu.SP = cpu.SP & 0x00FF
-		cpu.SP = cpu.SP | 0x1000
+		cpu.SP = cpu.SP | 0x0100
 	}
 	//return cpu.Read(0x100 | uint16(cpu.SP))
 	//return cpu.Read(cpu.SP)
