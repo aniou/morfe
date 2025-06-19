@@ -1,11 +1,16 @@
 # MORFE - Meyer's Own Re-combinable FrankenEmulator
 
-A kind-of-emulator software, created for my experiments and 
-development for [Foenix](https://c256foenix.com/) machines.
+> [!IMPORTANT]
+> You probably should take a look at [MORFE/O](https://github.com/aniou/morfeo)
+> that already is - or will be in short time - more feature rich and way faster
+> than this implementation. Not only for m68k but also for C256 line!
+> 
+> This repo is rather abandoned and lost sync with current state of hardware.
 
-**Warning:** m68k mode is slow and memory map *doesn't fit*
-current specifications! See [MORFE/O](https://github.com/aniou/morfeo)
-for better m68k emulator!
+---
+
+MORFE is a kind-of-emulator software, created for my experiments and 
+development for [Foenix](https://c256foenix.com/) machines.
 
 At this moment You should also consider following factors:
 
