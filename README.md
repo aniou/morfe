@@ -2,8 +2,8 @@
 
 > [!IMPORTANT]
 > At this moment You should take a look at [MORFE/O](https://github.com/aniou/morfeo): 
-> more feature rich and way faster than this implementation. Also has current memory 
-> map for A2560X. MORFE/O supports bot only for m68k but also for C256-line of systems!
+> more feature rich and way faster than this implementation. MORFE/O supports not only
+> m68k but also for C256-line of systems!
 > 
 > This repo (morfe) is rather abandoned and lost sync with current state of hardware.
 
