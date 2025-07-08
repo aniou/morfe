@@ -1,11 +1,11 @@
 # MORFE - Meyer's Own Re-combinable FrankenEmulator
 
 > [!IMPORTANT]
-> You probably should take a look at [MORFE/O](https://github.com/aniou/morfeo)
-> that already is - or will be in short time - more feature rich and way faster
-> than this implementation. Not only for m68k but also for C256 line!
+> At this moment You should take a look at [MORFE/O](https://github.com/aniou/morfeo): 
+> more feature rich and way faster than this implementation. Also has current memory 
+> map for A2560X. MORFE/O supports bot only for m68k but also for C256-line of systems!
 > 
-> This repo is rather abandoned and lost sync with current state of hardware.
+> This repo (morfe) is rather abandoned and lost sync with current state of hardware.
 
 ---
 
